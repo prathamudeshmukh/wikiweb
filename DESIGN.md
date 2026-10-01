@@ -84,6 +84,8 @@ Rules:
 
 Packages: `@expo-google-fonts/fraunces`, `@expo-google-fonts/literata`, `@expo-google-fonts/ibm-plex-mono`.
 
+**SDK 57 constraint (M2):** iOS/Android can't select faces from variable fonts until SDK 58 (and `fontVariationSettings` arrives with React Native 0.88), so each weight is loaded as a static file and Fraunces' `SOFT`/`WONK` axes are not applied yet. Revisit on SDK 58.
+
 ---
 
 ## 4. Spacing, shape, elevation
@@ -98,7 +100,7 @@ Packages: `@expo-google-fonts/fraunces`, `@expo-google-fonts/literata`, `@expo-g
 | Card height | viewport − header − 56 pt peek |
 | Card shadow (light) | `0 2 0 #D9CFBF`, `0 12 24 rgba(31,27,22,0.08)` — a "paper lift" |
 | Card shadow (dark) | none; 1 px `line.hairline` border instead |
-| Paper grain | tiled 256 px noise PNG, 3 % opacity, light mode only, behind cards |
+| Paper grain | tiled 256 px noise PNG, 3 % opacity, light mode only, behind cards — *not yet implemented (M5 polish)* |
 
 ---
 

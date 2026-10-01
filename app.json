@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
@@ -20,6 +20,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-sqlite",
+      "expo-font",
+      "expo-splash-screen",
+      "expo-asset"
+    ],
+    "scheme": "tangent",
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

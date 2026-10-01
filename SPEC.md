@@ -368,7 +368,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 |---|---|---|
 | M0 | **Gesture prototype** (throwaway) | Static fake cards; column push/pop with left/right swipe + direction lock feels right on a real phone |
 | M1 ✅ | API client + content engine | Builders pass unit/integration tests against fixtures — done 2026-10-01: 98 tests, ~98 % coverage, live smoke test (`npm run test:live`) |
-| M2 | Columns + Home + onboarding | Live infinite Home; hops into real columns |
+| M2 ✅ | Columns + Home + onboarding | Live infinite Home; hops into real columns — done 2026-10-01: Expo Router, onboarding (persisted in expo-sqlite kv-store), live Home and column feeds, the M0 hop on real data, breadcrumb jumps, skeleton/error/dead-end cards, Paper + Night atlas. Verified on an Android emulator; 185 tests, 92 % coverage. Card tap → reader is M3; Logbook button is M4. |
 | M3 | Reader + peek card | Inline links intercepted; Explore/Read work |
 | M4 | Journeys + breadcrumb | Persisted, reopenable Journeys; visited/read badges |
 | M5 | Prefetch, caches, states, analytics | Perf targets met; all §8 states; events firing |
