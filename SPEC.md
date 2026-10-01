@@ -58,7 +58,7 @@ Infinite column composed per page of 20 cards:
 
 | Share | Source |
 |---|---|
-| ~70 % | Interest picks — `articletopic:` searches rotated across chosen topics |
+| ~70 % | Interest picks — `articletopic:<topic> incategory:Featured_articles`, topping up from `incategory:Good_articles` when a topic runs low; titles matching the Home blocklist (config) are skipped. Columns are **not** filtered this way. |
 | ~20 % | Today on Wikipedia — featured article, On this day, most-read |
 | ~10 % | Wildcard — random quality-filtered article outside chosen topics |
 
@@ -197,7 +197,7 @@ All requests to `https://en.wikipedia.org` with header
 
 | Need | Endpoint |
 |---|---|
-| Outgoing links + card data | `w/api.php?action=query&generator=links&titles=S&gplnamespace=0&gpllimit=max&prop=pageimages\|description\|extracts\|pageprops\|pageviews\|cirrusdoc&piprop=thumbnail&pithumbsize=500&exintro&explaintext&exsentences=2&exlimit=20&ppprop=disambiguation&format=json&formatversion=2` |
+| Outgoing links + card data | `w/api.php?action=query&generator=links&titles=S&gplnamespace=0&gpllimit=max&prop=pageimages\|description\|extracts\|pageprops\|cirrusdoc&cdincludes=weighted_tags&piprop=thumbnail&pithumbsize=500&exintro&explaintext&exsentences=2&exlimit=20&ppprop=disambiguation&format=json&formatversion=2` |
 | Backlinks | same props with `generator=backlinks&gbltitle=S&gblnamespace=0&gblfilterredir=nonredirects` |
 | morelike | same props with `generator=search&gsrsearch=morelike:S&gsrlimit=20&gsroffset=N` |
 | Interest feed | `generator=search&gsrsearch=articletopic:<topic>&gsrlimit=20&gsroffset=N` |
@@ -213,7 +213,11 @@ All requests to `https://en.wikipedia.org` with header
 - Only coarse tags (e.g. *Iron gall ink* → `STEM.STEM*|712` only): map the bucket to a territory default (STEM → Cosmos, Culture → Culture, Geography → Earth, History_and_Society → Past) with **no topic label** — colour only.
 - Minimum score 500, else untagged.
 
-**Ranking note:** `generator=links` returns titles alphabetically; ranking uses `prop=pageviews` (last 60 days).
+**Ranking note (verified 2026-10-01):** `generator=links` returns titles alphabetically. `prop=pageviews` only returns ~35 pages per request (`pvipcontinue`), so ranking 500 links would take ~15 calls — rejected. Instead one **rank call** fetches all links with `prop=cirrusdoc&cdincludes=popularity_score` (~170 KB for 500 links), then cards are hydrated 20 at a time by `pageids`. Pure popularity favours generic hubs (*Animal, Aristotle, Oxford English Dictionary*), so ranking is a swappable pure function; tune after dogfooding.
+
+**Payload note (verified):** `cirrusdoc` **must** be called with `cdincludes` — without it a 20-card batch is ~2.1 MB; with `cdincludes=weighted_tags` it is ~26 KB. The API marks `cirrusdoc` as internal ("might change at any time without notice"), so the seed-topic fallback in §5.4 is mandatory, not optional.
+
+**Content note (verified):** raw `articletopic:biology` ranks *Anal sex* and *Oral sex* in its top five. Hence the Featured → Good restriction for Home (§3.2). Featured-only pools are still large (743 biology, ~490 space).
 
 ---
 
