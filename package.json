@@ -24,7 +24,8 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "test:coverage": "jest --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:live": "jest -c jest.live.config.js"
   },
   "private": true,
   "jest": {
@@ -32,7 +33,9 @@
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/**/*.d.ts",
-      "!src/**/__fixtures__/**"
+      "!src/**/*.test.ts",
+      "!src/**/__fixtures__/**",
+      "!src/**/__testing__/**"
     ],
     "coverageThreshold": {
       "global": {
@@ -41,6 +44,10 @@
         "lines": 80,
         "statements": 80
       }
-    }
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.smoke\\.test\\.ts$"
+    ]
   }
 }

@@ -1,5 +1,5 @@
 import type { Article } from '../wiki-api/types';
-import { isLowValueTitle, isUsableArticle, matchesBlocklist } from './quality';
+import { createBlocklistMatcher, isLowValueTitle, isUsableArticle } from './quality';
 
 const article = (overrides: Partial<Article> = {}): Article => ({
   pageId: 1,
@@ -7,7 +7,6 @@ const article = (overrides: Partial<Article> = {}): Article => ({
   description: 'Study of mathematical knots',
   extract: 'In topology, knot theory is the study of mathematical knots.',
   thumbnail: null,
-  weightedTags: [],
   isDisambiguation: false,
   ...overrides,
 });
@@ -48,18 +47,26 @@ describe('isUsableArticle', () => {
   });
 });
 
-describe('matchesBlocklist', () => {
-  const blocklist = ['sex', 'porn'];
+describe('createBlocklistMatcher', () => {
+  const matchesBlocklist = createBlocklistMatcher(['sex', 'porn', 'c++']);
 
   it('matches a blocked whole word, ignoring case', () => {
-    expect(matchesBlocklist('Anal Sex', blocklist)).toBe(true);
+    expect(matchesBlocklist('Anal Sex')).toBe(true);
   });
 
   it('does not match blocked text inside a longer word', () => {
-    expect(matchesBlocklist('Sussex', blocklist)).toBe(false);
+    expect(matchesBlocklist('Sussex')).toBe(false);
+  });
+
+  it('treats regex characters in terms literally', () => {
+    expect(matchesBlocklist('c++ programming')).toBe(true);
+  });
+
+  it('matches nothing with an empty blocklist', () => {
+    expect(createBlocklistMatcher([])('Anything')).toBe(false);
   });
 
   it('does not match clean titles', () => {
-    expect(matchesBlocklist('Polar bear', blocklist)).toBe(false);
+    expect(matchesBlocklist('Polar bear')).toBe(false);
   });
 });

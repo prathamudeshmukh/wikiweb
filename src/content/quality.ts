@@ -22,6 +22,12 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export function matchesBlocklist(title: string, blocklist: readonly string[]): boolean {
-  return blocklist.some((term) => new RegExp(`\\b${escapeRegExp(term)}\\b`, 'i').test(title));
+/**
+ * Whole-word, case-insensitive title matcher, compiled once per blocklist.
+ * Word boundaries are lookarounds so terms ending in symbols (e.g. "c++") still match.
+ */
+export function createBlocklistMatcher(blocklist: readonly string[]): (title: string) => boolean {
+  if (blocklist.length === 0) return () => false;
+  const pattern = new RegExp(`(?<![\\w])(${blocklist.map(escapeRegExp).join('|')})(?![\\w])`, 'i');
+  return (title) => pattern.test(title);
 }

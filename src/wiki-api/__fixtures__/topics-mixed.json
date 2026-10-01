@@ -1,0 +1,198 @@
+{
+ "batchcomplete": true,
+ "query": {
+  "pages": [
+   {
+    "pageid": 15292,
+    "ns": 0,
+    "title": "Ink",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "15292",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.drafttopic/STEM.STEM*|911",
+        "recommendation.link/exists",
+        "classification.prediction.articletopic/STEM.STEM*|724",
+        "ext.pageassessments.project/Color|40",
+        "ext.pageassessments.project/Materials|60",
+        "ext.pageassessments.project/Project-independent assessment|10",
+        "ext.pageassessments.project/Visual arts|10"
+       ],
+       "title": "Ink"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 18079,
+    "ns": 0,
+    "title": "Leonardo da Vinci",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "18079",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.articlecountry/Italy|1000",
+        "classification.prediction.drafttopic/Culture.Biography.Biography*|598",
+        "classification.prediction.drafttopic/Culture.Visual arts.Comics and Anime|579",
+        "classification.prediction.drafttopic/Culture.Visual arts.Visual arts*|609",
+        "classification.prediction.drafttopic/Geography.Regions.Europe.Europe*|572",
+        "classification.prediction.articletopic/Culture.Visual_arts.Visual_arts*|665",
+        "recommendation.tone/exists|813",
+        "ext.pageassessments.project/Biography/Core biographies|10",
+        "ext.pageassessments.project/Biography/arts and entertainment work group|100",
+        "ext.pageassessments.project/LGBTQ+ studies/LGBTQ+ Person task force|10",
+        "ext.pageassessments.project/Anatomy/Field of anatomy|10",
+        "ext.pageassessments.project/Visual arts|10",
+        "ext.pageassessments.project/Philosophy/Philosophers|60",
+        "ext.pageassessments.project/European history|80",
+        "ext.pageassessments.project/Philosophy|60",
+        "ext.pageassessments.project/Biography/science and academia work group|100",
+        "ext.pageassessments.project/Philosophy/Medieval philosophy|60",
+        "ext.pageassessments.project/Italy|100",
+        "ext.pageassessments.project/France|60",
+        "ext.pageassessments.project/Middle Ages|80",
+        "ext.pageassessments.project/Middle Ages/WikiProject History|10",
+        "ext.pageassessments.project/History of Science|80",
+        "ext.pageassessments.project/Physiology|60",
+        "ext.pageassessments.project/Astronomy|40",
+        "ext.pageassessments.project/LGBTQ+ studies|10",
+        "ext.pageassessments.project/Veganism and Vegetarianism|80",
+        "ext.pageassessments.project/Anatomy|40",
+        "ext.pageassessments.project/Civil engineering|60",
+        "ext.pageassessments.project/Biography|10",
+        "ext.pageassessments.project/Sculpture|10",
+        "ext.pageassessments.project/Project-independent assessment|10",
+        "ext.pageassessments.project/Architecture|60"
+       ],
+       "title": "Leonardo da Vinci"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 38011,
+    "ns": 0,
+    "title": "Squid",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "38011",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.drafttopic/STEM.STEM*|987",
+        "classification.prediction.drafttopic/STEM.Biology|980",
+        "classification.prediction.articletopic/STEM.Biology|939",
+        "classification.prediction.articletopic/STEM.STEM*|982",
+        "recommendation.tone/exists|720",
+        "ext.pageassessments.project/Fisheries and Fishing|80",
+        "ext.pageassessments.project/Marine life|10",
+        "ext.pageassessments.project/Food and drink|60",
+        "ext.pageassessments.project/Project-independent assessment|10",
+        "ext.pageassessments.project/Cephalopods|10"
+       ],
+       "title": "Squid"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 153008,
+    "ns": 0,
+    "title": "Knot theory",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "153008",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.drafttopic/STEM.STEM*|969",
+        "classification.prediction.articletopic/STEM.Mathematics|941",
+        "classification.prediction.articletopic/STEM.STEM*|984",
+        "recommendation.tone/exists|765",
+        "ext.pageassessments.project/Knots|10",
+        "ext.pageassessments.project/Mathematics|100",
+        "ext.pageassessments.project/Project-independent assessment|10"
+       ],
+       "title": "Knot theory"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 20976520,
+    "ns": 0,
+    "title": "Cuttlefish",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "20976520",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.drafttopic/STEM.Biology|990",
+        "classification.prediction.drafttopic/STEM.STEM*|989",
+        "recommendation.link/exists",
+        "classification.prediction.articletopic/STEM.STEM*|988",
+        "classification.prediction.articletopic/STEM.Biology|979",
+        "recommendation.tone/exists|689",
+        "ext.pageassessments.project/Fisheries and Fishing|60",
+        "ext.pageassessments.project/Food and drink|40",
+        "ext.pageassessments.project/Project-independent assessment|10",
+        "ext.pageassessments.project/Cephalopods|10"
+       ],
+       "title": "Cuttlefish"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 27973567,
+    "ns": 0,
+    "title": "Paul the Octopus",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "27973567",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.articlecountry/United Kingdom|1000",
+        "classification.prediction.drafttopic/Geography.Regions.Europe.Europe*|602",
+        "classification.prediction.drafttopic/Culture.Biography.Biography*|595",
+        "classification.prediction.articletopic/Culture.Sports|985",
+        "recommendation.tone/exists|547",
+        "ext.pageassessments.project/Football/German football task force|40",
+        "ext.pageassessments.project/Occult|40",
+        "ext.pageassessments.project/Project-independent assessment|10",
+        "ext.pageassessments.project/Football|40",
+        "ext.pageassessments.project/Germany|40",
+        "ext.pageassessments.project/Cephalopods|10"
+       ],
+       "title": "Paul the Octopus"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   }
+  ]
+ }
+}

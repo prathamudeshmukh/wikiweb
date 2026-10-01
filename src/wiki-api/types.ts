@@ -1,12 +1,16 @@
-export interface PageRef {
-  pageId: number;
+export interface TitleRef {
   title: string;
 }
 
-export interface RankedLink extends PageRef {
-  /** CirrusSearch popularity_score; 0 when the index has no document for the page. */
-  popularity: number;
-  isDisambiguation: boolean;
+export interface PageRef extends TitleRef {
+  pageId: number;
+}
+
+export interface ArticleSection {
+  /** MediaWiki section index; the lead is 0 and is not listed by the API. */
+  index: number;
+  title: string;
+  level: number;
 }
 
 export interface Thumbnail {
@@ -19,8 +23,6 @@ export interface Article extends PageRef {
   description: string | null;
   extract: string | null;
   thumbnail: Thumbnail | null;
-  /** Raw CirrusSearch weighted_tags, e.g. `classification.prediction.articletopic/STEM.Biology|952`. */
-  weightedTags: readonly string[];
   isDisambiguation: boolean;
 }
 
@@ -31,12 +33,15 @@ export interface Paged<T> {
 }
 
 export interface WikiApi {
-  rankedLinks(title: string): Promise<RankedLink[]>;
+  sections(title: string): Promise<ArticleSection[]>;
+  /** Titles linked from one section, in reading order. */
+  sectionLinks(title: string, sectionIndex: number): Promise<string[]>;
   backlinks(title: string, cursor: string | null): Promise<Paged<PageRef>>;
   moreLike(title: string, cursor: string | null): Promise<Paged<PageRef>>;
   topicSearch(query: string, cursor: string | null): Promise<Paged<PageRef>>;
-  random(): Promise<PageRef[]>;
   featured(date: Date): Promise<PageRef[]>;
-  /** At most FEED.hydrateBatch ids; result keeps the requested order and drops missing pages. */
-  hydrate(pageIds: readonly number[]): Promise<Article[]>;
+  /** At most FEED.hydrateBatch titles. Keyed by the title as requested (redirects and normalisation resolved); missing pages are absent. */
+  hydrate(titles: readonly string[]): Promise<ReadonlyMap<string, Article>>;
+  /** Raw CirrusSearch weighted_tags per page id. Slow (~1.5 s / 20) — never on the critical path. */
+  topicTags(pageIds: readonly number[]): Promise<ReadonlyMap<number, readonly string[]>>;
 }

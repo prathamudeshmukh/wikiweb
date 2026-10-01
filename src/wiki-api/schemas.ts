@@ -11,6 +11,7 @@ const cirrusDoc = z.object({
 
 export const queryPageSchema = z.object({
   pageid: z.number().optional(),
+  ns: z.number().optional(),
   title: z.string(),
   missing: z.boolean().optional(),
   /** Search-generator rank (1-based). Pages arrive unordered; this restores relevance order. */
@@ -22,9 +23,29 @@ export const queryPageSchema = z.object({
   cirrusdoc: z.array(cirrusDoc).optional(),
 });
 
+const titleMapping = z.array(z.object({ from: z.string(), to: z.string() }));
+
 export const queryResponseSchema = z.object({
-  query: z.object({ pages: z.array(queryPageSchema).optional() }).optional(),
+  query: z
+    .object({
+      pages: z.array(queryPageSchema).optional(),
+      /** Requested title → canonical spelling (e.g. lowercase first letter). */
+      normalized: titleMapping.optional(),
+      /** Requested (normalised) title → redirect target. */
+      redirects: titleMapping.optional(),
+    })
+    .optional(),
   continue: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+});
+
+export const sectionsResponseSchema = z.object({
+  parse: z.object({
+    sections: z.array(z.object({ index: z.string(), line: z.string(), level: z.string() })),
+  }),
+});
+
+export const sectionTextResponseSchema = z.object({
+  parse: z.object({ text: z.string() }),
 });
 
 const feedPage = z.object({

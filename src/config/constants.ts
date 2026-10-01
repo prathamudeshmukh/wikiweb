@@ -10,6 +10,12 @@ export const WIKI = {
 export const HTTP_RETRY = {
   attempts: 3,
   baseDelayMs: 300,
+  /** Upper bound on a server-requested Retry-After wait, so one throttled call can't stall a feed for minutes. */
+  maxRetryAfterMs: 10_000,
+  /** React Native's fetch has no default timeout; a stalled request would block a feed's queue forever. */
+  timeoutMs: 15_000,
+  /** Action API error codes (sent inside HTTP 200 bodies) that are worth retrying. */
+  retryableApiCodes: ['ratelimited', 'maxlag', 'readonly', 'internal_api_error_DBQueryError'],
 } as const;
 
 export const FEED = {
@@ -18,10 +24,15 @@ export const FEED = {
   hydrateBatch: 20,
   /** One backlink after every N primary (link / morelike) cards. */
   backlinkEveryN: 4,
-  /** Ranking follows `gplcontinue` at most this many times (500 links each). */
-  maxLinkRankPages: 3,
-  searchPageSize: 20,
+  /** Page size for backlink and search lists. */
+  listPageSize: 20,
 } as const;
+
+/** Sections whose links are citations or housekeeping, not part of the article's web (SPEC.md §5.1). */
+export const SKIPPED_SECTION_TITLES: ReadonlySet<string> = new Set([
+  'Notes', 'References', 'External links', 'Further reading', 'Bibliography', 'Sources', 'Citations', 'Footnotes',
+  'Works cited', 'Notes and references', 'References and notes',
+]);
 
 export const TOPICS = {
   tagPrefix: 'classification.prediction.articletopic/',

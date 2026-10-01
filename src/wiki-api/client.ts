@@ -1,17 +1,23 @@
 import type { z } from 'zod';
 import { FEED, WIKI } from '../config/constants';
 import { type WikiHttp, WikiApiError } from './http';
-import { featuredFeedSchema, type QueryPage, type QueryResponse, queryResponseSchema } from './schemas';
-import type { Article, PageRef, Paged, RankedLink, WikiApi } from './types';
+import { extractArticleLinks } from './linkExtraction';
+import {
+  featuredFeedSchema,
+  type QueryPage,
+  type QueryResponse,
+  queryResponseSchema,
+  sectionsResponseSchema,
+  sectionTextResponseSchema,
+} from './schemas';
+import type { Article, PageRef, Paged, WikiApi } from './types';
 
 type Params = Readonly<Record<string, string>>;
 type PageWithId = QueryPage & { pageid: number };
 
-const RANK_PROPS: Params = { prop: 'cirrusdoc|pageprops', cdincludes: 'popularity_score', ppprop: 'disambiguation' };
-
-// SPEC.md §6 — cdincludes keeps cirrusdoc at ~26 KB per 20 cards instead of ~2.1 MB.
+// SPEC.md §6 — card fields only; topics come from a separate background call (cirrusdoc is slow).
 const CARD_PROPS: Params = {
-  prop: 'pageimages|description|extracts|pageprops|cirrusdoc',
+  prop: 'pageimages|description|extracts|pageprops',
   piprop: 'thumbnail',
   pithumbsize: String(WIKI.thumbnailWidth),
   exintro: '1',
@@ -19,21 +25,26 @@ const CARD_PROPS: Params = {
   exsentences: String(WIKI.extractSentences),
   exlimit: String(FEED.hydrateBatch),
   ppprop: 'disambiguation',
-  cdincludes: 'weighted_tags',
 };
+
+const SECTION_TEXT_PROPS: Params = { action: 'parse', prop: 'text', disableeditsection: '1', disablelimitreport: '1' };
 
 function parse<T>(schema: z.ZodType<T>, body: unknown): T {
   const result = schema.safeParse(body);
-  if (!result.success) throw new WikiApiError('Unexpected response from Wikipedia.');
+  if (!result.success) throw new WikiApiError('Unexpected response from Wikipedia.', { retryable: false });
   return result.data;
 }
+
+const ARTICLE_NAMESPACE = 0;
 
 function pagesOf(response: QueryResponse): PageWithId[] {
   return (response.query?.pages ?? []).filter((page): page is PageWithId => page.pageid !== undefined && !page.missing);
 }
 
+// Prose can link to talk or project pages; only articles become cards.
+const articlePagesOf = (response: QueryResponse) => pagesOf(response).filter((page) => (page.ns ?? ARTICLE_NAMESPACE) === ARTICLE_NAMESPACE);
+
 const toRef = (page: PageWithId): PageRef => ({ pageId: page.pageid, title: page.title });
-const isDisambiguation = (page: QueryPage) => page.pageprops?.disambiguation !== undefined;
 
 function toArticle(page: PageWithId): Article {
   return {
@@ -41,8 +52,17 @@ function toArticle(page: PageWithId): Article {
     description: page.description ?? null,
     extract: page.extract ?? null,
     thumbnail: page.thumbnail ? { url: page.thumbnail.source, width: page.thumbnail.width, height: page.thumbnail.height } : null,
-    weightedTags: page.cirrusdoc?.[0]?.source.weighted_tags ?? [],
-    isDisambiguation: isDisambiguation(page),
+    isDisambiguation: page.pageprops?.disambiguation !== undefined,
+  };
+}
+
+/** Follows the API's normalisation and redirect mappings from a requested title to the page title it resolved to. */
+function titleResolver(response: QueryResponse): (requested: string) => string {
+  const normalized = new Map((response.query?.normalized ?? []).map((m) => [m.from, m.to]));
+  const redirects = new Map((response.query?.redirects ?? []).map((m) => [m.from, m.to]));
+  return (requested) => {
+    const canonical = normalized.get(requested) ?? requested;
+    return redirects.get(canonical) ?? canonical;
   };
 }
 
@@ -61,6 +81,10 @@ function uniqueByPageId(refs: readonly PageRef[]): PageRef[] {
   return refs.filter((ref) => !seen.has(ref.pageId) && seen.add(ref.pageId));
 }
 
+function assertBatchSize(count: number) {
+  if (count > FEED.hydrateBatch) throw new RangeError(`Requests accept at most ${FEED.hydrateBatch} pages.`);
+}
+
 export function createWikiApi(http: WikiHttp): WikiApi {
   const query = async (params: Params) => parse(queryResponseSchema, await http.query(params));
 
@@ -74,37 +98,30 @@ export function createWikiApi(http: WikiHttp): WikiApi {
   }
 
   const searchPage = (search: string, cursor: string | null) =>
-    paged({ generator: 'search', gsrsearch: search, gsrnamespace: '0', gsrlimit: String(FEED.searchPageSize), gsroffset: cursor ?? '0' }, 'gsroffset');
+    paged({ generator: 'search', gsrsearch: search, gsrnamespace: '0', gsrlimit: String(FEED.listPageSize), gsroffset: cursor ?? '0' }, 'gsroffset');
 
   return {
-    async rankedLinks(title) {
-      const base: Params = { generator: 'links', titles: title, gplnamespace: '0', gpllimit: 'max', ...RANK_PROPS };
-      const links: RankedLink[] = [];
-      let params: Params | null = base;
-      for (let page = 0; params && page < FEED.maxLinkRankPages; page += 1) {
-        const response = await query(params);
-        pagesOf(response).forEach((p) =>
-          links.push({ ...toRef(p), popularity: p.cirrusdoc?.[0]?.source.popularity_score ?? 0, isDisambiguation: isDisambiguation(p) }),
-        );
-        const next = continueParams(response);
-        params = next ? { ...base, ...next } : null;
-      }
-      return links;
+    async sections(title) {
+      const response = parse(sectionsResponseSchema, await http.query({ action: 'parse', page: title, prop: 'sections' }));
+      // Sections transcluded from templates have indices like "T-1" and can't be fetched by number.
+      return response.parse.sections
+        .filter((s) => /^\d+$/.test(s.index))
+        .map((s) => ({ index: Number(s.index), title: s.line, level: Number(s.level) }));
+    },
+
+    async sectionLinks(title, sectionIndex) {
+      const response = parse(sectionTextResponseSchema, await http.query({ ...SECTION_TEXT_PROPS, page: title, section: String(sectionIndex) }));
+      return extractArticleLinks(response.parse.text);
     },
 
     backlinks(title, cursor) {
-      const params: Params = { generator: 'backlinks', gbltitle: title, gblnamespace: '0', gblfilterredir: 'nonredirects', gbllimit: String(FEED.searchPageSize) };
+      const params: Params = { generator: 'backlinks', gbltitle: title, gblnamespace: '0', gblfilterredir: 'nonredirects', gbllimit: String(FEED.listPageSize) };
       return paged(cursor ? { ...params, gblcontinue: cursor } : params, 'gblcontinue');
     },
 
     moreLike: (title, cursor) => searchPage(`morelike:${title}`, cursor),
 
     topicSearch: (search, cursor) => searchPage(search, cursor),
-
-    async random() {
-      const response = await query({ generator: 'random', grnnamespace: '0', grnlimit: String(FEED.searchPageSize) });
-      return pagesOf(response).map(toRef);
-    },
 
     async featured(date) {
       const feed = parse(featuredFeedSchema, await http.rest(`/feed/featured/${utcDatePath(date)}`));
@@ -113,15 +130,25 @@ export function createWikiApi(http: WikiHttp): WikiApi {
       return uniqueByPageId(refs);
     },
 
-    async hydrate(pageIds) {
-      if (pageIds.length > FEED.hydrateBatch) throw new RangeError(`hydrate accepts at most ${FEED.hydrateBatch} page ids.`);
-      if (pageIds.length === 0) return [];
-      const response = await query({ pageids: pageIds.join('|'), ...CARD_PROPS });
-      const byId = new Map(pagesOf(response).map((page) => [page.pageid, page]));
-      return pageIds.flatMap((id) => {
-        const page = byId.get(id);
-        return page ? [toArticle(page)] : [];
-      });
+    async hydrate(titles) {
+      assertBatchSize(titles.length);
+      if (titles.length === 0) return new Map();
+      const response = await query({ titles: titles.join('|'), redirects: '1', ...CARD_PROPS });
+      const resolve = titleResolver(response);
+      const byTitle = new Map(articlePagesOf(response).map((page) => [page.title, page]));
+      return new Map(
+        titles.flatMap((requested) => {
+          const page = byTitle.get(resolve(requested));
+          return page ? [[requested, toArticle(page)] as const] : [];
+        }),
+      );
+    },
+
+    async topicTags(pageIds) {
+      assertBatchSize(pageIds.length);
+      if (pageIds.length === 0) return new Map();
+      const response = await query({ pageids: pageIds.join('|'), prop: 'cirrusdoc', cdincludes: 'weighted_tags' });
+      return new Map(pagesOf(response).map((page) => [page.pageid, page.cirrusdoc?.[0]?.source.weighted_tags ?? []]));
     },
   };
 }

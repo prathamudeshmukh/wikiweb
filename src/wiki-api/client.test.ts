@@ -1,10 +1,10 @@
 import backlinksOctopus from './__fixtures__/backlinks-octopus.json';
 import featuredFeed from './__fixtures__/featured-feed-2026-10-01.json';
-import hydrateMixed from './__fixtures__/hydrate-mixed.json';
+import hydrateTitles from './__fixtures__/hydrate-titles.json';
 import morelikeOctopus from './__fixtures__/morelike-octopus.json';
-import randomPages from './__fixtures__/random.json';
-import rankPage1 from './__fixtures__/rank-octopus-page1.json';
-import rankPage2 from './__fixtures__/rank-octopus-page2.json';
+import leadSection from './__fixtures__/section-octopus-0.json';
+import sectionsOctopus from './__fixtures__/sections-octopus.json';
+import topicsMixed from './__fixtures__/topics-mixed.json';
 import topicSpace from './__fixtures__/topic-space-featured.json';
 import { createWikiApi } from './client';
 import type { WikiHttp } from './http';
@@ -30,77 +30,108 @@ function fakeHttp(route: (params: Params) => unknown, restBody: unknown = featur
 
 const withoutContinue = <T extends object>(fixture: T) => ({ ...fixture, continue: undefined });
 
+const REQUESTED = ['Squid', 'Cephalopods', 'cuttlefish', 'Octopus (disambiguation)', 'No such page xyzzy', 'Ink'];
+
 describe('createWikiApi', () => {
-  describe('rankedLinks', () => {
-    it('follows continuation and returns every link with popularity and disambiguation flags', async () => {
-      const { http, queries } = fakeHttp((p) => (p.gplcontinue ? withoutContinue(rankPage2) : rankPage1));
+  describe('sections', () => {
+    it('lists sections with numeric index and level', async () => {
+      const { http, queries } = fakeHttp(() => sectionsOctopus);
 
-      const links = await createWikiApi(http).rankedLinks('Octopus');
+      const sections = await createWikiApi(http).sections('Octopus');
 
-      expect(queries).toHaveLength(2);
-      expect(links).toHaveLength(80);
-      expect(queries[0]).toMatchObject({ generator: 'links', titles: 'Octopus', prop: 'cirrusdoc|pageprops', cdincludes: 'popularity_score' });
+      expect(sections[0]).toEqual({ index: 1, title: 'Etymology and pluralisation', level: 2 });
+      expect(queries[0]).toMatchObject({ action: 'parse', page: 'Octopus', prop: 'sections' });
     });
+  });
 
-    it('stops following continuation at the configured page limit', async () => {
-      const { http, queries } = fakeHttp(() => rankPage1);
+  it('drops sections with non-numeric indices (transcluded from templates)', async () => {
+    const { http } = fakeHttp(() => ({ parse: { sections: [{ index: 'T-1', line: 'From a template', level: '2' }, { index: '3', line: 'Body', level: '2' }] } }));
 
-      await createWikiApi(http).rankedLinks('Octopus');
+    const sections = await createWikiApi(http).sections('Octopus');
 
-      expect(queries).toHaveLength(3);
-    });
+    expect(sections).toEqual([{ index: 3, title: 'Body', level: 2 }]);
+  });
 
-    it('defaults popularity to 0 when a page has no search document', async () => {
-      const page = { pageid: 7, ns: 0, title: 'Obscure' };
-      const { http } = fakeHttp(() => ({ batchcomplete: true, query: { pages: [page] } }));
+  describe('sectionLinks', () => {
+    it('returns the links of one section in reading order', async () => {
+      const { http, queries } = fakeHttp(() => leadSection);
 
-      const [link] = await createWikiApi(http).rankedLinks('Octopus');
+      const links = await createWikiApi(http).sectionLinks('Octopus', 0);
 
-      expect(link).toEqual({ pageId: 7, title: 'Obscure', popularity: 0, isDisambiguation: false });
+      expect(links.slice(0, 3)).toEqual(['Mollusc', 'Order (biology)', 'Species']);
+      expect(queries[0]).toMatchObject({ action: 'parse', page: 'Octopus', section: '0', prop: 'text' });
     });
   });
 
   describe('hydrate', () => {
-    const ids = [38011, 19007, 15292, 153008];
+    it('keys articles by the requested title, resolving redirects and normalisation', async () => {
+      const { http } = fakeHttp(() => hydrateTitles);
 
-    it('returns articles in the requested order, skipping pages it did not ask for', async () => {
-      const { http } = fakeHttp(() => hydrateMixed);
+      const articles = await createWikiApi(http).hydrate(REQUESTED);
 
-      const articles = await createWikiApi(http).hydrate(ids);
-
-      expect(articles.map((a) => a.title)).toEqual(['Squid', 'Mercury', 'Ink', 'Knot theory']);
+      expect(articles.get('Cephalopods')?.title).toBe('Cephalopod');
+      expect(articles.get('cuttlefish')?.title).toBe('Cuttlefish');
+      expect(articles.has('No such page xyzzy')).toBe(false);
     });
 
-    it('normalises thumbnail, text, topic tags and disambiguation', async () => {
-      const { http } = fakeHttp(() => hydrateMixed);
+    it('normalises thumbnail, text and disambiguation flags', async () => {
+      const { http } = fakeHttp(() => hydrateTitles);
 
-      const [squid, mercury] = await createWikiApi(http).hydrate(ids);
+      const articles = await createWikiApi(http).hydrate(REQUESTED);
 
-      expect(squid).toMatchObject({ pageId: 38011, description: expect.any(String), extract: expect.stringContaining('squid'), isDisambiguation: false });
-      expect(squid.thumbnail).toEqual({ url: expect.stringMatching(/^https:\/\//), width: expect.any(Number), height: expect.any(Number) });
-      expect(mercury.isDisambiguation).toBe(true);
+      expect(articles.get('Squid')).toMatchObject({ pageId: 38011, extract: expect.stringContaining('squid'), isDisambiguation: false });
+      expect(articles.get('Squid')?.thumbnail).toEqual({ url: expect.stringMatching(/^https:\/\//), width: expect.any(Number), height: expect.any(Number) });
+      expect(articles.get('Octopus (disambiguation)')?.isDisambiguation).toBe(true);
     });
 
-    it('requests card fields by page id with trimmed cirrusdoc', async () => {
-      const { http, queries } = fakeHttp(() => hydrateMixed);
+    it('requests card fields by title with redirects resolved and no cirrusdoc', async () => {
+      const { http, queries } = fakeHttp(() => hydrateTitles);
 
-      await createWikiApi(http).hydrate(ids);
+      await createWikiApi(http).hydrate(REQUESTED);
 
-      expect(queries[0]).toMatchObject({ pageids: '38011|19007|15292|153008', cdincludes: 'weighted_tags', pithumbsize: '500', exlimit: '20' });
+      expect(queries[0]).toMatchObject({ titles: REQUESTED.join('|'), redirects: '1', pithumbsize: '500', exlimit: '20' });
+      expect(queries[0].prop).not.toContain('cirrusdoc');
+    });
+
+    it('ignores pages outside the article namespace', async () => {
+      const talk = { pageid: 99, ns: 5, title: 'Wikipedia talk:Foo', extract: 'Talk' };
+      const { http } = fakeHttp(() => ({ batchcomplete: true, query: { pages: [talk] } }));
+
+      const articles = await createWikiApi(http).hydrate(['Wikipedia talk:Foo']);
+
+      expect(articles.size).toBe(0);
     });
 
     it('skips the request entirely for an empty list', async () => {
-      const { http, queries } = fakeHttp(() => hydrateMixed);
+      const { http, queries } = fakeHttp(() => hydrateTitles);
 
-      await expect(createWikiApi(http).hydrate([])).resolves.toEqual([]);
+      expect((await createWikiApi(http).hydrate([])).size).toBe(0);
       expect(queries).toHaveLength(0);
     });
 
     it('rejects batches larger than the API can extract in one call', async () => {
-      const { http } = fakeHttp(() => hydrateMixed);
-      const tooMany = Array.from({ length: 21 }, (_, i) => i + 1);
+      const { http } = fakeHttp(() => hydrateTitles);
+      const tooMany = Array.from({ length: 21 }, (_, i) => `Page ${i}`);
 
-      await expect(createWikiApi(http).hydrate(tooMany)).rejects.toThrow(/at most 20/);
+      await expect(createWikiApi(http).hydrate(tooMany)).rejects.toThrow(/at most 20 pages/);
+    });
+  });
+
+  describe('topicTags', () => {
+    it('returns weighted tags per page id from trimmed cirrusdoc', async () => {
+      const { http, queries } = fakeHttp(() => topicsMixed);
+
+      const tags = await createWikiApi(http).topicTags([38011, 15292]);
+
+      expect(tags.get(38011)).toEqual(expect.arrayContaining(['classification.prediction.articletopic/STEM.Biology|939']));
+      expect(queries[0]).toMatchObject({ pageids: '38011|15292', prop: 'cirrusdoc', cdincludes: 'weighted_tags' });
+    });
+
+    it('skips the request entirely for an empty list', async () => {
+      const { http, queries } = fakeHttp(() => topicsMixed);
+
+      expect((await createWikiApi(http).topicTags([])).size).toBe(0);
+      expect(queries).toHaveLength(0);
     });
   });
 
@@ -141,14 +172,6 @@ describe('createWikiApi', () => {
       expect(queries[0]).toMatchObject({ gsrsearch: 'articletopic:space incategory:Featured_articles', gsroffset: '10' });
       expect(page.next).toBe(String(topicSpace.continue.gsroffset));
     });
-
-    it('returns random pages as refs', async () => {
-      const { http } = fakeHttp(() => randomPages);
-
-      const refs = await createWikiApi(http).random();
-
-      expect(refs).toHaveLength(10);
-    });
   });
 
   describe('featured', () => {
@@ -167,7 +190,13 @@ describe('createWikiApi', () => {
     it('throws a WikiApiError when the response does not match the expected shape', async () => {
       const { http } = fakeHttp(() => ({ query: { pages: 'not-an-array' } }));
 
-      await expect(createWikiApi(http).hydrate([1])).rejects.toMatchObject({ name: 'WikiApiError' });
+      await expect(createWikiApi(http).hydrate(['Squid'])).rejects.toMatchObject({ name: 'WikiApiError' });
+    });
+
+    it('throws a WikiApiError when a parse response is malformed', async () => {
+      const { http } = fakeHttp(() => ({ parse: { text: 42 } }));
+
+      await expect(createWikiApi(http).sectionLinks('Octopus', 0)).rejects.toMatchObject({ name: 'WikiApiError' });
     });
 
     it('treats a response without results as an empty page', async () => {

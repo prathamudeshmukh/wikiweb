@@ -1,0 +1,369 @@
+{
+ "warnings": {
+  "main": {
+   "warnings": "Subscribe to the mediawiki-api-announce mailing list at <https://lists.wikimedia.org/postorius/lists/mediawiki-api-announce.lists.wikimedia.org/> for notice of API deprecations and breaking changes. Use [[Special:ApiFeatureUsage]] to see usage of deprecated features by your application."
+  },
+  "parse": {
+   "warnings": "\"prop=sections\" has been deprecated. Please use \"prop=tocdata\" instead."
+  }
+ },
+ "parse": {
+  "title": "Octopus",
+  "pageid": 22780,
+  "sections": [
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Etymology and pluralisation",
+    "number": "1",
+    "index": "1",
+    "fromtitle": "Octopus",
+    "byteoffset": 4691,
+    "anchor": "Etymology_and_pluralisation",
+    "linkAnchor": "Etymology_and_pluralisation"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Anatomy and physiology",
+    "number": "2",
+    "index": "2",
+    "fromtitle": "Octopus",
+    "byteoffset": 11542,
+    "anchor": "Anatomy_and_physiology",
+    "linkAnchor": "Anatomy_and_physiology"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Size",
+    "number": "2.1",
+    "index": "3",
+    "fromtitle": "Octopus",
+    "byteoffset": 11569,
+    "anchor": "Size",
+    "linkAnchor": "Size"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "External characteristics",
+    "number": "2.2",
+    "index": "4",
+    "fromtitle": "Octopus",
+    "byteoffset": 14188,
+    "anchor": "External_characteristics",
+    "linkAnchor": "External_characteristics"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Circulatory system",
+    "number": "2.3",
+    "index": "5",
+    "fromtitle": "Octopus",
+    "byteoffset": 22093,
+    "anchor": "Circulatory_system",
+    "linkAnchor": "Circulatory_system"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Respiration",
+    "number": "2.4",
+    "index": "6",
+    "fromtitle": "Octopus",
+    "byteoffset": 24096,
+    "anchor": "Respiration",
+    "linkAnchor": "Respiration"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Digestion and excretion",
+    "number": "2.5",
+    "index": "7",
+    "fromtitle": "Octopus",
+    "byteoffset": 26665,
+    "anchor": "Digestion_and_excretion",
+    "linkAnchor": "Digestion_and_excretion"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Nervous system and senses",
+    "number": "2.6",
+    "index": "8",
+    "fromtitle": "Octopus",
+    "byteoffset": 28664,
+    "anchor": "Nervous_system_and_senses",
+    "linkAnchor": "Nervous_system_and_senses"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Ink sac",
+    "number": "2.7",
+    "index": "9",
+    "fromtitle": "Octopus",
+    "byteoffset": 39011,
+    "anchor": "Ink_sac",
+    "linkAnchor": "Ink_sac"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Life cycle",
+    "number": "3",
+    "index": "10",
+    "fromtitle": "Octopus",
+    "byteoffset": 39883,
+    "anchor": "Life_cycle",
+    "linkAnchor": "Life_cycle"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Reproduction",
+    "number": "3.1",
+    "index": "11",
+    "fromtitle": "Octopus",
+    "byteoffset": 39898,
+    "anchor": "Reproduction",
+    "linkAnchor": "Reproduction"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Lifespan",
+    "number": "3.2",
+    "index": "12",
+    "fromtitle": "Octopus",
+    "byteoffset": 45856,
+    "anchor": "Lifespan",
+    "linkAnchor": "Lifespan"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Distribution and habitat",
+    "number": "4",
+    "index": "13",
+    "fromtitle": "Octopus",
+    "byteoffset": 47416,
+    "anchor": "Distribution_and_habitat",
+    "linkAnchor": "Distribution_and_habitat"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Behaviour and ecology",
+    "number": "5",
+    "index": "14",
+    "fromtitle": "Octopus",
+    "byteoffset": 50084,
+    "anchor": "Behaviour_and_ecology",
+    "linkAnchor": "Behaviour_and_ecology"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Feeding",
+    "number": "5.1",
+    "index": "15",
+    "fromtitle": "Octopus",
+    "byteoffset": 53567,
+    "anchor": "Feeding",
+    "linkAnchor": "Feeding"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Locomotion",
+    "number": "5.2",
+    "index": "16",
+    "fromtitle": "Octopus",
+    "byteoffset": 57384,
+    "anchor": "Locomotion",
+    "linkAnchor": "Locomotion"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Intelligence",
+    "number": "5.3",
+    "index": "17",
+    "fromtitle": "Octopus",
+    "byteoffset": 60880,
+    "anchor": "Intelligence",
+    "linkAnchor": "Intelligence"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Camouflage and colour change",
+    "number": "5.4",
+    "index": "18",
+    "fromtitle": "Octopus",
+    "byteoffset": 65442,
+    "anchor": "Camouflage_and_colour_change",
+    "linkAnchor": "Camouflage_and_colour_change"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Defence",
+    "number": "5.5",
+    "index": "19",
+    "fromtitle": "Octopus",
+    "byteoffset": 67960,
+    "anchor": "Defence",
+    "linkAnchor": "Defence"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Pathogens and parasites",
+    "number": "5.6",
+    "index": "20",
+    "fromtitle": "Octopus",
+    "byteoffset": 72105,
+    "anchor": "Pathogens_and_parasites",
+    "linkAnchor": "Pathogens_and_parasites"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Evolution",
+    "number": "6",
+    "index": "21",
+    "fromtitle": "Octopus",
+    "byteoffset": 74446,
+    "anchor": "Evolution",
+    "linkAnchor": "Evolution"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Fossil history and phylogeny",
+    "number": "6.1",
+    "index": "22",
+    "fromtitle": "Octopus",
+    "byteoffset": 75950,
+    "anchor": "Fossil_history_and_phylogeny",
+    "linkAnchor": "Fossil_history_and_phylogeny"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "RNA editing and the genome",
+    "number": "6.2",
+    "index": "23",
+    "fromtitle": "Octopus",
+    "byteoffset": 84979,
+    "anchor": "RNA_editing_and_the_genome",
+    "linkAnchor": "RNA_editing_and_the_genome"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Relationship to humans",
+    "number": "7",
+    "index": "24",
+    "fromtitle": "Octopus",
+    "byteoffset": 87425,
+    "anchor": "Relationship_to_humans",
+    "linkAnchor": "Relationship_to_humans"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Cultural significance",
+    "number": "7.1",
+    "index": "25",
+    "fromtitle": "Octopus",
+    "byteoffset": 87452,
+    "anchor": "Cultural_significance",
+    "linkAnchor": "Cultural_significance"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Danger to humans",
+    "number": "7.2",
+    "index": "26",
+    "fromtitle": "Octopus",
+    "byteoffset": 90401,
+    "anchor": "Danger_to_humans",
+    "linkAnchor": "Danger_to_humans"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "As a food source",
+    "number": "7.3",
+    "index": "27",
+    "fromtitle": "Octopus",
+    "byteoffset": 93362,
+    "anchor": "As_a_food_source",
+    "linkAnchor": "As_a_food_source"
+   },
+   {
+    "toclevel": 2,
+    "level": "3",
+    "line": "Science and technology",
+    "number": "7.4",
+    "index": "28",
+    "fromtitle": "Octopus",
+    "byteoffset": 97225,
+    "anchor": "Science_and_technology",
+    "linkAnchor": "Science_and_technology"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "See also",
+    "number": "8",
+    "index": "29",
+    "fromtitle": "Octopus",
+    "byteoffset": 105529,
+    "anchor": "See_also",
+    "linkAnchor": "See_also"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "Notes",
+    "number": "9",
+    "index": "30",
+    "fromtitle": "Octopus",
+    "byteoffset": 105583,
+    "anchor": "Notes",
+    "linkAnchor": "Notes"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "References",
+    "number": "10",
+    "index": "31",
+    "fromtitle": "Octopus",
+    "byteoffset": 105619,
+    "anchor": "References",
+    "linkAnchor": "References"
+   },
+   {
+    "toclevel": 1,
+    "level": "2",
+    "line": "External links",
+    "number": "11",
+    "index": "32",
+    "fromtitle": "Octopus",
+    "byteoffset": 105653,
+    "anchor": "External_links",
+    "linkAnchor": "External_links"
+   }
+  ],
+  "showtoc": true
+ }
+}

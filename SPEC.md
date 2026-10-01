@@ -60,7 +60,7 @@ Infinite column composed per page of 20 cards:
 |---|---|
 | ~70 % | Interest picks — `articletopic:<topic> incategory:Featured_articles`, topping up from `incategory:Good_articles` when a topic runs low; titles matching the Home blocklist (config) are skipped. Columns are **not** filtered this way. |
 | ~20 % | Today on Wikipedia — featured article, On this day, most-read |
-| ~10 % | Wildcard — random quality-filtered article outside chosen topics |
+| ~10 % | Wildcard — a Featured article from a topic tile the user did **not** pick (rotating). `generator=random` was dropped: live results were mostly obscure stubs. |
 
 Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`) so the feed never clumps.
 
@@ -132,7 +132,7 @@ First launch only: the 2nd Home card performs one left "wiggle" with caption *Sw
 ### 5.1 Column builder (non-root)
 For seed article `S` and current path `P`:
 
-1. **Links** — outgoing namespace-0 links of `S`, ranked by pageviews (desc).
+1. **Links** — `S`'s own article links **in reading order**, one top-level section at a time (lead first), fetched lazily as the column scrolls. Reference-type sections (*Notes, References, External links, Further reading, Bibliography, Sources, Citations, Footnotes*) are skipped; infobox/navbox tables, citation markers and hatnotes are ignored.
 2. **Backlinks** — namespace-0 non-redirect pages linking to `S`; one inserted every `BACKLINK_EVERY_N` link cards.
 3. **morelike** — once links are exhausted, `morelike:S` search pages keep the column infinite.
 
@@ -141,7 +141,7 @@ Then apply, in order:
 - **Dedup** within column by `pageid`
 - **Exclude path** — drop any `pageid` in `P` (including `S`)
 - **Annotate** — `source` (for the why-line), `topic` (§5.4), `visited` if `pageid` appears elsewhere in the active Journey; `read` if in read history
-- **Rank tie-break** — prefer cards with thumbnails
+- **Topic** — cards first render with the seed's territory; real topics are resolved in a separate background call and merged in (see §6 latency note)
 
 Column builder is a pure function over fetched candidates + context, so it is fully unit-testable.
 
@@ -158,6 +158,8 @@ Drop:
 Keep everything else. Image-less pages render as typographic cards.
 
 ### 5.4 Card topics
+Topics are resolved **after** a page of cards is shown (one `cirrusdoc` call per page, ~1.5 s), never on the critical path. Until then a card uses its fallback (column seed's territory; on Home the interest tile it came from).
+
 Each card's topic = highest-scoring `articletopic` tag from `prop=cirrusdoc` (`weighted_tags`), mapped to a tile and its territory. Untagged → neutral ink style, no label. **Fallback** if `cirrusdoc` is unusable: use the seed column's topic. Coverage verified on sample pages; coarse-only articles handled per §6 topic note.
 
 ### 5.5 Interest tiles → topics
@@ -192,17 +194,18 @@ Mapping lives in a config file, not code.
 
 ## 6. Wikimedia API usage
 
-All requests to `https://en.wikipedia.org` with header
-`Api-User-Agent: Tangent/<version> (<contact>)` and `origin=*` where required.
+All requests to `https://en.wikipedia.org` send both `User-Agent` and `Api-User-Agent: Tangent/<version> (<contact>)` (native apps can set the real User-Agent; Api-User-Agent covers browser builds). The contact comes from `EXPO_PUBLIC_WIKI_API_CONTACT`, never from code.
+
+**Throttling (observed 2026-10-01):** Wikimedia answers bursts with `429` and a `Retry-After` in seconds. The client honours it (capped at 10 s) and otherwise backs off 300 ms → 600 ms over 3 attempts. Measured burst cap: **10 back-to-back requests, then 429** for the rest of the window — identical with or without a real `User-Agent`. A column's first page costs ~4–5 requests, so **M5 needs a client-side request budget** (e.g. token bucket shared by feeds, prefetch and reader) and prefetch must stay within it (max 3 concurrent prefetches is not enough on its own).
 
 | Need | Endpoint |
 |---|---|
-| Outgoing links + card data | `w/api.php?action=query&generator=links&titles=S&gplnamespace=0&gpllimit=max&prop=pageimages\|description\|extracts\|pageprops\|cirrusdoc&cdincludes=weighted_tags&piprop=thumbnail&pithumbsize=500&exintro&explaintext&exsentences=2&exlimit=20&ppprop=disambiguation&format=json&formatversion=2` |
+| Card data (by title) | `w/api.php?action=query&titles=…&redirects=1&prop=pageimages\|description\|extracts\|pageprops&piprop=thumbnail&pithumbsize=500&exintro&explaintext&exsentences=2&exlimit=20&ppprop=disambiguation&format=json&formatversion=2` |
 | Backlinks | same props with `generator=backlinks&gbltitle=S&gblnamespace=0&gblfilterredir=nonredirects` |
 | morelike | same props with `generator=search&gsrsearch=morelike:S&gsrlimit=20&gsroffset=N` |
 | Interest feed | `generator=search&gsrsearch=articletopic:<topic>&gsrlimit=20&gsroffset=N` |
 | Today | `api/rest_v1/feed/featured/YYYY/MM/DD` |
-| Wildcard | `generator=random&grnnamespace=0&grnlimit=20` then quality filter |
+| Wildcard | `articletopic:<non-interest tile> incategory:Featured_articles` |
 | Reader | `api/rest_v1/page/mobile-html/<title>` |
 | Peek card | `api/rest_v1/page/summary/<title>` |
 
@@ -213,7 +216,14 @@ All requests to `https://en.wikipedia.org` with header
 - Only coarse tags (e.g. *Iron gall ink* → `STEM.STEM*|712` only): map the bucket to a territory default (STEM → Cosmos, Culture → Culture, Geography → Earth, History_and_Society → Past) with **no topic label** — colour only.
 - Minimum score 500, else untagged.
 
-**Ranking note (verified 2026-10-01):** `generator=links` returns titles alphabetically. `prop=pageviews` only returns ~35 pages per request (`pvipcontinue`), so ranking 500 links would take ~15 calls — rejected. Instead one **rank call** fetches all links with `prop=cirrusdoc&cdincludes=popularity_score` (~170 KB for 500 links), then cards are hydrated 20 at a time by `pageids`. Pure popularity favours generic hubs (*Animal, Aristotle, Oxford English Dictionary*), so ranking is a swappable pure function; tune after dogfooding.
+**Ranking note (verified 2026-10-01, revised):** popularity ranking was tried and dropped. `cirrusdoc` popularity for 500 links takes ~14 s, and pure popularity surfaces citation and navbox links (*Wayback Machine, Oxford English Dictionary, Alaska*) rather than the article's subject matter. Reading order is both fast and relevant — Octopus lead: *Mollusc → Cephalopod → Squid → Cuttlefish → … → Camouflage → Venom → Blue-ringed octopus*.
+
+| Need | Call | Measured |
+|---|---|---|
+| Section list | `action=parse&page=S&prop=sections` | ~0.5 s, 6 KB |
+| Links of one section, in order | `action=parse&page=S&section=N&prop=text&disableeditsection=1&disablelimitreport=1` → extract `/wiki/` hrefs | ~1–2 s, ~24 KB (lead) |
+| Card details for ≤20 titles | `action=query&titles=…&redirects=1&prop=pageimages\|description\|extracts\|pageprops` | ~0.6 s, ~13 KB |
+| Topics for ≤20 pages (background) | `action=query&pageids=…&prop=cirrusdoc&cdincludes=weighted_tags` | ~1.5 s, ~20 KB |
 
 **Payload note (verified):** `cirrusdoc` **must** be called with `cdincludes` — without it a 20-card batch is ~2.1 MB; with `cdincludes=weighted_tags` it is ~26 KB. The API marks `cirrusdoc` as internal ("might change at any time without notice"), so the seed-topic fallback in §5.4 is mandatory, not optional.
 
@@ -357,7 +367,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | # | Milestone | Exit criteria |
 |---|---|---|
 | M0 | **Gesture prototype** (throwaway) | Static fake cards; column push/pop with left/right swipe + direction lock feels right on a real phone |
-| M1 | API client + content engine | Builders pass unit/integration tests against fixtures |
+| M1 ✅ | API client + content engine | Builders pass unit/integration tests against fixtures — done 2026-10-01: 98 tests, ~98 % coverage, live smoke test (`npm run test:live`) |
 | M2 | Columns + Home + onboarding | Live infinite Home; hops into real columns |
 | M3 | Reader + peek card | Inline links intercepted; Explore/Read work |
 | M4 | Journeys + breadcrumb | Persisted, reopenable Journeys; visited/read badges |
@@ -372,7 +382,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | Vertical scroll vs horizontal card swipe conflict | M0 prototype de-risks before any API work |
 | Link lists dominated by low-value links | Pageview ranking + filter; revisit with lead-section boost if columns feel flat |
 | `pageviews` prop is slow / sparse for some pages | Fall back to alphabetical-with-images-first |
-| Wikimedia rate limiting | Batching, caching, proper `Api-User-Agent`; no parallel storms |
+| Wikimedia rate limiting (burst cap ≈ 10 requests measured) | Batching, caching, Retry-After honoured; shared client-side request budget in M5 |
 | Reader HTML styling drift | Own CSS injected; test on a set of varied articles |
 | Open: lead-section links ranked higher? | Decide after M2 dogfooding |
 | Open: Journey "idle" definition for closing a session | Proposal: 30 min background or returning to Home |

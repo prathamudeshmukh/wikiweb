@@ -10,7 +10,7 @@ if (!CONTACT) throw new Error('Set WIKI_API_CONTACT (URL or email) — Wikimedia
 const HEADERS = { 'Api-User-Agent': `Tangent/0.1 fixture recorder (${CONTACT})` };
 
 const CARD_PROPS = {
-  prop: 'pageimages|description|extracts|pageprops|cirrusdoc',
+  prop: 'pageimages|description|extracts|pageprops',
   piprop: 'thumbnail',
   pithumbsize: '500',
   exintro: '1',
@@ -18,13 +18,20 @@ const CARD_PROPS = {
   exsentences: '2',
   exlimit: '20',
   ppprop: 'disambiguation',
-  cdincludes: 'weighted_tags',
 };
-const RANK_PROPS = { prop: 'cirrusdoc|pageprops', cdincludes: 'popularity_score', ppprop: 'disambiguation' };
 
 async function action(params) {
   const url = new URL(ACTION_API);
   const all = { format: 'json', formatversion: '2', origin: '*', action: 'query', ...params };
+  Object.entries(all).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url, { headers: HEADERS });
+  if (!res.ok) throw new Error(`${res.status} for ${url}`);
+  return res.json();
+}
+
+async function parse(params) {
+  const url = new URL(ACTION_API);
+  const all = { format: 'json', formatversion: '2', origin: '*', action: 'parse', ...params };
   Object.entries(all).forEach(([k, v]) => url.searchParams.set(k, v));
   const res = await fetch(url, { headers: HEADERS });
   if (!res.ok) throw new Error(`${res.status} for ${url}`);
@@ -44,19 +51,20 @@ async function save(name, data) {
 
 await mkdir(OUT, { recursive: true });
 
-const links = { generator: 'links', titles: 'Octopus', gplnamespace: '0', gpllimit: '40', ...RANK_PROPS };
-const rankPage1 = await action(links);
-await save('rank-octopus-page1', rankPage1);
-await save('rank-octopus-page2', await action({ ...links, ...rankPage1.continue }));
-
+await save('sections-octopus', await parse({ page: 'Octopus', prop: 'sections' }));
+const sectionText = { page: 'Octopus', prop: 'text', disableeditsection: '1', disablelimitreport: '1' };
+await save('section-octopus-0', await parse({ ...sectionText, section: '0' }));
+await save('section-octopus-1', await parse({ ...sectionText, section: '1' }));
 await save(
-  'hydrate-mixed',
+  'hydrate-titles',
   await action({
-    titles: 'Squid|Cuttlefish|Ink|Iron gall ink|Paul the Octopus|List of cephalopods|Mercury|1998|Knot theory|Leonardo da Vinci',
+    // Includes a redirect (Cephalopods), a normalisation (lowercase), a disambiguation page, a missing page, a list and a year.
+    titles: 'Squid|Cephalopods|cuttlefish|Octopus (disambiguation)|No such page xyzzy|List of cephalopods|1998|Ink|Knot theory|Leonardo da Vinci',
     redirects: '1',
     ...CARD_PROPS,
   }),
 );
+await save('topics-mixed', await action({ pageids: '38011|20976520|15292|153008|18079|27973567', prop: 'cirrusdoc', cdincludes: 'weighted_tags' }));
 await save(
   'backlinks-octopus',
   await action({ generator: 'backlinks', gbltitle: 'Octopus', gblnamespace: '0', gblfilterredir: 'nonredirects', gbllimit: '10', prop: 'pageprops', ppprop: 'disambiguation' }),
@@ -66,7 +74,6 @@ await save(
   'topic-space-featured',
   await action({ generator: 'search', gsrsearch: 'articletopic:space incategory:Featured_articles', gsrlimit: '10', gsroffset: '0', gsrnamespace: '0' }),
 );
-await save('random', await action({ generator: 'random', grnnamespace: '0', grnlimit: '10' }));
 
 const feed = await rest('/feed/featured/2026/10/01');
 await save('featured-feed-2026-10-01', {
