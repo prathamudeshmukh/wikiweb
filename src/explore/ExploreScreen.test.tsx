@@ -10,7 +10,7 @@ describe('ExploreScreen', () => {
   it('opens on Home with cards from the user’s interests', async () => {
     const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: titles('Space', 30) } });
 
-    await renderWithServices(<ExploreScreen interests={['space']} />, api);
+    await renderWithServices(<ExploreScreen interests={['space']} onOpenArticle={jest.fn()} incomingTangent={null} onTangentStarted={jest.fn()} />, api);
     await layOutColumns();
 
     expect(await screen.findByText('Space 1')).toBeOnTheScreen();
@@ -22,7 +22,7 @@ describe('ExploreScreen', () => {
     const { api, state } = fakeWikiApi({ searches: { [FEATURED_SPACE]: titles('Space', 30) } });
     state.failNextHydrate = true;
 
-    await renderWithServices(<ExploreScreen interests={['space']} />, api);
+    await renderWithServices(<ExploreScreen interests={['space']} onOpenArticle={jest.fn()} incomingTangent={null} onTangentStarted={jest.fn()} />, api);
     await layOutColumns();
     await fireEvent.press(await screen.findByRole('button', { name: 'Couldn’t load. Tap to retry.' }));
 

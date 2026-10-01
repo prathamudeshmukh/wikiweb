@@ -1,9 +1,9 @@
 import { createWikiHttp, WikiApiError } from './http';
 
-type FakeResponse = { ok: boolean; status: number; json: () => Promise<unknown>; headers?: { get(name: string): string | null } };
+type FakeResponse = { ok: boolean; status: number; json: () => Promise<unknown>; text?: () => Promise<string>; headers?: { get(name: string): string | null } };
 type FetchFn = (url: string, init?: { headers?: Record<string, string>; signal?: AbortSignal }) => Promise<FakeResponse>;
 
-const ok = (body: unknown) => ({ ok: true, status: 200, json: async () => body });
+const ok = (body: unknown) => ({ ok: true, status: 200, json: async () => body, text: async () => String(body) });
 const fail = (status: number, retryAfter?: string) => ({
   ok: false,
   status,
@@ -56,6 +56,13 @@ describe('createWikiHttp', () => {
 
     expect(calls[0].url).toBe('https://en.wikipedia.org/api/rest_v1/feed/featured/2026/10/01');
     expect(body).toEqual({ tfa: null });
+  });
+
+  it('fetches REST paths as text for HTML documents', async () => {
+    const { http, calls } = setup([() => Promise.resolve(ok('<html>Ink</html>'))]);
+
+    await expect(http.restText('/page/mobile-html/Ink')).resolves.toBe('<html>Ink</html>');
+    expect(calls[0].url).toBe('https://en.wikipedia.org/api/rest_v1/page/mobile-html/Ink');
   });
 
   it('retries server errors with exponential backoff, then succeeds', async () => {

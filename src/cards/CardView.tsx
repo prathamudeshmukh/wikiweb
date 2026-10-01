@@ -23,7 +23,14 @@ export function CardView({ card, seedTitle }: CardViewProps) {
   const label = topicLabel(card);
 
   return (
-    <View style={[styles.card, surface(palette)]} accessible accessibilityLabel={`${card.title}. ${card.description ?? ''}`}>
+    // Keyed by theme: on Android, switching Night atlas → Paper adds elevation at runtime, which left the clipping
+    // outline stale and hid every child of the card. A fresh view per theme gets a fresh outline.
+    <View
+      key={palette.cardShadow ? 'paper' : 'night'}
+      style={[styles.card, surface(palette)]}
+      accessible
+      accessibilityLabel={`${card.title}. ${card.description ?? ''}`}
+    >
       {card.thumbnail ? (
         <>
           <Image

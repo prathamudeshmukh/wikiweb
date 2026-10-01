@@ -32,6 +32,8 @@ interface SwipeCardProps {
   /** This card's column is the one prepared offscreen; when the hop runs, the overlay replaces it. */
   candidate: boolean;
   hop: HopController;
+  /** Tap: open the article in the reader. */
+  onOpen: (card: Card) => void;
   pulseToken?: number;
 }
 
@@ -39,7 +41,7 @@ const RELEASE_HINT_FADE_MS = 120;
 const PULSE_SCALE = 1.03;
 const PULSE_UP_MS = 120;
 
-function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, pulseToken }: SwipeCardProps) {
+function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, onOpen, pulseToken }: SwipeCardProps) {
   const palette = useTheme();
   const tx = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -96,6 +98,17 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
     [enabled, card, width, hop, tx, wrapperRef],
   );
 
+  // A tap reads the article; any movement past the lock slop hands the touch to the swipe or the scroll instead.
+  const gesture = useMemo(() => {
+    const tap = Gesture.Tap()
+      .enabled(enabled)
+      .maxDistance(GESTURE.lockSlop)
+      .onEnd((_event, success) => {
+        if (success) scheduleOnRN(onOpen, card);
+      });
+    return Gesture.Race(pan, tap);
+  }, [enabled, pan, onOpen, card]);
+
   const cardStyle = useAnimatedStyle(() => ({
     opacity: candidate && hop.progress.value > 0 ? 0 : 1,
     transform: [{ translateX: tx.value }, { rotate: `${(tx.value / width) * -GESTURE.maxTiltDeg}deg` }, { scale: pulse.value }],
@@ -111,8 +124,8 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
         <Text style={[styles.label, { color: territoryColor(palette, card.topic.territory) }]}>TAKE A TANGENT →</Text>
         <Animated.Text style={[styles.release, { color: palette.ink }, releaseStyle]}>RELEASE TO GO DEEPER</Animated.Text>
       </Animated.View>
-      <GestureDetector gesture={pan}>
-        <Animated.View style={[styles.card, cardStyle]}>
+      <GestureDetector gesture={gesture}>
+        <Animated.View style={[styles.card, cardStyle]} accessibilityRole="button" accessibilityHint="Opens the article" accessible>
           <CardView card={card} seedTitle={seedTitle} />
         </Animated.View>
       </GestureDetector>

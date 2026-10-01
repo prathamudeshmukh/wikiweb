@@ -61,3 +61,12 @@ export const featuredFeedSchema = z.object({
 
 export type QueryPage = z.infer<typeof queryPageSchema>;
 export type QueryResponse = z.infer<typeof queryResponseSchema>;
+
+export const summarySchema = z.object({
+  type: z.string(),
+  pageid: z.number(),
+  titles: z.object({ normalized: z.string() }),
+  description: z.string().optional(),
+  extract: z.string().optional(),
+  thumbnail: z.object({ source: z.string(), width: z.number(), height: z.number() }).optional(),
+});

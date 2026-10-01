@@ -42,6 +42,10 @@ export interface WikiApi {
   featured(date: Date): Promise<PageRef[]>;
   /** At most FEED.hydrateBatch titles. Keyed by the title as requested (redirects and normalisation resolved); missing pages are absent. */
   hydrate(titles: readonly string[]): Promise<ReadonlyMap<string, Article>>;
+  /** Wikipedia's mobile-ready article HTML (REST `page/mobile-html`). */
+  articleHtml(title: string): Promise<string>;
+  /** A single article's preview, for link peek cards (REST `page/summary`). */
+  summary(title: string): Promise<Article>;
   /** Raw CirrusSearch weighted_tags per page id. Slow (~1.5 s / 20) — never on the critical path. */
   topicTags(pageIds: readonly number[]): Promise<ReadonlyMap<number, readonly string[]>>;
 }

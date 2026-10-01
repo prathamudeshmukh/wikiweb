@@ -248,6 +248,7 @@ describe('createColumnFeed', () => {
         return params.titles ? hydrateTitles : { batchcomplete: true };
       },
       rest: async () => ({}),
+      restText: async () => '',
     };
 
     // Act

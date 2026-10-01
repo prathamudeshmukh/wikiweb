@@ -58,17 +58,24 @@ function decodeEntities(text: string): string {
   return text.replace(/&(amp|quot|#39|lt|gt);/g, (entity) => ENTITIES[entity] ?? entity);
 }
 
-function hrefToTitle(href: string): string | null {
-  const path = decodeEntities(href).split('#')[0];
-  let title: string;
+/** False for titles in non-article namespaces (File:, Help:, Talk:…); titles like "Star Wars: Episode IV" pass. */
+export function isArticleTitle(title: string): boolean {
+  const colon = title.indexOf(':');
+  return !(colon > 0 && NON_ARTICLE_NAMESPACES.has(title.slice(0, colon)));
+}
+
+/** A URL path segment (`Iron_gall_ink`, `Caf%C3%A9`) as a readable title, or null if it isn't one. */
+export function pathToTitle(path: string): string | null {
   try {
-    title = decodeURIComponent(path).replace(/_/g, ' ');
+    return decodeURIComponent(path).replace(/_/g, ' ').trim() || null;
   } catch {
     return null;
   }
-  const colon = title.indexOf(':');
-  if (colon > 0 && NON_ARTICLE_NAMESPACES.has(title.slice(0, colon))) return null;
-  return title.trim() || null;
+}
+
+function hrefToTitle(href: string): string | null {
+  const title = pathToTitle(decodeEntities(href).split('#')[0]);
+  return title && isArticleTitle(title) ? title : null;
 }
 
 export function extractArticleLinks(html: string): string[] {

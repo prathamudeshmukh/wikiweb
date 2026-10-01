@@ -27,7 +27,7 @@ const hop: HopController = {
 function renderColumn(entryProgress: ReturnType<typeof makeMutable<number>> | null = null) {
   const { api } = fakeWikiApi({ links: ['Squid', 'Cuttlefish', 'Ink'] });
   return renderWithServices(
-    <ColumnView entry={entry} interests={['space']} isTop entryProgress={entryProgress} candidateCardId={null} pulse={null} hop={hop} onBack={jest.fn()} onJump={jest.fn()} />,
+    <ColumnView entry={entry} interests={['space']} isTop entryProgress={entryProgress} candidateCardId={null} pulse={null} hop={hop} onOpen={jest.fn()} onBack={jest.fn()} onJump={jest.fn()} />,
     api,
   );
 }

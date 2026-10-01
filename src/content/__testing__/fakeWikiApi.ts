@@ -105,6 +105,8 @@ export function fakeWikiApi(data: FakeWikiData) {
         }),
       );
     },
+    articleHtml: async (title) => `<html><head></head><body><p>${title} article</p></body></html>`,
+    summary: async (title) => overrides.get(title) ?? makeArticle(title),
     async topicTags(pageIds) {
       calls.topicTags.push([...pageIds]);
       return new Map(pageIds.flatMap((id) => (tagsById.has(id) ? [[id, tagsById.get(id) ?? []] as const] : [])));

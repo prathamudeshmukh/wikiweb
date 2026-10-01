@@ -9,6 +9,7 @@ import {
   queryResponseSchema,
   sectionsResponseSchema,
   sectionTextResponseSchema,
+  summarySchema,
 } from './schemas';
 import type { Article, PageRef, Paged, WikiApi } from './types';
 
@@ -51,7 +52,7 @@ function toArticle(page: PageWithId): Article {
     ...toRef(page),
     description: page.description ?? null,
     extract: page.extract ?? null,
-    thumbnail: page.thumbnail ? { url: page.thumbnail.source, width: page.thumbnail.width, height: page.thumbnail.height } : null,
+    thumbnail: toThumbnail(page.thumbnail),
     isDisambiguation: page.pageprops?.disambiguation !== undefined,
   };
 }
@@ -80,6 +81,12 @@ function uniqueByPageId(refs: readonly PageRef[]): PageRef[] {
   const seen = new Set<number>();
   return refs.filter((ref) => !seen.has(ref.pageId) && seen.add(ref.pageId));
 }
+
+/** REST paths take titles with underscores, URL-encoded (`AC/DC` → `AC%2FDC`). */
+const restTitle = (title: string) => encodeURIComponent(title.replace(/ /g, '_'));
+
+const toThumbnail = (thumb: { source: string; width: number; height: number } | undefined) =>
+  thumb ? { url: thumb.source, width: thumb.width, height: thumb.height } : null;
 
 function assertBatchSize(count: number) {
   if (count > FEED.hydrateBatch) throw new RangeError(`Requests accept at most ${FEED.hydrateBatch} pages.`);
@@ -128,6 +135,20 @@ export function createWikiApi(http: WikiHttp): WikiApi {
       const pages = [feed.tfa, ...(feed.mostread?.articles ?? []), ...(feed.onthisday ?? []).flatMap((event) => event.pages)];
       const refs = pages.flatMap((page) => (page?.pageid ? [{ pageId: page.pageid, title: page.titles.normalized }] : []));
       return uniqueByPageId(refs);
+    },
+
+    articleHtml: (title) => http.restText(`/page/mobile-html/${restTitle(title)}`),
+
+    async summary(title) {
+      const page = parse(summarySchema, await http.rest(`/page/summary/${restTitle(title)}`));
+      return {
+        pageId: page.pageid,
+        title: page.titles.normalized,
+        description: page.description ?? null,
+        extract: page.extract ?? null,
+        thumbnail: toThumbnail(page.thumbnail),
+        isDisambiguation: page.type === 'disambiguation',
+      };
     },
 
     async hydrate(titles) {

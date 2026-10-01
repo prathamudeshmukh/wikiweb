@@ -30,6 +30,7 @@ interface ColumnViewProps {
   candidateCardId: number | null;
   pulse: PulseTarget | null;
   hop: HopController;
+  onOpen: (card: Card) => void;
   onBack: () => void;
   onJump: (columnIndex: number) => void;
 }
@@ -56,7 +57,7 @@ function ColumnHeader({ entry, entryProgress, onJump }: ColumnHeaderProps) {
   );
 }
 
-function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardId, pulse, hop, onBack, onJump }: ColumnViewProps) {
+function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump }: ColumnViewProps) {
   const palette = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -80,10 +81,11 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
         enabled={isTop}
         candidate={candidateCardId === item.pageId}
         hop={hop}
+        onOpen={onOpen}
         pulseToken={pulse?.cardId === item.pageId ? pulse.token : undefined}
       />
     ),
-    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, pulse],
+    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse],
   );
 
   return (
@@ -106,7 +108,7 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
               initialNumToRender={2}
               maxToRenderPerBatch={3}
               windowSize={5}
-              removeClippedSubviews
+              // No removeClippedSubviews: on Android it left cards blank after the column re-rendered while hidden.
               onEndReached={feed.loadMore}
               onEndReachedThreshold={LOAD_MORE_THRESHOLD}
               ListEmptyComponent={feed.status === 'loading' ? <SkeletonCard width={cardWidth} height={cardHeight} /> : null}

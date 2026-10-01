@@ -9,8 +9,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InterestsProvider } from '../interests/InterestsContext';
 import { AppServicesProvider, createAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
+import { TangentProvider } from '../tangent/TangentContext';
 import { FONT_SOURCES } from '../theme/fonts';
 import { useTheme } from '../theme/useTheme';
+
+// Declaring screen options below would otherwise make the first declared screen the initial route.
+export const unstable_settings = { initialRouteName: 'index' };
 
 SplashScreen.preventAutoHideAsync().catch((error: unknown) => reportError('splash', error));
 
@@ -25,6 +29,7 @@ function ConfigProblem({ problem }: { problem: string }) {
 }
 
 export default function RootLayout() {
+  const palette = useTheme();
   const [fontsLoaded, fontError] = useFonts(FONT_SOURCES);
   const result = useMemo(() => createAppServices(process.env.EXPO_PUBLIC_WIKI_API_CONTACT), []);
   const ready = fontsLoaded || fontError !== null;
@@ -38,12 +43,20 @@ export default function RootLayout() {
   if (!result.ok) return <ConfigProblem problem={result.problem} />;
 
   return (
-    <GestureHandlerRootView style={styles.root}>
+    // The root view shows through during screen transitions; paper here keeps them from flashing white.
+    <GestureHandlerRootView style={[styles.root, { backgroundColor: palette.paper }]}>
       <SafeAreaProvider>
         <AppServicesProvider services={result.services}>
           <InterestsProvider store={result.services.interests}>
-            <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
-            <StatusBar style="auto" />
+            <TangentProvider>
+              {/* Paper behind every screen, so dismissing the reader never flashes white. */}
+              <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: palette.paper } }}>
+                <Stack.Screen name="index" />
+                {/* The reader slides up over the column it was opened from (SPEC.md §3.4). */}
+                <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              </Stack>
+              <StatusBar style="auto" />
+            </TangentProvider>
           </InterestsProvider>
         </AppServicesProvider>
       </SafeAreaProvider>

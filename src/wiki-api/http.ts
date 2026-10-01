@@ -5,12 +5,15 @@ export interface WikiHttp {
   query(params: Readonly<Record<string, string>>): Promise<unknown>;
   /** REST API path, e.g. `/feed/featured/2026/10/01`. */
   rest(path: string): Promise<unknown>;
+  /** REST API path returning a document rather than JSON, e.g. `/page/mobile-html/Ink`. */
+  restText(path: string): Promise<string>;
 }
 
 interface FetchResponse {
   ok: boolean;
   status: number;
   json(): Promise<unknown>;
+  text?(): Promise<string>;
   headers?: { get(name: string): string | null };
 }
 
@@ -83,19 +86,34 @@ function apiError(body: unknown): WikiApiError | null {
 }
 
 async function readJson(response: FetchResponse): Promise<unknown> {
+  let body: unknown;
   try {
-    return await response.json();
+    body = await response.json();
   } catch {
     // An HTML error page or a truncated body — treat like a dropped connection.
     throw networkError();
   }
+  const error = apiError(body);
+  if (error) throw error;
+  return body;
 }
+
+async function readText(response: FetchResponse): Promise<string> {
+  try {
+    if (!response.text) throw new Error('no text body');
+    return await response.text();
+  } catch {
+    throw networkError();
+  }
+}
+
+type BodyReader<T> = (response: FetchResponse) => Promise<T>;
 
 export function createWikiHttp({ fetchFn, userAgent, sleep = defaultSleep, timeoutMs = HTTP_RETRY.timeoutMs }: WikiHttpConfig): WikiHttp {
   // Native apps can set the real User-Agent (Wikimedia policy); Api-User-Agent covers browser builds where it is locked.
   const headers = { 'User-Agent': userAgent, 'Api-User-Agent': userAgent };
 
-  async function attempt(url: string): Promise<unknown> {
+  async function attempt<T>(url: string, read: BodyReader<T>): Promise<T> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -103,20 +121,17 @@ export function createWikiHttp({ fetchFn, userAgent, sleep = defaultSleep, timeo
         throw networkError();
       });
       if (!response.ok) throw httpError(response);
-      const body = await readJson(response);
-      const error = apiError(body);
-      if (error) throw error;
-      return body;
+      return await read(response);
     } finally {
       clearTimeout(timer);
     }
   }
 
-  async function getJson(url: string): Promise<unknown> {
+  async function get<T>(url: string, read: BodyReader<T>): Promise<T> {
     let lastError = networkError();
     for (let i = 0; i < HTTP_RETRY.attempts; i += 1) {
       try {
-        return await attempt(url);
+        return await attempt(url, read);
       } catch (error) {
         if (!(error instanceof WikiApiError) || !error.retryable) throw error;
         lastError = error;
@@ -130,10 +145,13 @@ export function createWikiHttp({ fetchFn, userAgent, sleep = defaultSleep, timeo
     query(params) {
       const url = new URL(WIKI.actionApiUrl);
       Object.entries({ ...STANDARD_PARAMS, ...params }).forEach(([key, value]) => url.searchParams.set(key, value));
-      return getJson(url.toString());
+      return get(url.toString(), readJson);
     },
     rest(path) {
-      return getJson(`${WIKI.restApiUrl}${path}`);
+      return get(`${WIKI.restApiUrl}${path}`, readJson);
+    },
+    restText(path) {
+      return get(`${WIKI.restApiUrl}${path}`, readText);
     },
   };
 }

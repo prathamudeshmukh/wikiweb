@@ -6,6 +6,8 @@ import leadSection from './__fixtures__/section-octopus-0.json';
 import sectionsOctopus from './__fixtures__/sections-octopus.json';
 import topicsMixed from './__fixtures__/topics-mixed.json';
 import topicSpace from './__fixtures__/topic-space-featured.json';
+import summaryDisambiguation from './__fixtures__/summary-Mercury.json';
+import summaryLeonardo from './__fixtures__/summary-Leonardo_da_Vinci.json';
 import { createWikiApi } from './client';
 import type { WikiHttp } from './http';
 
@@ -23,6 +25,10 @@ function fakeHttp(route: (params: Params) => unknown, restBody: unknown = featur
     rest: async (path) => {
       restPaths.push(path);
       return restBody;
+    },
+    restText: async (path) => {
+      restPaths.push(path);
+      return String(restBody);
     },
   };
   return { http, queries, restPaths };
@@ -183,6 +189,43 @@ describe('createWikiApi', () => {
       expect(restPaths).toEqual(['/feed/featured/2026/10/01']);
       expect(refs[0].title).toBe(featuredFeed.tfa.titles.normalized);
       expect(new Set(refs.map((r) => r.pageId)).size).toBe(refs.length);
+    });
+  });
+
+  describe('articleHtml', () => {
+    it('fetches the mobile article HTML for a title', async () => {
+      const { http, restPaths } = fakeHttp(() => ({}), '<html>Ink</html>');
+
+      const html = await createWikiApi(http).articleHtml('Iron gall ink');
+
+      expect(html).toBe('<html>Ink</html>');
+      expect(restPaths).toEqual(['/page/mobile-html/Iron_gall_ink']);
+    });
+
+    it('encodes titles that contain URL characters', async () => {
+      const { http, restPaths } = fakeHttp(() => ({}), '');
+
+      await createWikiApi(http).articleHtml('AC/DC & Friends?');
+
+      expect(restPaths).toEqual(['/page/mobile-html/AC%2FDC_%26_Friends%3F']);
+    });
+  });
+
+  describe('summary', () => {
+    it('returns a card-ready summary for a link preview', async () => {
+      const { http, restPaths } = fakeHttp(() => ({}), summaryLeonardo);
+
+      const summary = await createWikiApi(http).summary('Leonardo da Vinci');
+
+      expect(summary).toMatchObject({ pageId: 18079, title: 'Leonardo da Vinci', description: summaryLeonardo.description, isDisambiguation: false });
+      expect(summary.thumbnail?.url).toMatch(/^https:\/\//);
+      expect(restPaths).toEqual(['/page/summary/Leonardo_da_Vinci']);
+    });
+
+    it('flags disambiguation pages', async () => {
+      const { http } = fakeHttp(() => ({}), summaryDisambiguation);
+
+      await expect(createWikiApi(http).summary('Mercury')).resolves.toMatchObject({ isDisambiguation: true, thumbnail: null });
     });
   });
 

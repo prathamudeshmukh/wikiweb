@@ -76,6 +76,12 @@ Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`
   - **Read** — replace reader contents with the linked article.
 - Both actions add a node to the active Journey. Opening any article in the reader marks it **read**.
 
+**Implementation notes (M3, verified on device):**
+- The app fetches `page/mobile-html` itself and renders it in a WebView with `baseUrl` set, so Wikipedia's page script (PCS) still loads images and collapsible tables.
+- PCS handles link taps itself and cancels them, so a capture-phase script injected before content loads forwards every link tap to the app over the WebView message bridge; the app decides: peek (article), scroll (in-page anchor), browser (other site), or ignore (files, edit links).
+- Theming sets Wikipedia's own CSS variables (`--background-color-base`, `--color-base`, …), which its `!important` rules already read.
+- "Take a tangent" hands the card to the explore screen only after the reader's closing animation ends (fallback 600 ms), so the flight is visible.
+
 ### 3.5 Journeys
 - **Logbook** screen (from Home header): stamps grid (collected / 20) and expeditions list (title, date, hop count, territory route strip).
 - Opening an expedition shows its **recap card** (start → end, route strip, tangents/read counts, furthest leap). **Continue expedition** restores its path to the most recent node; a node list reopens any column.
@@ -369,7 +375,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | M0 | **Gesture prototype** (throwaway) | Static fake cards; column push/pop with left/right swipe + direction lock feels right on a real phone |
 | M1 ✅ | API client + content engine | Builders pass unit/integration tests against fixtures — done 2026-10-01: 98 tests, ~98 % coverage, live smoke test (`npm run test:live`) |
 | M2 ✅ | Columns + Home + onboarding | Live infinite Home; hops into real columns — done 2026-10-01: Expo Router, onboarding (persisted in expo-sqlite kv-store), live Home and column feeds, the M0 hop on real data, breadcrumb jumps, skeleton/error/dead-end cards, Paper + Night atlas. Verified on an Android emulator; 185 tests, 92 % coverage. Card tap → reader is M3; Logbook button is M4. |
-| M3 | Reader + peek card | Inline links intercepted; Explore/Read work |
+| M3 ✅ | Reader + peek card | Inline links intercepted; Explore/Read work — done 2026-10-01: reader modal (mobile-html themed via Wikipedia's CSS variables, fonts embedded, CC BY-SA footer), peek card with Take a tangent / Read, hop from the peek card after the sheet closes. Verified on an Android emulator in Paper and Night atlas. Marking articles *read* lands with Journeys in M4. |
 | M4 | Journeys + breadcrumb | Persisted, reopenable Journeys; visited/read badges |
 | M5 | Prefetch, caches, states, analytics | Perf targets met; all §8 states; events firing |
 
