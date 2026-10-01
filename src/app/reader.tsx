@@ -1,19 +1,23 @@
 import { Redirect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useReaderTrail } from '../journeys/useReaderTrail';
+import { parseReaderParams } from '../reader/readerParams';
 import { ReaderScreen } from '../reader/ReaderScreen';
 import { cardFromArticle, useTangentQueue } from '../tangent/TangentContext';
-import type { Card } from '../content/card';
+import type { Tangent } from '../tangent/tangentQueue';
 import type { Article } from '../wiki-api/types';
 
 // If the closing animation's end event never arrives, hand the tangent over anyway after this long.
 const TANGENT_HANDOFF_FALLBACK_MS = 600;
 
 export default function Reader() {
-  const { title } = useLocalSearchParams<{ title: string }>();
+  const params = useLocalSearchParams<{ title: string; pageId: string; tileId?: string }>();
+  const target = useMemo(() => parseReaderParams(params), [params]);
   const router = useRouter();
   const navigation = useNavigation();
   const tangents = useTangentQueue();
-  const pending = useRef<Card | null>(null);
+  const trail = useReaderTrail(target);
+  const pending = useRef<Tangent | null>(null);
 
   // Hand the tangent to the explore screen only once this sheet has finished closing, so the hop's
   // flight plays over the columns instead of behind the dismissing sheet (SPEC.md §3.4).
@@ -29,14 +33,14 @@ export default function Reader() {
   const close = useCallback(() => router.back(), [router]);
   const takeTangent = useCallback(
     (article: Article) => {
-      pending.current = cardFromArticle(article);
+      pending.current = { card: cardFromArticle(article), fromNodeId: trail.tangentOrigin() };
       router.back();
       setTimeout(handOff, TANGENT_HANDOFF_FALLBACK_MS);
     },
-    [router, handOff],
+    [router, handOff, trail],
   );
 
-  // Reached without an article (e.g. a stale deep link): there's nothing to read.
-  if (!title) return <Redirect href="/" />;
-  return <ReaderScreen initialTitle={title} onTangent={takeTangent} onClose={close} />;
+  // Reached without a usable article (e.g. a stale deep link): there's nothing to read.
+  if (!target) return <Redirect href="/" />;
+  return <ReaderScreen initialTitle={target.page.title} onTangent={takeTangent} onReadLink={trail.readInPlace} onClose={close} />;
 }

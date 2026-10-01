@@ -1,18 +1,18 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { BackHandler, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { Card } from '../content/card';
+import { useAppServices } from '../services/AppServices';
+import type { ResumePoint, Tangent } from '../tangent/tangentQueue';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
-import { ColumnView, type PulseTarget } from './ColumnView';
-import { goBack, initialStack, jumpTo, landHop, prepareHop, type StackState } from './columnStack';
+import { ColumnView } from './ColumnView';
 import { GESTURE, type HopController, type Rect } from './hopController';
 import { HopOverlay } from './HopOverlay';
-
-type ColumnPulse = PulseTarget & { columnId: string };
+import { useStackNavigation } from './useStackNavigation';
 
 const EMPTY_RECT: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
@@ -34,58 +34,21 @@ function seedHeaderRect(insetTop: number, screenWidth: number): Rect {
   };
 }
 
-function useStackNavigation() {
-  const [stack, setStack] = useState<StackState>(initialStack);
-  const [preparedCard, setPreparedCard] = useState<Card | null>(null);
-  const [pulse, setPulse] = useState<ColumnPulse | null>(null);
-  // Handlers read state through a ref so their identity never changes and memoized columns don't re-render.
-  const stackRef = useRef(stack);
-  stackRef.current = stack;
-
-  const prepare = useCallback((card: Card) => {
-    const next = prepareHop(stackRef.current, { ref: card, topic: card.topic, thumbnailUrl: card.thumbnail?.url ?? null });
-    if (next === stackRef.current) return;
-    setPreparedCard(card);
-    setStack(next);
-  }, []);
-
-  const land = useCallback(() => {
-    setStack(landHop(stackRef.current));
-    setPreparedCard(null);
-  }, []);
-
-  const back = useCallback(() => {
-    const { state, cameFrom } = goBack(stackRef.current);
-    if (!cameFrom) return false;
-    const parent = state.columns[state.columns.length - 1];
-    setPulse({ columnId: parent.id, cardId: cameFrom.pageId, token: Date.now() });
-    setPreparedCard(null);
-    setStack(state);
-    return true;
-  }, []);
-
-  const jump = useCallback((columnIndex: number) => {
-    setPreparedCard(null);
-    setStack(jumpTo(stackRef.current, columnIndex));
-  }, []);
-
-  return { stack, preparedCard, pulse, prepare, land, back, jump };
-}
-
 interface IncomingTangent {
-  card: Card | null;
+  tangent: Tangent | null;
   onStarted: () => void;
+  prepare: (tangent: Tangent) => void;
   hop: HopController;
   startRect: Rect;
 }
 
 /** Runs the same flight as a swipe, started from the reader's peek card instead of a released drag. */
-function useIncomingTangent({ card, onStarted, hop, startRect }: IncomingTangent) {
+function useIncomingTangent({ tangent, onStarted, prepare, hop, startRect }: IncomingTangent) {
   const { x, y, width, height } = startRect;
   useEffect(() => {
-    if (!card) return;
+    if (!tangent) return;
     onStarted();
-    hop.prepare(card);
+    prepare(tangent);
     hop.from.value = { x, y, width, height };
     hop.tiltDeg.value = 0;
     hop.progress.value = 0;
@@ -93,22 +56,39 @@ function useIncomingTangent({ card, onStarted, hop, startRect }: IncomingTangent
       if (finished) scheduleOnRN(hop.landed);
     });
     hop.committed();
-  }, [card, onStarted, hop, x, y, width, height]);
+  }, [tangent, onStarted, prepare, hop, x, y, width, height]);
+}
+
+/** Reopens a saved expedition's columns ("Continue expedition"). */
+function useIncomingResume(point: ResumePoint | null, onResumed: () => void, resume: (point: ResumePoint) => void) {
+  useEffect(() => {
+    if (!point) return;
+    onResumed();
+    resume(point);
+  }, [point, onResumed, resume]);
 }
 
 interface ExploreScreenProps {
   interests: readonly string[];
   onOpenArticle: (card: Card) => void;
+  onOpenLogbook: () => void;
+  /** False while another screen (the reader, the Logbook) is on top — Android back is then theirs. */
+  isFocused: boolean;
   /** A tangent taken from the reader's peek card, to hop into as soon as this screen is back. */
-  incomingTangent: Card | null;
+  incomingTangent: Tangent | null;
   onTangentStarted: () => void;
+  /** An expedition to reopen, from the Logbook. */
+  incomingResume: ResumePoint | null;
+  onResumed: () => void;
 }
 
-export function ExploreScreen({ interests, onOpenArticle, incomingTangent, onTangentStarted }: ExploreScreenProps) {
+export function ExploreScreen(props: ExploreScreenProps) {
+  const { interests, onOpenArticle, onOpenLogbook, isFocused, incomingTangent, onTangentStarted, incomingResume, onResumed } = props;
   const palette = useTheme();
+  const { journeys } = useAppServices();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { stack, preparedCard, pulse, prepare, land, back, jump } = useStackNavigation();
+  const { stack, preparedCard, pulse, prepare, prepareTangent, land, back, jump, resume } = useStackNavigation(journeys);
   const progress = useSharedValue(0);
   const from = useSharedValue<Rect>(EMPTY_RECT);
   const tiltDeg = useSharedValue(0);
@@ -118,7 +98,8 @@ export function ExploreScreen({ interests, onOpenArticle, incomingTangent, onTan
   }, []);
   const hop: HopController = useMemo(() => ({ progress, from, tiltDeg, prepare, committed, landed: land }), [progress, from, tiltDeg, prepare, committed, land]);
 
-  useIncomingTangent({ card: incomingTangent, onStarted: onTangentStarted, hop, startRect: peekCardRect(screenWidth, screenHeight) });
+  useIncomingTangent({ tangent: incomingTangent, onStarted: onTangentStarted, prepare: prepareTangent, hop, startRect: peekCardRect(screenWidth, screenHeight) });
+  useIncomingResume(incomingResume, onResumed, resume);
 
   // Once the landed column is in the stack (and no longer follows progress), rearm for the next hop.
   useEffect(() => {
@@ -126,9 +107,10 @@ export function ExploreScreen({ interests, onOpenArticle, incomingTangent, onTan
   }, [stack.prepared, progress]);
 
   useEffect(() => {
+    if (!isFocused) return undefined;
     const sub = BackHandler.addEventListener('hardwareBackPress', back);
     return () => sub.remove();
-  }, [back]);
+  }, [back, isFocused]);
 
   const depth = stack.columns.length - 1;
   // The prepared column renders as the next item of the same keyed list, so landing never remounts it.
@@ -153,6 +135,7 @@ export function ExploreScreen({ interests, onOpenArticle, incomingTangent, onTan
               onOpen={onOpenArticle}
               onBack={onBack}
               onJump={jump}
+              onOpenLogbook={onOpenLogbook}
             />
           </View>
         );

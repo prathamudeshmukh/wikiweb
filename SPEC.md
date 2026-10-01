@@ -311,6 +311,10 @@ CREATE TABLE stamps (
 
 `read_history` and `card_cache` payloads include `topic`. Recap stats are derived from `journey_nodes` + `card_cache`, not stored.
 
+**As built (M4):** `journey_nodes` also stores `tile_id`, `territory` and `thumbnail_url` (the topic a card had when it was hopped into), so routes and resumed columns render offline and before `card_cache` exists (M5). A `journey_reads(journey_id, page_id)` table records which articles were read on which expedition, for the recap's *n read*. Schema changes go through `PRAGMA user_version` migrations.
+
+**Journey rules (M4):** a swipe or *Take a tangent* from Home starts an expedition; every hop adds a node under the node of the column it left. *Read* on a peek card adds a `peek_read` node under the column (or previous in-place read) the reader was opened from; a tangent from the reader then leaves from that node. Reading a card from a column marks it read but adds no node. *Continue expedition* reopens the column ancestors of the most recent node (in-place reads reopen the column they were read from). Visited = the article is a node of the active expedition; read = in read history.
+
 Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]`, `onboardingDone: boolean`, `swipeHintShown: boolean`.
 
 All repository functions return new objects; no in-place mutation of domain state.
@@ -376,7 +380,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | M1 ✅ | API client + content engine | Builders pass unit/integration tests against fixtures — done 2026-10-01: 98 tests, ~98 % coverage, live smoke test (`npm run test:live`) |
 | M2 ✅ | Columns + Home + onboarding | Live infinite Home; hops into real columns — done 2026-10-01: Expo Router, onboarding (persisted in expo-sqlite kv-store), live Home and column feeds, the M0 hop on real data, breadcrumb jumps, skeleton/error/dead-end cards, Paper + Night atlas. Verified on an Android emulator; 185 tests, 92 % coverage. Card tap → reader is M3; Logbook button is M4. |
 | M3 ✅ | Reader + peek card | Inline links intercepted; Explore/Read work — done 2026-10-01: reader modal (mobile-html themed via Wikipedia's CSS variables, fonts embedded, CC BY-SA footer), peek card with Take a tangent / Read, hop from the peek card after the sheet closes. Verified on an Android emulator in Paper and Night atlas. Marking articles *read* lands with Journeys in M4. |
-| M4 | Journeys + breadcrumb | Persisted, reopenable Journeys; visited/read badges |
+| M4 ✅ | Journeys + breadcrumb | Persisted, reopenable Journeys; visited/read badges — done 2026-10-02: journeys in expo-sqlite (hops, in-place reads, read history, stamps), live ◌/✓ badges, Logbook (stamp grid, expeditions) and recap card with *Continue expedition* and a reopenable node list. Verified on an Android emulator; 307 tests, 92 % coverage. New-territory toast and Settings (Logbook gear) move to M5. |
 | M5 | Prefetch, caches, states, analytics | Perf targets met; all §8 states; events firing |
 
 ---
@@ -391,5 +395,5 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | Wikimedia rate limiting (burst cap ≈ 10 requests measured) | Batching, caching, Retry-After honoured; shared client-side request budget in M5 |
 | Reader HTML styling drift | Own CSS injected; test on a set of varied articles |
 | Open: lead-section links ranked higher? | Decide after M2 dogfooding |
-| Open: Journey "idle" definition for closing a session | Proposal: 30 min background or returning to Home |
+| Journey "idle" definition for closing a session | Decided (M4): returning to Home ends the expedition; the next hop from Home starts a new one. Restarting the app opens on Home, so it ends one too. Background timeout not needed. |
 | Name "Tangent" | Check App Store / Play Store / domain availability. Do not use "Wikipedia" or Wikimedia marks in name or icon |

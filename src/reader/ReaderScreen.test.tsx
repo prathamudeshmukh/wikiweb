@@ -37,9 +37,10 @@ async function openReader(overrides: Parameters<typeof fakeWikiApi>[0] = {}) {
   const fake = fakeWikiApi(overrides);
   const onTangent = jest.fn();
   const onClose = jest.fn();
-  await renderWithServices(<ReaderScreen initialTitle="Iron gall ink" onTangent={onTangent} onClose={onClose} />, fake.api);
+  const onReadLink = jest.fn();
+  await renderWithServices(<ReaderScreen initialTitle="Iron gall ink" onTangent={onTangent} onReadLink={onReadLink} onClose={onClose} />, fake.api);
   await screen.findByTestId('reader-webview');
-  return { ...fake, onTangent, onClose };
+  return { ...fake, onTangent, onReadLink, onClose };
 }
 
 describe('ReaderScreen', () => {
@@ -103,13 +104,14 @@ describe('ReaderScreen', () => {
   });
 
   it('reads the peeked article in place', async () => {
-    await openReader();
+    const { onReadLink } = await openReader();
     await act(async () => void tapLink(`${BASE}Ink`));
 
     await fireEvent.press(await screen.findByRole('button', { name: 'Read' }));
 
     expect(await screen.findByText('INK')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Take a tangent' })).toBeNull();
+    expect(onReadLink).toHaveBeenCalledWith(expect.objectContaining({ title: 'Ink' }));
   });
 
   it('will not take a tangent into a disambiguation page', async () => {
@@ -140,7 +142,7 @@ describe('ReaderScreen', () => {
     let fail = true;
     const articleHtml = fake.api.articleHtml;
     fake.api.articleHtml = (title) => (fail ? Promise.reject(new Error('offline')) : articleHtml(title));
-    await renderWithServices(<ReaderScreen initialTitle="Ink" onTangent={jest.fn()} onClose={jest.fn()} />, fake.api);
+    await renderWithServices(<ReaderScreen initialTitle="Ink" onTangent={jest.fn()} onReadLink={jest.fn()} onClose={jest.fn()} />, fake.api);
 
     const retry = await screen.findByRole('button', { name: 'Couldn’t load this article. Tap to retry.' });
     fail = false;

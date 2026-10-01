@@ -1,7 +1,7 @@
 import { FEED } from '../config/constants';
 import type { WikiApi } from '../wiki-api/types';
 import type { Card } from './card';
-import { topicFromWeightedTags } from './topics';
+import { type CardTopic, topicFromWeightedTags } from './topics';
 
 function chunks<T>(items: readonly T[], size: number): T[][] {
   return Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, (i + 1) * size));
@@ -22,4 +22,10 @@ export async function resolveTopics(api: WikiApi, cards: readonly Card[]): Promi
     const topic = topicFromWeightedTags(tagsById.get(card.pageId) ?? []);
     return card.topicIsFallback && topic.territory ? { ...card, topic, topicIsFallback: false } : card;
   });
+}
+
+/** One article's own topic, e.g. to stamp it when it's read (SPEC.md §3.6). */
+export async function topicOfPage(api: WikiApi, pageId: number): Promise<CardTopic> {
+  const tags = await api.topicTags([pageId]);
+  return topicFromWeightedTags(tags.get(pageId) ?? []);
 }

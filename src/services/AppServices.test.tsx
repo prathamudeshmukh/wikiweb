@@ -12,11 +12,12 @@ describe('createAppServices', () => {
     expect(createAppServices('   ').ok).toBe(false);
   });
 
-  it('builds the API and interests store when configured', () => {
+  it('builds the API, interests store and journey session when configured', () => {
     const result = createAppServices('https://example.org/tangent');
 
     expect(result.ok && typeof result.services.api.hydrate).toBe('function');
     expect(result.ok && typeof result.services.interests.load).toBe('function');
+    expect(result.ok && result.services.journeys.getState().active).toBeNull();
   });
 });
 

@@ -1,0 +1,114 @@
+import { useCallback } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TOPIC_TILES } from '../config/topicTiles';
+import { recapOf } from '../journeys/expedition';
+import type { Expedition } from '../journeys/journeyTypes';
+import type { Logbook } from '../journeys/journeySession';
+import { useAppServices } from '../services/AppServices';
+import { FONT } from '../theme/fonts';
+import { LAYOUT, TYPE } from '../theme/layout';
+import { useTheme } from '../theme/useTheme';
+import { LoadStatus } from './LoadStatus';
+import { logDate, tangentCount } from './logbookFormat';
+import { RouteStrip } from './RouteStrip';
+import { ScreenHeader } from './ScreenHeader';
+import { Stamp } from './Stamp';
+import { useLoaded } from './useLoaded';
+
+interface LogbookScreenProps {
+  onBack: () => void;
+  onOpenExpedition: (journeyId: string) => void;
+}
+
+const STAMPS_PER_ROW = 5;
+const STAMP_GAP = 8;
+const MAX_STAMP = 72;
+
+function StampGrid({ collected }: { collected: ReadonlySet<string> }) {
+  const palette = useTheme();
+  const { width } = useWindowDimensions();
+  const size = Math.floor(Math.min(MAX_STAMP, (width - LAYOUT.gutter * 2 - STAMP_GAP * (STAMPS_PER_ROW - 1)) / STAMPS_PER_ROW));
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHead}>
+        <Text style={[styles.eyebrow, { color: palette.muted }]}>STAMPS</Text>
+        <Text style={[styles.eyebrow, { color: palette.muted }]}>{`${collected.size} / ${TOPIC_TILES.length}`}</Text>
+      </View>
+      <View style={[styles.grid, { gap: STAMP_GAP }]}>
+        {TOPIC_TILES.map((tile) => (
+          <Stamp key={tile.id} tile={tile} collected={collected.has(tile.id)} size={size} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ExpeditionRow({ expedition, onOpen }: { expedition: Expedition; onOpen: (journeyId: string) => void }) {
+  const palette = useTheme();
+  const { journey } = expedition;
+  const recap = recapOf(expedition);
+  const meta = `${logDate(journey.createdAt)} · ${tangentCount(recap.tangents)}`;
+  return (
+    <Pressable
+      onPress={() => onOpen(journey.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`${journey.title}. ${meta}`}
+      style={({ pressed }) => [styles.row, { backgroundColor: palette.card, borderColor: palette.line }, pressed && styles.pressed]}
+    >
+      <Text style={[styles.rowTitle, { color: palette.ink }]} numberOfLines={2}>{journey.title}</Text>
+      <Text style={[styles.eyebrow, { color: palette.muted }]}>{meta}</Text>
+      <RouteStrip route={recap.route} />
+    </Pressable>
+  );
+}
+
+function LogbookContent({ logbook, onOpenExpedition }: { logbook: Logbook; onOpenExpedition: (journeyId: string) => void }) {
+  const palette = useTheme();
+  const insets = useSafeAreaInsets();
+  const collected = new Set(logbook.stamps.map((stamp) => stamp.tileId));
+  // An expedition with no nodes never got past its first write; there's nothing to show or resume.
+  const expeditions = logbook.expeditions.filter((expedition) => expedition.nodes.length > 0);
+  return (
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + LAYOUT.gutter }]}>
+      <StampGrid collected={collected} />
+      <View style={styles.section}>
+        <Text style={[styles.eyebrow, { color: palette.muted }]}>EXPEDITIONS</Text>
+        {expeditions.length === 0 ? (
+          <Text style={[styles.empty, { color: palette.muted }]}>No expeditions yet. Swipe left on anything that catches your eye.</Text>
+        ) : (
+          expeditions.map((expedition) => <ExpeditionRow key={expedition.journey.id} expedition={expedition} onOpen={onOpenExpedition} />)
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+/** Stamps collected and every expedition so far (DESIGN.md §6.5). */
+export function LogbookScreen({ onBack, onOpenExpedition }: LogbookScreenProps) {
+  const palette = useTheme();
+  const insets = useSafeAreaInsets();
+  const { journeys } = useAppServices();
+  const load = useCallback(() => journeys.logbook(), [journeys]);
+  const { state, retry } = useLoaded('logbook.load', load);
+
+  return (
+    <View style={[styles.root, { backgroundColor: palette.paper, paddingTop: insets.top }]}>
+      <ScreenHeader title="LOGBOOK" onBack={onBack} />
+      {state.status === 'ready' ? <LogbookContent logbook={state.value} onOpenExpedition={onOpenExpedition} /> : <LoadStatus status={state.status} onRetry={retry} />}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  content: { paddingHorizontal: LAYOUT.gutter, gap: 28, paddingTop: 8 },
+  section: { gap: 12 },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between' },
+  eyebrow: { fontFamily: FONT.mono, ...TYPE.meta },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  row: { borderRadius: LAYOUT.seedRadius, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 8 },
+  pressed: { opacity: 0.7 },
+  rowTitle: { fontFamily: FONT.display, fontSize: 20, lineHeight: 26 },
+  empty: { fontFamily: FONT.body, ...TYPE.body },
+});

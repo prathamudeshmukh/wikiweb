@@ -17,6 +17,8 @@ import { useArticleDocument } from './useArticleDocument';
 interface ReaderScreenProps {
   initialTitle: string;
   onTangent: (article: Article) => void;
+  /** A peeked article is now being read in place. */
+  onReadLink: (article: Article) => void;
   onClose: () => void;
 }
 
@@ -35,7 +37,7 @@ function ReaderStatus({ status, onRetry }: { status: 'loading' | 'error'; onRetr
 }
 
 /** The article sheet (SPEC.md §3.4): reads in place; links open a peek card instead of navigating. */
-export function ReaderScreen({ initialTitle, onTangent, onClose }: ReaderScreenProps) {
+export function ReaderScreen({ initialTitle, onTangent, onReadLink, onClose }: ReaderScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const [title, setTitle] = useState(initialTitle);
@@ -66,10 +68,14 @@ export function ReaderScreen({ initialTitle, onTangent, onClose }: ReaderScreenP
   }, [followLink]);
   const onNavigate = useCallback((request: WebViewNavigation) => followLink(request.url), [followLink]);
 
-  const read = useCallback((article: Article) => {
-    setPeekTitle(null);
-    setTitle(article.title);
-  }, []);
+  const read = useCallback(
+    (article: Article) => {
+      setPeekTitle(null);
+      setTitle(article.title);
+      onReadLink(article);
+    },
+    [onReadLink],
+  );
 
   return (
     <View style={[styles.root, { backgroundColor: palette.paper, paddingTop: insets.top }]}>

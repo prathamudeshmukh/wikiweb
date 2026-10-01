@@ -31,8 +31,11 @@ const RISE_RANGE = [0.15, 1];
  * The incoming spring is overshoot-clamped so the parent never shows at the right edge (M0 finding).
  */
 export function useColumnMotion({ isHome, isTop, screenWidth, entry, onBack }: ColumnMotionOptions) {
-  const x = useSharedValue(isHome ? 0 : screenWidth);
-  const rise = useSharedValue(isHome ? 0 : LAYOUT.firstCardRiseOffset);
+  // A column mounted for a hop waits offscreen for the flight; one mounted already in the stack (Home, or the
+  // columns of a resumed expedition) starts in place.
+  const fliesIn = !isHome && entry !== null;
+  const x = useSharedValue(fliesIn ? screenWidth : 0);
+  const rise = useSharedValue(fliesIn ? LAYOUT.firstCardRiseOffset : 0);
 
   useAnimatedReaction(
     () => (entry ? entry.value : null),

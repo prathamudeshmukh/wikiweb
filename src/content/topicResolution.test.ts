@@ -1,6 +1,6 @@
 import { CULTURE_MUSIC, fakeWikiApi, idOf, STEM_BIOLOGY } from './__testing__/fakeWikiApi';
 import type { Card } from './card';
-import { resolveTopics } from './topicResolution';
+import { resolveTopics, topicOfPage } from './topicResolution';
 
 const card = (title: string, overrides: Partial<Card> = {}): Card => ({
   pageId: idOf(title),
@@ -71,5 +71,19 @@ describe('resolveTopics', () => {
     };
 
     await expect(resolveTopics(api, [card('Squid')])).rejects.toThrow('cirrusdoc unavailable');
+  });
+});
+
+describe('topicOfPage', () => {
+  it('finds one article’s own topic', async () => {
+    const { api } = fakeWikiApi({ tags: { Song: [CULTURE_MUSIC] } });
+
+    expect(await topicOfPage(api, idOf('Song'))).toEqual({ tileId: 'music', territory: 'culture' });
+  });
+
+  it('has no topic for an untagged article', async () => {
+    const { api } = fakeWikiApi({});
+
+    expect(await topicOfPage(api, idOf('Rock'))).toEqual({ tileId: null, territory: null });
   });
 });

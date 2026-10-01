@@ -29,7 +29,7 @@ export function CardView({ card, seedTitle }: CardViewProps) {
       key={palette.cardShadow ? 'paper' : 'night'}
       style={[styles.card, surface(palette)]}
       accessible
-      accessibilityLabel={`${card.title}. ${card.description ?? ''}`}
+      accessibilityLabel={[card.title, card.description, card.visited && 'Visited on this expedition', card.read && 'Read'].filter(Boolean).join('. ')}
     >
       {card.thumbnail ? (
         <>
@@ -50,15 +50,29 @@ export function CardView({ card, seedTitle }: CardViewProps) {
           </View>
         </View>
       )}
-      <Text style={styles.meta} numberOfLines={1}>
-        <Text style={{ color: accent }}>●{label ? ` ${label.toUpperCase()}` : ''}</Text>
-        {card.description ? <Text style={{ color: palette.muted }}> · {card.description.toUpperCase()}</Text> : null}
-      </Text>
+      <View style={styles.metaRow}>
+        <Text style={[styles.meta, styles.metaText]} numberOfLines={1}>
+          <Text style={{ color: accent }}>●{label ? ` ${label.toUpperCase()}` : ''}</Text>
+          {card.description ? <Text style={{ color: palette.muted }}> · {card.description.toUpperCase()}</Text> : null}
+        </Text>
+        <Badges visited={card.visited} read={card.read} color={palette.muted} />
+      </View>
       {card.extract ? (
         <Text style={[styles.extract, { color: palette.ink }]} numberOfLines={TYPE.extractLines}>{card.extract}</Text>
       ) : null}
       <Text style={[styles.why, { color: palette.muted }]} numberOfLines={1}>{whyLine(card, seedTitle)}</Text>
     </View>
+  );
+}
+
+/** Visited ◌ (elsewhere on this expedition) and read ✓, never colour-coded (DESIGN.md §5.4). */
+function Badges({ visited, read, color }: { visited: boolean; read: boolean; color: string }) {
+  if (!visited && !read) return null;
+  const label = [visited && 'visited on this expedition', read && 'read'].filter(Boolean).join(', ');
+  return (
+    <Text style={[styles.meta, { color }]} accessibilityLabel={label}>
+      {[visited && '◌', read && '✓'].filter(Boolean).join(' ')}
+    </Text>
   );
 }
 
@@ -75,7 +89,9 @@ const styles = StyleSheet.create({
   block: { aspectRatio: LAYOUT.imageAspect, borderRadius: LAYOUT.imageRadius, padding: 18, justifyContent: 'space-between' },
   blockTitle: { fontFamily: FONT.display, ...TYPE.typographicTitle },
   blockIcon: { alignItems: 'flex-end' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   meta: { fontFamily: FONT.mono, ...TYPE.meta },
+  metaText: { flex: 1 },
   extract: { fontFamily: FONT.body, ...TYPE.body },
   why: { marginTop: 'auto', fontFamily: FONT.monoLight, ...TYPE.meta },
 });

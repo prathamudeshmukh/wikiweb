@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { InterestsStore } from '../interests/interestsStore';
+import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
+import type { JourneySession } from '../journeys/journeySession';
 import { AppServicesProvider } from '../services/AppServices';
 import type { WikiApi } from '../wiki-api/types';
 
@@ -17,11 +19,11 @@ export function memoryInterestsStore(initial: string[] | null = null): Interests
   };
 }
 
-/** Renders UI inside the same providers the app uses, with a fake Wikipedia API. */
-export function renderWithServices(ui: ReactElement, api: WikiApi) {
+/** Renders UI inside the same providers the app uses, with a fake Wikipedia API and in-memory journeys. */
+export function renderWithServices(ui: ReactElement, api: WikiApi, journeys: JourneySession = memoryJourneySession()) {
   return render(
     <SafeAreaProvider initialMetrics={SAFE_AREA}>
-      <AppServicesProvider services={{ api, interests: memoryInterestsStore() }}>{ui}</AppServicesProvider>
+      <AppServicesProvider services={{ api, interests: memoryInterestsStore(), journeys }}>{ui}</AppServicesProvider>
     </SafeAreaProvider>,
   );
 }

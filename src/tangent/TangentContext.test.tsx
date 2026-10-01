@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react-native';
 import { makeArticle } from '../content/__testing__/fakeWikiApi';
-import { cardFromArticle, TangentProvider, useTangentQueue } from './TangentContext';
+import { cardFromArticle, TangentProvider, useResumeQueue, useTangentQueue } from './TangentContext';
 
 describe('cardFromArticle', () => {
   it('turns a peeked article into a card whose topic resolves later', () => {
@@ -25,5 +25,13 @@ describe('useTangentQueue', () => {
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
     await expect(renderHook(() => useTangentQueue())).rejects.toThrow(/inside TangentProvider/);
+  });
+});
+
+describe('useResumeQueue', () => {
+  it('is separate from the tangent queue', async () => {
+    const { result } = await renderHook(() => ({ resumes: useResumeQueue(), tangents: useTangentQueue() }), { wrapper: TangentProvider });
+
+    expect(result.current.resumes).not.toBe(result.current.tangents);
   });
 });

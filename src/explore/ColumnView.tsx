@@ -7,6 +7,7 @@ import { FeedStatusCard } from '../cards/FeedStatusCard';
 import { SeedHeader } from '../cards/SeedHeader';
 import { SkeletonCard } from '../cards/SkeletonCard';
 import type { Card } from '../content/card';
+import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { Breadcrumb } from './Breadcrumb';
@@ -33,19 +34,28 @@ interface ColumnViewProps {
   onOpen: (card: Card) => void;
   onBack: () => void;
   onJump: (columnIndex: number) => void;
+  onOpenLogbook: () => void;
 }
 
 // FlatList measures this in screen-heights; one card fills a screen, so this is ~5 cards from the end (SPEC.md §7).
 const LOAD_MORE_THRESHOLD = 5;
 
+/** The card with its visited / read badges brought up to date — the same object when nothing changed. */
+function withMarks(card: Card, { visitedIds, readIds }: JourneyMarks): Card {
+  const visited = card.visited || visitedIds.has(card.pageId);
+  const read = card.read || readIds.has(card.pageId);
+  return visited === card.visited && read === card.read ? card : { ...card, visited, read };
+}
+
 interface ColumnHeaderProps {
   entry: ColumnEntry;
   entryProgress: SharedValue<number> | null;
   onJump: (columnIndex: number) => void;
+  onOpenLogbook: () => void;
 }
 
-function ColumnHeader({ entry, entryProgress, onJump }: ColumnHeaderProps) {
-  if (!entry.seed) return <HomeHeader />;
+function ColumnHeader({ entry, entryProgress, onJump, onOpenLogbook }: ColumnHeaderProps) {
+  if (!entry.seed) return <HomeHeader onOpenLogbook={onOpenLogbook} />;
   return (
     <>
       <Breadcrumb path={entry.path} onJump={onJump} entry={entryProgress} />
@@ -57,8 +67,9 @@ function ColumnHeader({ entry, entryProgress, onJump }: ColumnHeaderProps) {
   );
 }
 
-function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump }: ColumnViewProps) {
+function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook }: ColumnViewProps) {
   const palette = useTheme();
+  const marks = useJourneyMarks();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [listHeight, setListHeight] = useState(0);
@@ -74,7 +85,7 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
   const renderCard = useCallback(
     ({ item }: { item: Card }) => (
       <SwipeCard
-        card={item}
+        card={withMarks(item, marks)}
         seedTitle={seedTitle}
         width={cardWidth}
         height={cardHeight}
@@ -85,13 +96,13 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
         pulseToken={pulse?.cardId === item.pageId ? pulse.token : undefined}
       />
     ),
-    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse],
+    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks],
   );
 
   return (
     <GestureDetector gesture={backPan}>
       <Animated.View style={[styles.column, { backgroundColor: palette.paper, paddingTop: insets.top }, !isHome && styles.pushed, columnStyle]}>
-        <ColumnHeader entry={entry} entryProgress={entryProgress} onJump={onJump} />
+        <ColumnHeader entry={entry} entryProgress={entryProgress} onJump={onJump} onOpenLogbook={onOpenLogbook} />
         <Animated.View testID="column-list-area" style={[styles.listArea, riseStyle]} onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}>
           {cardHeight > 0 && (
             <FlatList

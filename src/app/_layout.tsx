@@ -35,6 +35,10 @@ export default function RootLayout() {
   const ready = fontsLoaded || fontError !== null;
 
   useEffect(() => {
+    if (result.ok) result.services.journeys.load().catch((error: unknown) => reportError('journeys.load', error));
+  }, [result]);
+
+  useEffect(() => {
     if (fontError) reportError('fonts', fontError);
     if (ready) SplashScreen.hideAsync().catch((error: unknown) => reportError('splash', error));
   }, [ready, fontError]);
@@ -54,6 +58,8 @@ export default function RootLayout() {
                 <Stack.Screen name="index" />
                 {/* The reader slides up over the column it was opened from (SPEC.md §3.4). */}
                 <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+                <Stack.Screen name="logbook" options={{ animation: 'slide_from_right' }} />
+                <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
               </Stack>
               <StatusBar style="auto" />
             </TangentProvider>

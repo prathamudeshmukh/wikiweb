@@ -1,46 +1,32 @@
-import type { Card } from '../content/card';
-import { createTangentQueue } from './tangentQueue';
+import { createHandoff } from './tangentQueue';
 
-const card = (title: string): Card => ({
-  pageId: title.length,
-  title,
-  description: null,
-  extract: null,
-  thumbnail: null,
-  topic: { tileId: null, territory: null },
-  topicIsFallback: true,
-  source: 'link',
-  visited: false,
-  read: false,
-});
+describe('hand-off', () => {
+  it('hands a request to the next taker exactly once', () => {
+    const handoff = createHandoff<string>();
 
-describe('tangent queue', () => {
-  it('hands a requested tangent to the next taker exactly once', () => {
-    const queue = createTangentQueue();
+    handoff.request('Leonardo da Vinci');
 
-    queue.request(card('Leonardo da Vinci'));
-
-    expect(queue.take()?.title).toBe('Leonardo da Vinci');
-    expect(queue.take()).toBeNull();
+    expect(handoff.take()).toBe('Leonardo da Vinci');
+    expect(handoff.take()).toBeNull();
   });
 
   it('keeps only the latest request', () => {
-    const queue = createTangentQueue();
+    const handoff = createHandoff<string>();
 
-    queue.request(card('Ink'));
-    queue.request(card('Leonardo da Vinci'));
+    handoff.request('Ink');
+    handoff.request('Leonardo da Vinci');
 
-    expect(queue.take()?.title).toBe('Leonardo da Vinci');
+    expect(handoff.take()).toBe('Leonardo da Vinci');
   });
 
-  it('notifies listeners when a tangent is requested, until they unsubscribe', () => {
-    const queue = createTangentQueue();
+  it('notifies listeners when something is requested, until they unsubscribe', () => {
+    const handoff = createHandoff<string>();
     const listener = jest.fn();
-    const unsubscribe = queue.subscribe(listener);
+    const unsubscribe = handoff.subscribe(listener);
 
-    queue.request(card('Ink'));
+    handoff.request('Ink');
     unsubscribe();
-    queue.request(card('Squid'));
+    handoff.request('Squid');
 
     expect(listener).toHaveBeenCalledTimes(1);
   });

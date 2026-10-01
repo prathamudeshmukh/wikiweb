@@ -2,20 +2,31 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 import type { Card } from '../content/card';
 import { NO_TOPIC } from '../content/topics';
 import type { Article } from '../wiki-api/types';
-import { createTangentQueue, type TangentQueue } from './tangentQueue';
+import { createHandoff, type ResumeQueue, type TangentQueue } from './tangentQueue';
 
-const TangentContext = createContext<TangentQueue | null>(null);
+/** Requests other screens leave for the explore screen. */
+interface ExploreRequests {
+  tangents: TangentQueue;
+  resumes: ResumeQueue;
+}
+
+const TangentContext = createContext<ExploreRequests | null>(null);
+
+const createRequests = (): ExploreRequests => ({ tangents: createHandoff(), resumes: createHandoff() });
 
 export function TangentProvider({ children }: { children: ReactNode }) {
-  const [queue] = useState(createTangentQueue);
-  return <TangentContext.Provider value={queue}>{children}</TangentContext.Provider>;
+  const [requests] = useState(createRequests);
+  return <TangentContext.Provider value={requests}>{children}</TangentContext.Provider>;
 }
 
-export function useTangentQueue(): TangentQueue {
-  const queue = useContext(TangentContext);
-  if (!queue) throw new Error('useTangentQueue must be used inside TangentProvider.');
-  return queue;
+function useExploreRequests(hook: string): ExploreRequests {
+  const requests = useContext(TangentContext);
+  if (!requests) throw new Error(`${hook} must be used inside TangentProvider.`);
+  return requests;
 }
+
+export const useTangentQueue = (): TangentQueue => useExploreRequests('useTangentQueue').tangents;
+export const useResumeQueue = (): ResumeQueue => useExploreRequests('useResumeQueue').resumes;
 
 /** A peeked article as a card, so it can fly into the new column like a swiped one. Its topic resolves later. */
 export function cardFromArticle(article: Article): Card {

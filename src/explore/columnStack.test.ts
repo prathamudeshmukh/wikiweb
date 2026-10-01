@@ -1,5 +1,5 @@
 import type { PageRef } from '../wiki-api/types';
-import { goBack, initialStack, jumpTo, landHop, prepareHop } from './columnStack';
+import { goBack, initialStack, jumpTo, landHop, prepareHop, resumeStack, topOf } from './columnStack';
 
 const octopus: PageRef = { pageId: 1, title: 'Octopus' };
 const ink: PageRef = { pageId: 2, title: 'Ink' };
@@ -77,5 +77,29 @@ describe('column stack', () => {
 
     expect(new Set(state.columns.map((c) => c.id)).size).toBe(3);
     expect(hop(hop(initialStack(), octopus), ink).columns[2].id).toBe(state.columns[2].id);
+  });
+
+  it('files the landed column under its Journey node', () => {
+    const state = landHop(prepareHop(initialStack(), { ref: octopus, topic: life }), 'node-1');
+
+    expect(topOf(state).nodeId).toBe('node-1');
+  });
+
+  it('reopens a resumed expedition’s columns above Home', () => {
+    const state = resumeStack([
+      { ref: octopus, topic: life, nodeId: 'n1' },
+      { ref: squid, topic: life, thumbnailUrl: 'https://img/squid.jpg', nodeId: 'n2' },
+    ]);
+
+    expect(state.columns.map((c) => c.nodeId)).toEqual([null, 'n1', 'n2']);
+    expect(topOf(state)).toMatchObject({ path: [octopus, squid], seedThumbnailUrl: 'https://img/squid.jpg' });
+  });
+
+  it('gives a resumed column the same id as when it was first opened', () => {
+    const swiped = hop(hop(initialStack(), octopus), squid);
+
+    const resumed = resumeStack([{ ref: octopus, topic: life, nodeId: 'n1' }, { ref: squid, topic: life, nodeId: 'n2' }]);
+
+    expect(topOf(resumed).id).toBe(topOf(swiped).id);
   });
 });
