@@ -1,0 +1,621 @@
+{
+ "batchcomplete": true,
+ "continue": {
+  "gplcontinue": "22780|0|Biomimicry",
+  "continue": "gplcontinue||"
+ },
+ "query": {
+  "pages": [
+   {
+    "pageid": 308,
+    "ns": 0,
+    "title": "Aristotle",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "308",
+      "version": [],
+      "source": {
+       "title": "Aristotle",
+       "popularity_score": 0.000020490850338445188
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 42080,
+    "ns": 0,
+    "title": "Atlantic cod",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "42080",
+      "version": [],
+      "source": {
+       "title": "Atlantic cod",
+       "popularity_score": 0.0000015913644673605869
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 166189,
+    "ns": 0,
+    "title": "Autonomic nervous system",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "166189",
+      "version": [],
+      "source": {
+       "title": "Autonomic nervous system",
+       "popularity_score": 0.000001687813391672395
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 250988,
+    "ns": 0,
+    "title": "Benthic",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 256420,
+    "ns": 0,
+    "title": "Asuka period",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "256420",
+      "version": [],
+      "source": {
+       "title": "Asuka period",
+       "popularity_score": 9.604557809499365e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 379245,
+    "ns": 0,
+    "title": "Aquatic respiration",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "379245",
+      "version": [],
+      "source": {
+       "title": "Aquatic respiration",
+       "popularity_score": 1.8932307947663142e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 425396,
+    "ns": 0,
+    "title": "Bioluminescent",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 634011,
+    "ns": 0,
+    "title": "Argonautidae",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "634011",
+      "version": [],
+      "source": {
+       "title": "Argonautidae",
+       "popularity_score": 5.455365087911909e-8
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 634032,
+    "ns": 0,
+    "title": "Argonaut (animal)",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "634032",
+      "version": [],
+      "source": {
+       "title": "Argonaut (animal)",
+       "popularity_score": 4.82110926024844e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 680270,
+    "ns": 0,
+    "title": "Atlantic bluefin tuna",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "680270",
+      "version": [],
+      "source": {
+       "title": "Atlantic bluefin tuna",
+       "popularity_score": 0.0000027533991980862792
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 1202747,
+    "ns": 0,
+    "title": "Atlantic salmon",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "1202747",
+      "version": [],
+      "source": {
+       "title": "Atlantic salmon",
+       "popularity_score": 0.000001699705482854574
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 1317242,
+    "ns": 0,
+    "title": "Atrium (heart)",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "1317242",
+      "version": [],
+      "source": {
+       "title": "Atrium (heart)",
+       "popularity_score": 8.350010741150181e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 1651630,
+    "ns": 0,
+    "title": "Biomimetic",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 2078585,
+    "ns": 0,
+    "title": "Autotomy",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "2078585",
+      "version": [],
+      "source": {
+       "title": "Autotomy",
+       "popularity_score": 6.938361515447559e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 2121366,
+    "ns": 0,
+    "title": "Bilaterian",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 3596643,
+    "ns": 0,
+    "title": "Armand Marie Leroi",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "3596643",
+      "version": [],
+      "source": {
+       "title": "Armand Marie Leroi",
+       "popularity_score": 7.909732127610218e-8
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 4224799,
+    "ns": 0,
+    "title": "Bighead carp",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "4224799",
+      "version": [],
+      "source": {
+       "title": "Bighead carp",
+       "popularity_score": 4.255083073385677e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 4455809,
+    "ns": 0,
+    "title": "Bigeye tuna",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "4455809",
+      "version": [],
+      "source": {
+       "title": "Bigeye tuna",
+       "popularity_score": 4.3156608626083817e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 5223171,
+    "ns": 0,
+    "title": "Atlantic jackknife clam",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "5223171",
+      "version": [],
+      "source": {
+       "title": "Atlantic jackknife clam",
+       "popularity_score": 2.394650876673825e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 6485164,
+    "ns": 0,
+    "title": "Aquaculture of catfish",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "6485164",
+      "version": [],
+      "source": {
+       "title": "Aquaculture of catfish",
+       "popularity_score": 1.4560633615927207e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 9174535,
+    "ns": 0,
+    "title": "Aquaculture of tilapia",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "9174535",
+      "version": [],
+      "source": {
+       "title": "Aquaculture of tilapia",
+       "popularity_score": 1.6600545838153443e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 9563889,
+    "ns": 0,
+    "title": "Bathyal",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 11287648,
+    "ns": 0,
+    "title": "Basal (phylogenetics)",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "11287648",
+      "version": [],
+      "source": {
+       "title": "Basal (phylogenetics)",
+       "popularity_score": 7.544547489100806e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 12955404,
+    "ns": 0,
+    "title": "Atlantic surf clam",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "12955404",
+      "version": [],
+      "source": {
+       "title": "Atlantic surf clam",
+       "popularity_score": 1.9149877782635264e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 13842230,
+    "ns": 0,
+    "title": "Austrolittorina antipodum",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "13842230",
+      "version": [],
+      "source": {
+       "title": "Austrolittorina antipodum",
+       "popularity_score": 2.7290888627427066e-8
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 13967697,
+    "ns": 0,
+    "title": "Arctica islandica",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "13967697",
+      "version": [],
+      "source": {
+       "title": "Arctica islandica",
+       "popularity_score": 4.248074436577483e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 21097465,
+    "ns": 0,
+    "title": "Argopecten irradians",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "21097465",
+      "version": [],
+      "source": {
+       "title": "Argopecten irradians",
+       "popularity_score": 1.540392119909728e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 22015660,
+    "ns": 0,
+    "title": "Austrovenus stutchburyi",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "22015660",
+      "version": [],
+      "source": {
+       "title": "Austrovenus stutchburyi",
+       "popularity_score": 9.574938891317632e-8
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 22210655,
+    "ns": 0,
+    "title": "Aquatic locomotion",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "22210655",
+      "version": [],
+      "source": {
+       "title": "Aquatic locomotion",
+       "popularity_score": 3.0853281693767116e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 24185698,
+    "ns": 0,
+    "title": "Argopecten purpuratus",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "24185698",
+      "version": [],
+      "source": {
+       "title": "Argopecten purpuratus",
+       "popularity_score": 3.1396742756339744e-8
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 31569747,
+    "ns": 0,
+    "title": "Aristotle's Lagoon",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 34292864,
+    "ns": 0,
+    "title": "Australian Faunal Directory",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "34292864",
+      "version": [],
+      "source": {
+       "title": "Australian Faunal Directory",
+       "popularity_score": 2.280408151410431e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 38458330,
+    "ns": 0,
+    "title": "Atlantic white-spotted octopus",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 41460828,
+    "ns": 0,
+    "title": "Barcode of Life Data System",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "41460828",
+      "version": [],
+      "source": {
+       "title": "Barcode of Life Data System",
+       "popularity_score": 5.04851894019137e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 42028505,
+    "ns": 0,
+    "title": "Aquaculture of salmon",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 46770365,
+    "ns": 0,
+    "title": "Argonautoidea",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "46770365",
+      "version": [],
+      "source": {
+       "title": "Argonautoidea",
+       "popularity_score": 3.6552475740537756e-8
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 48691513,
+    "ns": 0,
+    "title": "Aristotle's biology",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "48691513",
+      "version": [],
+      "source": {
+       "title": "Aristotle's biology",
+       "popularity_score": 6.082630261875693e-7
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 51171988,
+    "ns": 0,
+    "title": "Bathypolypus arcticus",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "51171988",
+      "version": [],
+      "source": {
+       "title": "Bathypolypus arcticus",
+       "popularity_score": 5.634472650997235e-8
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 56457427,
+    "ns": 0,
+    "title": "Bathypolypodidae",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 63434951,
+    "ns": 0,
+    "title": "Bibcode (identifier)",
+    "cirrusdoc": [],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   }
+  ]
+ }
+}

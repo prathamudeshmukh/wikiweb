@@ -1,0 +1,71 @@
+{
+ "batchcomplete": true,
+ "continue": {
+  "gsroffset": 10,
+  "continue": "gsroffset||"
+ },
+ "query": {
+  "pages": [
+   {
+    "pageid": 42726,
+    "ns": 0,
+    "title": "Cephalopod",
+    "index": 7
+   },
+   {
+    "pageid": 633948,
+    "ns": 0,
+    "title": "Grimpoteuthis",
+    "index": 2
+   },
+   {
+    "pageid": 633964,
+    "ns": 0,
+    "title": "Umbrella octopus",
+    "index": 3
+   },
+   {
+    "pageid": 1828198,
+    "ns": 0,
+    "title": "Cirrina",
+    "index": 5
+   },
+   {
+    "pageid": 13564973,
+    "ns": 0,
+    "title": "Cephalopod limb",
+    "index": 10
+   },
+   {
+    "pageid": 26142806,
+    "ns": 0,
+    "title": "Stauroteuthis syrtensis",
+    "index": 4
+   },
+   {
+    "pageid": 27296226,
+    "ns": 0,
+    "title": "Cirroteuthis",
+    "index": 1
+   },
+   {
+    "pageid": 33378546,
+    "ns": 0,
+    "title": "Stauroteuthis gilchristi",
+    "index": 9
+   },
+   {
+    "pageid": 54211852,
+    "ns": 0,
+    "title": "Octopus minor",
+    "index": 8
+   },
+   {
+    "pageid": 64935447,
+    "ns": 0,
+    "title": "Opisthoteuthis agassizii",
+    "index": 6
+   }
+  ]
+ }
+}
