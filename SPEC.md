@@ -129,13 +129,33 @@ PAGINATE_THRESHOLD       = 5      // cards from end
 BACKLINK_EVERY_N         = 4      // insert one backlink per N link cards
 CARD_CACHE_TTL_HOURS     = 24
 MIN_INTEREST_PICKS       = 3
+HINT_PEEL_DISTANCE       = 96     // pt; below the commit distance on the narrowest phone
+HINT_PEEL_HOLD_MS        = 600
+HINT_FIRST_PEEL_DELAY_MS = 800    // after Home appears
+HINT_IDLE_MS             = 8000   // idle on Home before the next peel
 ```
 
 ### 4.3 Direction lock
 First axis to exceed `DIRECTION_LOCK_SLOP` owns the touch until release. Prevents diagonal drags from half-scrolling and half-swiping.
 
 ### 4.4 Discoverability
-First launch only: the 2nd Home card performs one left "wiggle" with caption *Swipe left to go deeper*. Flag persisted after shown.
+Two in-place hints teach the first hop and the first return. Each stays until the user has done the thing it teaches, then never shows again. Visuals: DESIGN.md §6.2–6.3, §7.
+
+**Home hint** — until the first hop (`swipeHintShown`):
+- A chip `← SWIPE LEFT TO TAKE A TANGENT` sits on the bottom edge of the **focused** Home card and moves with it.
+- The focused card **peels**: slides `HINT_PEEL_DISTANCE` left (revealing the real `TAKE A TANGENT →` label), holds `HINT_PEEL_HOLD_MS`, springs back. The label fades in as drag ÷ commit distance, so a shorter peel shows nothing readable.
+- A peel plays `HINT_FIRST_PEEL_DELAY_MS` after Home appears — including when the reader closes over Home — and again after every `HINT_IDLE_MS` without scroll, tap or drag. Any interaction restarts the idle timer from 0.
+- Peel only while: Home is the top column, nothing is over it (reader, Logbook), the app is foregrounded, no touch is in progress, and the focused card is an article card. Compass, error and offline cards get no chip and no peel. Otherwise the idle timer pauses.
+- Reduce Motion: chip only, no peel.
+- **Any** first hop clears it: a left swipe or *Take a tangent* from the reader.
+
+**Back hint** — until the first return (`backHintShown`):
+- Chip `SWIPE RIGHT TO GO BACK →` on the first card of the first column the user lands in. No peel.
+- **Any** first return clears it: right swipe, breadcrumb crumb tap, or system back.
+
+**Existing users:** if any `journey_nodes` row exists at launch, both flags are set and neither hint shows.
+
+**Screen readers:** chips are hidden from accessibility (`importantForAccessibility="no-hide-descendants"`). Card actions for screen readers are an open item (§14).
 
 ---
 
@@ -333,7 +353,7 @@ CREATE TABLE stamps (
 
 **Journey rules (M4):** a swipe or *Take a tangent* from Home starts an expedition; every hop adds a node under the node of the column it left. *Read* on a peek card adds a `peek_read` node under the column (or previous in-place read) the reader was opened from; a tangent from the reader then leaves from that node. Reading a card from a column marks it read but adds no node. *Continue expedition* reopens the column ancestors of the most recent node (in-place reads reopen the column they were read from). Visited = the article is a node of the active expedition; read = in read history.
 
-Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]`, `onboardingDone: boolean`, `swipeHintShown: boolean`.
+Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]`, `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`).
 
 All repository functions return new objects; no in-place mutation of domain state.
 
@@ -374,6 +394,8 @@ src/
 | `read_open` | `depth`, `entry` (`card`/`peek_read`) |
 | `journey_depth` | `max_depth`, `node_count` — sent when a Journey goes idle / app backgrounds |
 | `stamp_earned` | `topic`, `territory` |
+| `first_hop` | `route` (`swipe`/`tangent`), `peels_seen`, `seconds_on_home` (total Home time before the hop) — once per install |
+| `first_return` | `route` (`swipe`/`crumb`/`system_back`) — once per install |
 
 No article titles, no PII. Anonymous distinct ID. Opt-out toggle in Settings.
 
@@ -414,4 +436,5 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | Reader HTML styling drift | Own CSS injected; test on a set of varied articles |
 | Open: lead-section links ranked higher? | Decide after M2 dogfooding |
 | Journey "idle" definition for closing a session | Decided (M4): returning to Home ends the expedition; the next hop from Home starts a new one. Restarting the app opens on Home, so it ends one too. Background timeout not needed. |
+| Open: screen-reader users can't hop | Cards expose only "Opens the article". Add accessibility actions *Take a tangent* / *Read* on cards and *Go back* on columns (DESIGN.md §10), plus an at-rest hop animation for action-triggered hops. Not part of the first-hop hints work. |
 | Name "Tangent" | Check App Store / Play Store / domain availability. Do not use "Wikipedia" or Wikimedia marks in name or icon |
