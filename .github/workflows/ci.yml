@@ -13,6 +13,7 @@ concurrency:
 
 env:
   NODE_VERSION: 22
+  JAVA_VERSION: 17
 
 jobs:
   checks:
@@ -51,8 +52,8 @@ jobs:
     # Releases are cut by hand: Actions → CI → Run workflow. Pushes and pull requests stop at the checks.
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    # The free EAS plan builds from a low-priority queue, so the wait can be long.
-    timeout-minutes: 120
+    # Compiles every native module from source on the runner; the first build with no Gradle cache is the slow one.
+    timeout-minutes: 90
     permissions:
       contents: write
     steps:
@@ -71,6 +72,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - uses: gradle/actions/setup-gradle@v6
+
       - uses: expo/expo-github-action@v9
         with:
           eas-version: latest
@@ -78,20 +86,14 @@ jobs:
 
       - run: npm ci
 
-      # Builds and signs on Expo's servers with the keystore EAS holds; EXPO_PUBLIC_* values come from the "preview" EAS environment.
-      - name: Build APK on EAS
-        id: build
-        run: |
-          eas build --platform android --profile preview --non-interactive --wait --json > build.json
-          echo "url=$(jq -r '.[0].artifacts.buildUrl' build.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Download the APK
+      # Builds on this runner (no EAS queue), signed with the keystore EAS holds; EXPO_PUBLIC_* values come from the "preview" EAS environment.
+      - name: Build APK with EAS (local)
         id: apk
         run: |
           version=$(node -p "require('./app.json').expo.version")
           tag="v${version}-build.${{ github.run_number }}"
           file="tangent-${tag}.apk"
-          curl --fail --location --silent --show-error --output "$file" "${{ steps.build.outputs.url }}"
+          eas build --platform android --profile preview --local --non-interactive --output "$file"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "file=$file" >> "$GITHUB_OUTPUT"
 
