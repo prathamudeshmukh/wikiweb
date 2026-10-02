@@ -49,8 +49,8 @@ jobs:
   android-apk:
     name: Build & release Android APK
     needs: checks
-    # Only merges to main (or a manual run) produce a release; pull requests stop at the checks.
-    if: github.event_name != 'pull_request'
+    # Releases are cut by hand: Actions → CI → Run workflow. Pushes and pull requests stop at the checks.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
