@@ -1,0 +1,114 @@
+{
+ "batchcomplete": true,
+ "query": {
+  "normalized": [
+   {
+    "fromencoded": false,
+    "from": "cuttlefish",
+    "to": "Cuttlefish"
+   }
+  ],
+  "redirects": [
+   {
+    "from": "Cephalopods",
+    "to": "Cephalopod"
+   }
+  ],
+  "pages": [
+   {
+    "ns": 0,
+    "title": "No such page xyzzy",
+    "missing": true
+   },
+   {
+    "pageid": 31717,
+    "ns": 0,
+    "title": "United Kingdom",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "31717",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.articletopic/Geography.Regions.Europe.Northern_Europe|946",
+        "classification.prediction.articletopic/Geography.Regions.Europe.Europe*|874",
+        "classification.prediction.articletopic/History_and_Society.Politics_and_government|554"
+       ],
+       "incoming_links": 365214,
+       "title": "United Kingdom"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 38011,
+    "ns": 0,
+    "title": "Squid",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "38011",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.articletopic/STEM.Biology|939",
+        "classification.prediction.articletopic/STEM.STEM*|982"
+       ],
+       "incoming_links": 2839,
+       "title": "Squid"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 42726,
+    "ns": 0,
+    "title": "Cephalopod",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "42726",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.articletopic/STEM.STEM*|994",
+        "classification.prediction.articletopic/STEM.Biology|987"
+       ],
+       "incoming_links": 6543,
+       "title": "Cephalopod"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   },
+   {
+    "pageid": 20976520,
+    "ns": 0,
+    "title": "Cuttlefish",
+    "cirrusdoc": [
+     {
+      "index": "enwiki_content_1784718242",
+      "type": [],
+      "id": "20976520",
+      "version": [],
+      "source": {
+       "weighted_tags": [
+        "classification.prediction.articletopic/STEM.STEM*|988",
+        "classification.prediction.articletopic/STEM.Biology|979"
+       ],
+       "incoming_links": 1306,
+       "title": "Cuttlefish"
+      }
+     }
+    ],
+    "cirrusdoc_comment": "The CirrusDoc format is meant for internal use by CirrusSearch for debugging or queries, it might change at any time without notice"
+   }
+  ]
+ }
+}

@@ -1,8 +1,12 @@
 import hydrateTitles from '../wiki-api/__fixtures__/hydrate-titles.json';
 import { createWikiApi } from '../wiki-api/client';
 import type { WikiHttp } from '../wiki-api/http';
-import { fakeWikiApi, idOf, makeArticle } from './__testing__/fakeWikiApi';
+import { fakeWikiApi, idOf, makeArticle, STEM_BIOLOGY } from './__testing__/fakeWikiApi';
 import { type ColumnContext, createColumnFeed } from './columnFeed';
+
+// Octopus is in the Life territory, so its detours leave out every Life topic.
+const SIDEWAYS_OCTOPUS = 'linksto:"Octopus" "Octopus" -articletopic:biology -articletopic:food-and-drink -articletopic:medicine-and-health';
+const HUB = 365_000;
 
 const titles = (prefix: string, count: number) => Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}`);
 
@@ -18,13 +22,39 @@ function context(overrides: Partial<ColumnContext> = {}): ColumnContext {
 }
 
 describe('createColumnFeed', () => {
-  it('returns a full page of links with one backlink after every four', async () => {
-    const { api } = fakeWikiApi({ links: titles('Link', 30), backlinks: titles('Back', 10) });
+  it('returns a full page of links with one sideways card after every four', async () => {
+    const { api } = fakeWikiApi({ links: titles('Link', 30), searches: { [SIDEWAYS_OCTOPUS]: titles('Detour', 10) } });
 
     const page = (await createColumnFeed(api, context()).nextPage()).cards;
 
     expect(page).toHaveLength(20);
-    expect(page.slice(0, 5).map((c) => c.source)).toEqual(['link', 'link', 'link', 'link', 'backlink']);
+    expect(page.slice(0, 5).map((c) => c.source)).toEqual(['link', 'link', 'link', 'link', 'sideways']);
+  });
+
+  it('finds detours among articles that link to the seed, outside its territory', async () => {
+    const { api, calls } = fakeWikiApi({ links: titles('Link', 30) });
+
+    await createColumnFeed(api, context()).nextPage();
+
+    expect(calls.searches).toEqual([{ query: SIDEWAYS_OCTOPUS, sort: 'relevance' }]);
+  });
+
+  it('searches for a seed by its plain name, without the disambiguating suffix', async () => {
+    const { api, calls } = fakeWikiApi({ links: titles('Link', 30) });
+    const seed = { pageId: idOf('Mercury (planet)'), title: 'Mercury (planet)' };
+
+    await createColumnFeed(api, context({ seed, seedTopic: { tileId: 'space', territory: 'cosmos' } })).nextPage();
+
+    expect(calls.searches[0].query).toMatch(/^linksto:"Mercury \(planet\)" "Mercury" -articletopic:space/);
+  });
+
+  it('falls back to plain backlinks when the seed has no territory to leave', async () => {
+    const plain = 'linksto:"Octopus" "Octopus"';
+    const { api } = fakeWikiApi({ links: titles('Link', 30), searches: { [plain]: ['Kraken'] } });
+
+    const page = (await createColumnFeed(api, context({ seedTopic: { tileId: null, territory: null } })).nextPage()).cards;
+
+    expect(page[4]).toMatchObject({ title: 'Kraken', source: 'backlink' });
   });
 
   it('reads the article section by section, lead first, skipping reference sections and subsections', async () => {
@@ -73,7 +103,7 @@ describe('createColumnFeed', () => {
 
   it('never repeats a card across sources or pages', async () => {
     const shared = ['Squid', 'Cuttlefish'];
-    const { api } = fakeWikiApi({ links: [...shared, ...titles('Link', 18)], backlinks: shared, moreLike: [...shared, ...titles('Like', 30)] });
+    const { api } = fakeWikiApi({ links: [...shared, ...titles('Link', 18)], searches: { [SIDEWAYS_OCTOPUS]: shared }, moreLike: [...shared, ...titles('Like', 30)] });
     const feed = createColumnFeed(api, context());
 
     const cards = [...((await feed.nextPage()).cards), ...((await feed.nextPage()).cards)];
@@ -118,13 +148,68 @@ describe('createColumnFeed', () => {
     expect(ink).toMatchObject({ visited: false, read: true });
   });
 
-  it('starts cards in the seed’s territory, without a topic label, until topics resolve', async () => {
+  it('gives each card its own topic and link count, with the first page', async () => {
+    const { api } = fakeWikiApi({ links: ['Squid'], tags: { Squid: [STEM_BIOLOGY] }, incomingLinks: { Squid: 2839 } });
+
+    const [squid] = (await createColumnFeed(api, context({ seedTopic: { tileId: 'music', territory: 'culture' } })).nextPage()).cards;
+
+    expect(squid).toMatchObject({ topic: { tileId: 'animals', territory: 'life' }, topicIsFallback: false, incomingLinks: 2839 });
+  });
+
+  it('uses the seed’s territory, without a topic label, when an article’s own topic is unknown', async () => {
     const { api } = fakeWikiApi({ links: ['Squid'] });
 
     const [squid] = (await createColumnFeed(api, context({ seedTopic: { tileId: 'music', territory: 'culture' } })).nextPage()).cards;
 
     expect(squid.topic).toEqual({ tileId: null, territory: 'culture' });
     expect(squid.topicIsFallback).toBe(true);
+  });
+
+  it('fetches ranking signals alongside each hydrate batch, asking which cards link back to the seed', async () => {
+    const { api, calls } = fakeWikiApi({ links: ['Squid', 'Ink'] });
+
+    await createColumnFeed(api, context()).nextPage();
+
+    expect(calls.pageSignals).toEqual([['Squid', 'Ink']]);
+    expect(calls.linkingTo).toEqual([{ titles: ['Squid', 'Ink'], target: 'Octopus' }]);
+  });
+
+  it('sinks hub articles like "United Kingdom" below the specific ones', async () => {
+    const { api } = fakeWikiApi({ links: ['United Kingdom', 'Portmanteau', 'Withdrawal'], incomingLinks: { 'United Kingdom': HUB, Portmanteau: 159, Withdrawal: 856 } });
+
+    const page = (await createColumnFeed(api, context()).nextPage()).cards;
+
+    expect(page.map((c) => c.title)).toEqual(['Portmanteau', 'Withdrawal', 'United Kingdom']);
+  });
+
+  it('lifts links that link back to the seed or that the seed keeps linking', async () => {
+    const { api } = fakeWikiApi({ links: ['Aside', 'Squid', 'Ink'], linksBack: ['Squid'], mentions: { Ink: 6 } });
+
+    const page = (await createColumnFeed(api, context()).nextPage()).cards;
+
+    expect(page.map((c) => c.title)).toEqual(['Squid', 'Ink', 'Aside']);
+  });
+
+  it('shows the batch in reading order with fallback topics when signals fail, and reports it', async () => {
+    const onSourceError = jest.fn();
+    const { api, state } = fakeWikiApi({ links: ['United Kingdom', 'Squid'], incomingLinks: { 'United Kingdom': HUB } });
+    state.failures.pageSignals = Infinity;
+    state.failures.linkingTo = Infinity;
+
+    const page = (await createColumnFeed(api, context({ onSourceError })).nextPage()).cards;
+
+    expect(page.map((c) => c.title)).toEqual(['United Kingdom', 'Squid']);
+    expect(page[0].topicIsFallback).toBe(true);
+    expect(onSourceError).toHaveBeenCalledWith(expect.objectContaining({ message: 'pageSignals failed' }));
+  });
+
+  it('still sinks listed generic concepts when signals fail', async () => {
+    const { api, state } = fakeWikiApi({ links: ['Country', 'Squid'] });
+    state.failures.pageSignals = Infinity;
+
+    const page = (await createColumnFeed(api, context()).nextPage()).cards;
+
+    expect(page.map((c) => c.title)).toEqual(['Squid', 'Country']);
   });
 
   it('returns an empty page at a dead end', async () => {
@@ -187,9 +272,9 @@ describe('createColumnFeed', () => {
     expect(page.cards.map((c) => c.title)).toEqual(['Squid']);
   });
 
-  it('keeps showing links when backlinks fail', async () => {
-    const { api, state } = fakeWikiApi({ links: titles('Link', 30), backlinks: titles('Back', 10) });
-    state.failures.backlinks = Infinity;
+  it('keeps showing links when the sideways search fails', async () => {
+    const { api, state } = fakeWikiApi({ links: titles('Link', 30), searches: { [SIDEWAYS_OCTOPUS]: titles('Detour', 10) } });
+    state.failures.search = Infinity;
 
     const page = await createColumnFeed(api, context()).nextPage();
 

@@ -2,9 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { InterestsStore } from '../interests/interestsStore';
+import { PREFETCH } from '../config/constants';
+import { columnFeedFor } from '../explore/columnFeedFor';
+import { createColumnPrefetcher } from '../explore/columnPrefetch';
 import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
 import type { JourneySession } from '../journeys/journeySession';
-import { AppServicesProvider } from '../services/AppServices';
+import { type AppServices, AppServicesProvider } from '../services/AppServices';
 import type { WikiApi } from '../wiki-api/types';
 
 const SAFE_AREA = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
@@ -19,11 +22,17 @@ export function memoryInterestsStore(initial: string[] | null = null): Interests
   };
 }
 
+/** The app's services over a fake Wikipedia API and in-memory stores. */
+export function testServices(api: WikiApi, journeys: JourneySession = memoryJourneySession()): AppServices {
+  const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry) => columnFeedFor(api, entry) });
+  return { api, interests: memoryInterestsStore(), journeys, prefetcher };
+}
+
 /** Renders UI inside the same providers the app uses, with a fake Wikipedia API and in-memory journeys. */
 export function renderWithServices(ui: ReactElement, api: WikiApi, journeys: JourneySession = memoryJourneySession()) {
   return render(
     <SafeAreaProvider initialMetrics={SAFE_AREA}>
-      <AppServicesProvider services={{ api, interests: memoryInterestsStore(), journeys }}>{ui}</AppServicesProvider>
+      <AppServicesProvider services={testServices(api, journeys)}>{ui}</AppServicesProvider>
     </SafeAreaProvider>,
   );
 }

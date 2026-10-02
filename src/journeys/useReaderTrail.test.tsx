@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { fakeWikiApi, makeArticle } from '../content/__testing__/fakeWikiApi';
-import { memoryInterestsStore } from '../__testing__/renderWithServices';
+import { testServices } from '../__testing__/renderWithServices';
 import { AppServicesProvider } from '../services/AppServices';
 import { memoryJourneySession } from './__testing__/memoryJourneySession';
 import type { JourneySession } from './journeySession';
@@ -15,7 +15,7 @@ function setUp() {
   const octopus = journeys.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
   journeys.focus(octopus.id);
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <AppServicesProvider services={{ api: fakeWikiApi({}).api, interests: memoryInterestsStore(), journeys }}>{children}</AppServicesProvider>
+    <AppServicesProvider services={testServices(fakeWikiApi({}).api, journeys)}>{children}</AppServicesProvider>
   );
   return { journeys, octopus, wrapper };
 }

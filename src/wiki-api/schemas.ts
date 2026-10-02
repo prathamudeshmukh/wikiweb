@@ -5,6 +5,7 @@ import { z } from 'zod';
 const cirrusDoc = z.object({
   source: z.object({
     weighted_tags: z.array(z.string()).optional(),
+    incoming_links: z.number().optional(),
     popularity_score: z.number().optional(),
   }),
 });
@@ -21,6 +22,8 @@ export const queryPageSchema = z.object({
   thumbnail: z.object({ source: z.string(), width: z.number(), height: z.number() }).optional(),
   pageprops: z.object({ disambiguation: z.string().optional() }).optional(),
   cirrusdoc: z.array(cirrusDoc).optional(),
+  /** Only the links asked about via `pltitles`. */
+  links: z.array(z.object({ title: z.string() })).optional(),
 });
 
 const titleMapping = z.array(z.object({ from: z.string(), to: z.string() }));

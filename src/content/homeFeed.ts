@@ -3,17 +3,19 @@ import type { PageRef, WikiApi } from '../wiki-api/types';
 import type { Candidate, Card, CardSource } from './card';
 import { type CandidateSource, createPagedFeed, type Feed } from './pagedFeed';
 import { createBlocklistMatcher } from './quality';
-import { concatStreams, onceStream, optionalStream, pagedStream, type Stream } from './refStream';
+import type { RankingPolicy } from './ranking';
+import { alternateStreams, onceStream, optionalStream, pagedStream, type Stream } from './refStream';
 import { type CardTopic, NO_TOPIC } from './topics';
 
 export interface HomeContext {
   interestTileIds: readonly string[];
   today: Date;
   visitedIds: ReadonlySet<number>;
-  readIds: ReadonlySet<number>;
+  /** Already-read articles are left out of Home. Asked per batch, so reads made while browsing count too. */
+  isRead: (pageId: number) => boolean;
   /** Whole-word title blocklist applied to every Home card (SPEC.md §3.2). */
   blocklist: readonly string[];
-  /** Told when an optional source (today's feed, wildcards) fails and its slots go to interests. */
+  /** Told when an optional source (today's feed, wildcards) fails and its slots go to interests, or ranking signals fail. */
   onSourceError?: (error: unknown) => void;
 }
 
@@ -32,16 +34,16 @@ function resolveTiles(ids: readonly string[]): TopicTile[] {
   });
 }
 
+// Only reviewed articles: raw topic search surfaces explicit pages first (SPEC.md §6 content note).
 const FEATURED = 'Featured_articles';
 const GOOD = 'Good_articles';
 
-const curated = (api: WikiApi, tile: TopicTile, category: string) =>
-  pagedStream((cursor) => api.topicSearch(`articletopic:${tile.searchTopics.join('|')} incategory:${category}`, cursor));
+// Random order, so every session opens on a different slice of the pool rather than the same famous few (SPEC.md §3.2).
+const curated = (api: WikiApi, tile: TopicTile, category: string): Stream<PageRef> =>
+  pagedStream((cursor) => api.search(`articletopic:${tile.searchTopics.join('|')} incategory:${category}`, cursor, 'random'));
 
-// Featured articles first, then Good articles: raw topic search surfaces explicit pages first (SPEC.md §6 content note).
-function interestStream(api: WikiApi, tile: TopicTile): Stream<PageRef> {
-  return concatStreams(curated(api, tile, FEATURED), curated(api, tile, GOOD));
-}
+// Good articles outnumber Featured ~7:1, so drawing from both pools at once makes Home almost all obscure; alternate instead.
+const interestStream = (api: WikiApi, tile: TopicTile): Stream<PageRef> => alternateStreams([curated(api, tile, FEATURED), curated(api, tile, GOOD)]);
 
 interface TaggedRef {
   ref: PageRef;
@@ -93,13 +95,18 @@ function homeCandidates(api: WikiApi, context: HomeContext): CandidateSource {
       const fallback = slot === 'interest' ? null : await nextInterest();
       return fallback ? { ...fallback, source: 'home_interest' } : null;
     },
-    accepts: (card: Card) => !matchesBlocklist(card.title),
+    accepts: (card: Card) => !matchesBlocklist(card.title) && !context.isRead(card.pageId),
   };
 }
+
+// Home only sinks hubs: famous-but-specific Featured picks are part of the mix (SPEC.md §3.2).
+const HOME_RANKING: RankingPolicy = { isRankable: (card: Card) => card.source === 'home_interest', gradeSpecificity: false };
 
 export function createHomeFeed(api: WikiApi, context: HomeContext): Feed {
   return createPagedFeed(api, homeCandidates(api, context), {
     excludeIds: new Set(),
-    annotations: { visitedIds: context.visitedIds, readIds: context.readIds },
+    annotations: { visitedIds: context.visitedIds, readIds: new Set() },
+    ranking: HOME_RANKING,
+    onSignalsError: context.onSourceError,
   });
 }

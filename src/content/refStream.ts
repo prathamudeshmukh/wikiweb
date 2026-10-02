@@ -57,11 +57,20 @@ export function optionalStream<T>(stream: Stream<T>, onError: (error: unknown) =
   };
 }
 
-/** Drains `first`, then `second`. */
-export function concatStreams<T>(first: Stream<T>, second: Stream<T>): Stream<T> {
+/** Takes from each stream in turn, skipping any that have run dry. */
+export function alternateStreams<T>(streams: readonly Stream<T>[]): Stream<T> {
+  let turn = 0;
   return {
     async next() {
-      return (await first.next()) ?? second.next();
+      for (let tried = 0; tried < streams.length; tried += 1) {
+        const index = (turn + tried) % streams.length;
+        const item = await streams[index].next();
+        if (item !== null) {
+          turn = (index + 1) % streams.length;
+          return item;
+        }
+      }
+      return null;
     },
   };
 }

@@ -1,7 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { Card } from '../content/card';
 import type { Feed, FeedPage } from '../content/pagedFeed';
-import { fakeWikiApi, STEM_BIOLOGY } from '../content/__testing__/fakeWikiApi';
 import { useFeed } from './useFeed';
 
 const card = (title: string): Card => ({
@@ -12,6 +11,7 @@ const card = (title: string): Card => ({
   thumbnail: null,
   topic: { tileId: null, territory: 'cosmos' },
   topicIsFallback: true,
+  incomingLinks: null,
   source: 'link',
   visited: false,
   read: false,
@@ -32,13 +32,11 @@ function scriptedFeed(pages: (FeedPage | Error)[]): Feed & { calls: number } {
   return feed;
 }
 
-const options = (overrides = {}) => ({ api: fakeWikiApi({}).api, onBackgroundError: jest.fn(), ...overrides });
-
 describe('useFeed', () => {
   it('loads the first page on mount', async () => {
     const feed = scriptedFeed([{ cards: [card('Squid')], done: false }]);
 
-    const { result } = await renderHook(() => useFeed(feed, options()));
+    const { result } = await renderHook(() => useFeed(feed));
 
     await waitFor(() => expect(result.current.status).toBe('idle'));
     expect(result.current.cards.map((c) => c.title)).toEqual(['Squid']);
@@ -46,7 +44,7 @@ describe('useFeed', () => {
 
   it('appends the next page when asked for more', async () => {
     const feed = scriptedFeed([{ cards: [card('Squid')], done: false }, { cards: [card('Ink')], done: false }]);
-    const { result } = await renderHook(() => useFeed(feed, options()));
+    const { result } = await renderHook(() => useFeed(feed));
     await waitFor(() => expect(result.current.status).toBe('idle'));
 
     await act(() => result.current.loadMore());
@@ -57,7 +55,7 @@ describe('useFeed', () => {
   it('reports done when the feed has nothing more', async () => {
     const feed = scriptedFeed([{ cards: [card('Squid')], done: true }]);
 
-    const { result } = await renderHook(() => useFeed(feed, options()));
+    const { result } = await renderHook(() => useFeed(feed));
 
     await waitFor(() => expect(result.current.status).toBe('done'));
   });
@@ -65,14 +63,14 @@ describe('useFeed', () => {
   it('keeps asking when a page comes back empty but the feed is not done', async () => {
     const feed = scriptedFeed([{ cards: [], done: false }, { cards: [card('Squid')], done: false }]);
 
-    const { result } = await renderHook(() => useFeed(feed, options()));
+    const { result } = await renderHook(() => useFeed(feed));
 
     await waitFor(() => expect(result.current.cards.map((c) => c.title)).toEqual(['Squid']));
   });
 
   it('shows an error and recovers on retry', async () => {
     const feed = scriptedFeed([new Error('offline'), { cards: [card('Squid')], done: false }]);
-    const { result } = await renderHook(() => useFeed(feed, options()));
+    const { result } = await renderHook(() => useFeed(feed));
     await waitFor(() => expect(result.current.status).toBe('error'));
 
     await act(() => result.current.retry());
@@ -87,7 +85,7 @@ describe('useFeed', () => {
       releaseSecond = resolve;
     });
     const feed = { calls: 0, nextPage: async () => (++feed.calls === 1 ? { cards: [card('Squid')], done: false } : second) };
-    const { result } = await renderHook(() => useFeed(feed, options()));
+    const { result } = await renderHook(() => useFeed(feed));
     await waitFor(() => expect(result.current.status).toBe('idle'));
 
     await act(() => {
@@ -98,29 +96,5 @@ describe('useFeed', () => {
     await act(() => releaseSecond({ cards: [card('Ink')], done: false }));
 
     expect(feed.calls).toBe(2);
-  });
-
-  it('fills in real topics after the page is shown', async () => {
-    const { api } = fakeWikiApi({ tags: { Squid: [STEM_BIOLOGY] } });
-    const feed = scriptedFeed([{ cards: [{ ...card('Squid'), pageId: 42 }], done: false }]);
-    api.topicTags = async () => new Map([[42, [STEM_BIOLOGY]]]);
-
-    const { result } = await renderHook(() => useFeed(feed, options({ api })));
-
-    await waitFor(() => expect(result.current.cards[0]?.topic).toEqual({ tileId: 'animals', territory: 'life' }));
-  });
-
-  it('keeps fallback topics and reports the error when topic lookup fails', async () => {
-    const { api } = fakeWikiApi({});
-    api.topicTags = async () => {
-      throw new Error('cirrusdoc down');
-    };
-    const onBackgroundError = jest.fn();
-    const feed = scriptedFeed([{ cards: [card('Squid')], done: false }]);
-
-    const { result } = await renderHook(() => useFeed(feed, options({ api, onBackgroundError })));
-
-    await waitFor(() => expect(onBackgroundError).toHaveBeenCalledWith(expect.objectContaining({ message: 'cirrusdoc down' })));
-    expect(result.current.cards[0].topic).toEqual({ tileId: null, territory: 'cosmos' });
   });
 });

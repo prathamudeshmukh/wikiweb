@@ -12,6 +12,10 @@ export function topicLabel(card: Card): string | null {
 const COPY: Readonly<Record<CardSource, (seedTitle: string, card: Card) => string>> = {
   link: (seed) => `↳ LINKED FROM ${seed}`,
   backlink: (seed) => `↰ LINKS TO ${seed}`,
+  sideways: (seed, card) => {
+    const label = topicLabel(card);
+    return label ? `⤳ DETOUR INTO ${label} · LINKS TO ${seed}` : `⤳ DETOUR · LINKS TO ${seed}`;
+  },
   morelike: (seed) => `≈ SIMILAR TO ${seed}`,
   home_interest: (_seed, card) => {
     const label = topicLabel(card);

@@ -12,6 +12,7 @@ import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { Breadcrumb } from './Breadcrumb';
 import type { ColumnEntry } from './columnStack';
+import { useDwellPrefetch } from './dwellPrefetch';
 import { HomeHeader } from './HomeHeader';
 import type { HopController } from './hopController';
 import { SwipeCard } from './SwipeCard';
@@ -75,6 +76,7 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
   const [listHeight, setListHeight] = useState(0);
   const isHome = entry.seed === null;
   const feed = useColumnFeed(entry, interests);
+  const dwellPrefetch = useDwellPrefetch(entry, isTop);
   const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, entry: entryProgress, onBack });
 
   const cardWidth = screenWidth - LAYOUT.gutter * 2;
@@ -120,6 +122,7 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
               maxToRenderPerBatch={3}
               windowSize={5}
               // No removeClippedSubviews: on Android it left cards blank after the column re-rendered while hidden.
+              viewabilityConfigCallbackPairs={dwellPrefetch}
               onEndReached={feed.loadMore}
               onEndReachedThreshold={LOAD_MORE_THRESHOLD}
               ListEmptyComponent={feed.status === 'loading' ? <SkeletonCard width={cardWidth} height={cardHeight} /> : null}

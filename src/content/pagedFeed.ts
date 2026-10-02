@@ -1,7 +1,9 @@
 import { FEED } from '../config/constants';
-import type { WikiApi } from '../wiki-api/types';
+import type { PageSignals, WikiApi } from '../wiki-api/types';
 import { type Annotations, type Candidate, type Card, toCard } from './card';
 import { isUsableArticle } from './quality';
+import { arrangeBatch, type Ranked, type RankingPolicy } from './ranking';
+import { topicFromWeightedTags } from './topics';
 
 export interface FeedPage {
   cards: Card[];
@@ -23,6 +25,11 @@ export interface FeedOptions {
   /** Never shown — e.g. the column's own path. */
   excludeIds: ReadonlySet<number>;
   annotations: Annotations;
+  ranking: RankingPolicy;
+  /** A column's seed: cards whose article links back to it rank higher. */
+  relatedTo?: string;
+  /** Told when ranking signals fail; the batch is still shown, in source order with fallback topics. */
+  onSignalsError?: (error: unknown) => void;
 }
 
 // Bounds the work (and requests) for one page when most candidates get filtered out.
@@ -58,19 +65,47 @@ async function fillPending(state: FeedState): Promise<void> {
   }
 }
 
-/** De-duplicates by page id after hydrating, since two titles can redirect to one article. */
+const NO_SIGNALS: ReadonlyMap<string, PageSignals> = new Map();
+const NO_LINKS_BACK: ReadonlySet<string> = new Set();
+
+/** Signals only improve a batch, so their failure is reported and the batch goes ahead without them. */
+function withoutFailing<T>(request: Promise<T>, fallback: T, state: FeedState): Promise<T> {
+  return request.catch((error: unknown) => {
+    state.options.onSignalsError?.(error);
+    return fallback;
+  });
+}
+
+/** The article's own topic and link count replace the feed's fallback, when the index knows them. */
+function withSignals(card: Card, signals: PageSignals | undefined): Card {
+  if (!signals) return card;
+  const topic = topicFromWeightedTags(signals.weightedTags);
+  const ownTopic = topic.territory ? { topic, topicIsFallback: false } : {};
+  return { ...card, ...ownTopic, incomingLinks: signals.incomingLinks };
+}
+
+/** Hydrates and ranks one batch. De-duplicates by page id after hydrating, since two titles can redirect to one article. */
 async function hydratePending(state: FeedState): Promise<Card[]> {
   const batch = state.pending;
-  const articles = await state.api.hydrate(batch.map((c) => c.ref.title));
+  const titles = batch.map((c) => c.ref.title);
+  const { relatedTo } = state.options;
+  // Signals ride alongside hydration (SPEC.md §5.4), so ranking adds no round trip of its own.
+  const [articles, signals, linksBack] = await Promise.all([
+    state.api.hydrate(titles),
+    withoutFailing(state.api.pageSignals(titles), NO_SIGNALS, state),
+    relatedTo ? withoutFailing(state.api.linkingTo(titles, relatedTo), NO_LINKS_BACK, state) : Promise.resolve(NO_LINKS_BACK),
+  ]);
   state.pending = [];
-  return batch.flatMap((candidate) => {
-    const article = articles.get(candidate.ref.title);
+  const usable = batch.flatMap((candidate): Ranked[] => {
+    const { title } = candidate.ref;
+    const article = articles.get(title);
     if (!article || state.seenIds.has(article.pageId)) return [];
     state.seenIds.add(article.pageId);
     if (!isUsableArticle(article)) return [];
-    const card = toCard(article, candidate, state.options.annotations);
-    return state.source.accepts(card) ? [card] : [];
+    const card = withSignals(toCard(article, candidate, state.options.annotations), signals.get(title));
+    return state.source.accepts(card) ? [{ card, linksBack: linksBack.has(title), mentions: candidate.mentions ?? 1 }] : [];
   });
+  return arrangeBatch(usable, state.options.ranking);
 }
 
 async function buildPage(state: FeedState): Promise<FeedPage> {

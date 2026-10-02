@@ -1,3 +1,5 @@
+import type { ArticleLink } from './types';
+
 // Pulls article links, in reading order, out of MediaWiki's parsed section HTML.
 // MediaWiki output is machine-generated and regular, so targeted scanning is enough — no DOM needed.
 
@@ -8,13 +10,14 @@ interface StrippedElement {
 }
 
 // Containers whose links are not part of the article's prose: infoboxes/navboxes (tables), citation markers,
-// the citation list, hatnotes ("For other uses, see…"), short descriptions and inline styles.
+// the citation list, hatnotes ("For other uses, see…"), short descriptions, notice boxes (e.g. "this article
+// contains Tibetan script… mojibake") and inline styles.
 const STRIPPED: readonly StrippedElement[] = [
   { tag: 'style' },
   { tag: 'table' },
   { tag: 'sup', classPattern: /\breference\b/ },
   { tag: 'ol', classPattern: /\breferences\b/ },
-  { tag: 'div', classPattern: /\b(hatnote|mw-references-wrap|shortdescription|navbox|reflist)\b/ },
+  { tag: 'div', classPattern: /\b(hatnote|mw-references-wrap|shortdescription|navbox|reflist|side-box|ambox|metadata)\b/ },
 ];
 
 const NON_ARTICLE_NAMESPACES = new Set([
@@ -78,12 +81,14 @@ function hrefToTitle(href: string): string | null {
   return title && isArticleTitle(title) ? title : null;
 }
 
-export function extractArticleLinks(html: string): string[] {
+/** Each linked article once, in order of first appearance. */
+export function extractArticleLinks(html: string): ArticleLink[] {
   const prose = STRIPPED.reduce(stripElements, html);
   const anchors = prose.matchAll(/<a\b[^>]*\bhref="\/wiki\/([^"]+)"[^>]*>/gi);
   const titles = [...anchors]
     .filter(([anchor]) => !/\bmw-disambig\b/.test(classOf(anchor)))
     .map(([, href]) => hrefToTitle(href))
     .filter((title): title is string => title !== null);
-  return [...new Set(titles)];
+  const mentions = titles.reduce((counts, title) => counts.set(title, (counts.get(title) ?? 0) + 1), new Map<string, number>());
+  return [...mentions].map(([title, count]) => ({ title, mentions: count }));
 }

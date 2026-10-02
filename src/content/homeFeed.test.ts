@@ -8,14 +8,14 @@ const FEATURED_SPACE = featuredQuery('space');
 const GOOD_SPACE = 'articletopic:space incategory:Good_articles';
 const FEATURED_HISTORY = featuredQuery('history|military-and-warfare');
 // First tile in TOPIC_TILES order that the user did not pick (when they picked Space).
-const WILDCARD_ANIMALS = featuredQuery('biology');
+const WILDCARD_ANIMALS = 'articletopic:biology incategory:Featured_articles';
 
 function context(overrides: Partial<HomeContext> = {}): HomeContext {
   return {
     interestTileIds: ['space'],
     today: new Date(Date.UTC(2026, 9, 1)),
     visitedIds: new Set(),
-    readIds: new Set(),
+    isRead: () => false,
     blocklist: ['sex'],
     ...overrides,
   };
@@ -55,13 +55,24 @@ describe('createHomeFeed', () => {
     expect(interests.slice(0, 4)).toEqual(['Space', 'History', 'Space', 'History']);
   });
 
-  it('labels interest cards with the tile they came from until topics resolve', async () => {
+  it('labels interest cards with the tile they came from when their own topic is unknown', async () => {
     const { api } = plentiful();
 
     const [first] = (await createHomeFeed(api, context()).nextPage()).cards;
 
     expect(first.topic).toEqual({ tileId: 'space', territory: 'cosmos' });
     expect(first.topicIsFallback).toBe(true);
+  });
+
+  it('sinks only hub articles, keeping well-known picks and the today and wildcard slots in place', async () => {
+    const { api } = fakeWikiApi({
+      searches: { [FEATURED_SPACE]: ['Sun', 'Moon', 'Kepler-452b'], [WILDCARD_ANIMALS]: ['Wild 1'] },
+      incomingLinks: { Sun: 10_000, Moon: 25_000, 'Kepler-452b': 400 },
+    });
+
+    const page = (await createHomeFeed(api, context()).nextPage()).cards;
+
+    expect(page.map((c) => c.title)).toEqual(['Sun', 'Kepler-452b', 'Wild 1', 'Moon']);
   });
 
   it('takes wildcards from Featured articles of a tile the user did not pick', async () => {
@@ -74,15 +85,30 @@ describe('createHomeFeed', () => {
     expect(wildcard?.topic).toEqual({ tileId: 'animals', territory: 'life' });
   });
 
-  it('tops up from Good articles when Featured runs out', async () => {
-    const { api, calls } = fakeWikiApi({ searches: { [FEATURED_SPACE]: ['Moon'], [GOOD_SPACE]: titles('Good', 30) } });
+  it('draws a fresh random slice of Featured and Good articles each time', async () => {
+    const { api, calls } = plentiful();
+
+    await createHomeFeed(api, context()).nextPage();
+
+    expect(calls.searches).toEqual(
+      expect.arrayContaining([{ query: FEATURED_SPACE, sort: 'random' }, { query: GOOD_SPACE, sort: 'random' }, { query: WILDCARD_ANIMALS, sort: 'random' }]),
+    );
+  });
+
+  it('alternates famous Featured and lesser-known Good articles within an interest', async () => {
+    const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: titles('Featured', 10), [GOOD_SPACE]: titles('Good', 10) } });
 
     const page = (await createHomeFeed(api, context()).nextPage()).cards;
 
-    expect(page.filter((c) => c.source === 'home_interest').map((c) => c.title).slice(0, 2)).toEqual(['Moon', 'Good 1']);
-    const interestQueries = calls.searches.filter((q) => q.startsWith('articletopic:space'));
-    expect(interestQueries[0]).toBe(FEATURED_SPACE);
-    expect(interestQueries.slice(1).every((q) => q === GOOD_SPACE)).toBe(true);
+    expect(page.slice(0, 4).map((c) => c.title)).toEqual(['Featured 1', 'Good 1', 'Featured 2', 'Good 2']);
+  });
+
+  it('keeps drawing from Good articles when Featured runs out', async () => {
+    const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: ['Moon'], [GOOD_SPACE]: titles('Good', 10) } });
+
+    const page = (await createHomeFeed(api, context()).nextPage()).cards;
+
+    expect(page.slice(0, 4).map((c) => c.title)).toEqual(['Moon', 'Good 1', 'Good 2', 'Good 3']);
   });
 
   it('fills today and wildcard slots with interests when those sources are empty', async () => {
@@ -97,7 +123,7 @@ describe('createHomeFeed', () => {
   it('still builds Home from interests when today’s feed and wildcards fail', async () => {
     const { api, state } = plentiful();
     state.failures.featured = Infinity;
-    const failingWildcards = { ...api, topicSearch: (q: string, c: string | null) => (q === WILDCARD_ANIMALS ? Promise.reject(new Error('down')) : api.topicSearch(q, c)) };
+    const failingWildcards = { ...api, search: (q: string, c: string | null) => (q === WILDCARD_ANIMALS ? Promise.reject(new Error('down')) : api.search(q, c)) };
 
     const page = await createHomeFeed(failingWildcards, context()).nextPage();
 
@@ -132,12 +158,20 @@ describe('createHomeFeed', () => {
     expect(new Set(cards.map((c) => c.pageId)).size).toBe(cards.length);
   });
 
-  it('marks cards the reader has already read', async () => {
+  it('leaves out articles the reader has already read', async () => {
+    const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: ['Moon', 'Mars'] } });
+
+    const page = (await createHomeFeed(api, context({ isRead: (pageId) => pageId === idOf('Moon') })).nextPage()).cards;
+
+    expect(page.map((c) => c.title)).toEqual(['Mars']);
+  });
+
+  it('still shows, and marks, articles visited but not read', async () => {
     const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: ['Moon'] } });
 
-    const [moon] = (await createHomeFeed(api, context({ readIds: new Set([idOf('Moon')]) })).nextPage()).cards;
+    const [moon] = (await createHomeFeed(api, context({ visitedIds: new Set([idOf('Moon')]) })).nextPage()).cards;
 
-    expect(moon.read).toBe(true);
+    expect(moon.visited).toBe(true);
   });
 
   it('rejects an empty or unknown interest list', () => {

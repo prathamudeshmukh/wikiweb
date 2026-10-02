@@ -132,7 +132,8 @@ Same layout; image slot replaced by a territory-colour block (16:10) containing 
 | Source | Copy |
 |---|---|
 | Outgoing link | `↳ LINKED FROM {SEED}` |
-| Backlink | `↰ LINKS TO {SEED}` |
+| Sideways (detour out of the seed's territory) | `⤳ DETOUR INTO {TOPIC} · LINKS TO {SEED}` — `⤳ DETOUR · LINKS TO {SEED}` when the card has no topic label |
+| Backlink (seed has no territory) | `↰ LINKS TO {SEED}` |
 | morelike | `≈ SIMILAR TO {SEED}` |
 | Home – interest | `★ YOU LIKE {TOPIC}` |
 | Home – today | `☀ TODAY ON WIKIPEDIA` |

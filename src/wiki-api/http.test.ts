@@ -1,4 +1,5 @@
 import { createWikiHttp, WikiApiError } from './http';
+import { createLane, LaneCancelledError, type Lane, type RequestBudget } from './requestBudget';
 
 type FakeResponse = { ok: boolean; status: number; json: () => Promise<unknown>; text?: () => Promise<string>; headers?: { get(name: string): string | null } };
 type FetchFn = (url: string, init?: { headers?: Record<string, string>; signal?: AbortSignal }) => Promise<FakeResponse>;
@@ -144,5 +145,38 @@ describe('createWikiHttp', () => {
 
     await expect(http.rest('/page/summary/Nope')).rejects.toBeInstanceOf(WikiApiError);
     expect(calls).toHaveLength(1);
+  });
+
+  describe('with a request budget', () => {
+    function budgeted(lane: Lane, responses: (() => ReturnType<FetchFn>)[]) {
+      const acquired: Lane[] = [];
+      const budget: RequestBudget = {
+        acquire: async (requestLane) => {
+          acquired.push(requestLane);
+          if (requestLane.state === 'cancelled') throw new LaneCancelledError();
+        },
+      };
+      const queue = [...responses];
+      const fetchFn: FetchFn = () => (queue.shift() ?? (() => Promise.reject(new Error('unexpected extra request'))))();
+      const http = createWikiHttp({ fetchFn, userAgent: 'Tangent/test (contact@example.org)', sleep: async () => undefined, budget, lane });
+      return { http, acquired };
+    }
+
+    it('takes a turn from the budget, on its lane, for every attempt including retries', async () => {
+      const lane = createLane('prefetch');
+      const { http, acquired } = budgeted(lane, [() => Promise.resolve(fail(503)), () => Promise.resolve(ok({ query: {} }))]);
+
+      await http.query({ titles: 'Octopus' });
+
+      expect(acquired).toEqual([lane, lane]);
+    });
+
+    it('sends nothing once its lane is cancelled', async () => {
+      const lane = createLane('prefetch');
+      lane.cancel();
+      const { http } = budgeted(lane, []);
+
+      await expect(http.query({ titles: 'Octopus' })).rejects.toBeInstanceOf(LaneCancelledError);
+    });
   });
 });

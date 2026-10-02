@@ -14,6 +14,11 @@ export interface ColumnEntry {
   nodeId: string | null;
 }
 
+/** A column with a seed — every column but Home. */
+export type SeededEntry = ColumnEntry & { seed: PageRef };
+
+export const isSeeded = (entry: ColumnEntry): entry is SeededEntry => entry.seed !== null;
+
 export interface StackState {
   columns: readonly ColumnEntry[];
   /** Column mounted offscreen for the card being dragged; entered when the hop lands (M0 finding). */
@@ -34,6 +39,11 @@ export interface ResumedColumn extends HopTarget {
 const HOME: ColumnEntry = { id: 'home', seed: null, seedTopic: NO_TOPIC, seedThumbnailUrl: null, path: [], nodeId: null };
 
 export const topOf = (state: StackState): ColumnEntry => state.columns[state.columns.length - 1];
+
+/** The column a hop from `parent` into `target` would open (prefetch uses it to name a column before the hop). */
+export function childEntry(parent: ColumnEntry, target: HopTarget): ColumnEntry {
+  return entryBelow(parent, target, null);
+}
 
 function entryBelow(parent: ColumnEntry, target: HopTarget, nodeId: string | null): ColumnEntry {
   const path = [...parent.path, target.ref];

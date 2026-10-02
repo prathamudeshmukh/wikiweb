@@ -1,9 +1,10 @@
-import backlinksOctopus from './__fixtures__/backlinks-octopus.json';
 import featuredFeed from './__fixtures__/featured-feed-2026-10-01.json';
 import hydrateTitles from './__fixtures__/hydrate-titles.json';
 import morelikeOctopus from './__fixtures__/morelike-octopus.json';
 import leadSection from './__fixtures__/section-octopus-0.json';
+import linksToOctopus from './__fixtures__/links-to-octopus.json';
 import sectionsOctopus from './__fixtures__/sections-octopus.json';
+import signalsMixed from './__fixtures__/signals-mixed.json';
 import topicsMixed from './__fixtures__/topics-mixed.json';
 import topicSpace from './__fixtures__/topic-space-featured.json';
 import summaryDisambiguation from './__fixtures__/summary-Mercury.json';
@@ -34,8 +35,6 @@ function fakeHttp(route: (params: Params) => unknown, restBody: unknown = featur
   return { http, queries, restPaths };
 }
 
-const withoutContinue = <T extends object>(fixture: T) => ({ ...fixture, continue: undefined });
-
 const REQUESTED = ['Squid', 'Cephalopods', 'cuttlefish', 'Octopus (disambiguation)', 'No such page xyzzy', 'Ink'];
 
 describe('createWikiApi', () => {
@@ -59,12 +58,12 @@ describe('createWikiApi', () => {
   });
 
   describe('sectionLinks', () => {
-    it('returns the links of one section in reading order', async () => {
+    it('returns the links of one section in reading order, with how often each is linked', async () => {
       const { http, queries } = fakeHttp(() => leadSection);
 
       const links = await createWikiApi(http).sectionLinks('Octopus', 0);
 
-      expect(links.slice(0, 3)).toEqual(['Mollusc', 'Order (biology)', 'Species']);
+      expect(links.slice(0, 3)).toEqual([{ title: 'Mollusc', mentions: 1 }, { title: 'Order (biology)', mentions: 1 }, { title: 'Species', mentions: 1 }]);
       expect(queries[0]).toMatchObject({ action: 'parse', page: 'Octopus', section: '0', prop: 'text' });
     });
   });
@@ -141,25 +140,66 @@ describe('createWikiApi', () => {
     });
   });
 
+  describe('pageSignals', () => {
+    it('keys incoming links and weighted tags by the requested title, resolving redirects', async () => {
+      const { http } = fakeHttp(() => signalsMixed);
+
+      const signals = await createWikiApi(http).pageSignals(['Squid', 'Cephalopods', 'cuttlefish', 'United Kingdom', 'No such page xyzzy']);
+
+      expect(signals.get('United Kingdom')?.incomingLinks).toBe(365214);
+      expect(signals.get('Cephalopods')?.weightedTags.length).toBeGreaterThan(0);
+      expect(signals.has('No such page xyzzy')).toBe(false);
+    });
+
+    it('asks cirrusdoc for only the two fields it needs', async () => {
+      const { http, queries } = fakeHttp(() => signalsMixed);
+
+      await createWikiApi(http).pageSignals(['Squid']);
+
+      expect(queries[0]).toMatchObject({ titles: 'Squid', redirects: '1', prop: 'cirrusdoc', cdincludes: 'incoming_links|weighted_tags' });
+    });
+
+    it('reports an unknown incoming-link count as null', async () => {
+      const { http } = fakeHttp(() => ({ query: { pages: [{ pageid: 1, ns: 0, title: 'Bare', cirrusdoc: [{ source: {} }] }] } }));
+
+      const signals = await createWikiApi(http).pageSignals(['Bare']);
+
+      expect(signals.get('Bare')).toEqual({ incomingLinks: null, weightedTags: [] });
+    });
+
+    it('skips the request entirely for an empty list', async () => {
+      const { http, queries } = fakeHttp(() => signalsMixed);
+
+      expect((await createWikiApi(http).pageSignals([])).size).toBe(0);
+      expect(queries).toHaveLength(0);
+    });
+  });
+
+  describe('linkingTo', () => {
+    it('returns the requested titles whose article links to the target', async () => {
+      const { http, queries } = fakeHttp(() => linksToOctopus);
+
+      const linking = await createWikiApi(http).linkingTo(['Squid', 'Cephalopods', 'Mollusca', 'United Kingdom', 'No such page xyzzy'], 'Octopus');
+
+      expect([...linking].sort()).toEqual(['Cephalopods', 'Mollusca', 'Squid']);
+      expect(queries[0]).toMatchObject({ prop: 'links', pltitles: 'Octopus', redirects: '1' });
+    });
+
+    it('skips the request entirely for an empty list', async () => {
+      const { http, queries } = fakeHttp(() => linksToOctopus);
+
+      expect((await createWikiApi(http).linkingTo([], 'Octopus')).size).toBe(0);
+      expect(queries).toHaveLength(0);
+    });
+
+    it('rejects batches larger than one request can check', async () => {
+      const { http } = fakeHttp(() => linksToOctopus);
+
+      await expect(createWikiApi(http).linkingTo(Array.from({ length: 21 }, (_, i) => `Page ${i}`), 'Octopus')).rejects.toThrow(/at most 20 pages/);
+    });
+  });
+
   describe('paged lists', () => {
-    it('returns backlinks with a cursor taken from gblcontinue', async () => {
-      const { http } = fakeHttp(() => backlinksOctopus);
-
-      const page = await createWikiApi(http).backlinks('Octopus', null);
-
-      expect(page.items).toHaveLength(10);
-      expect(page.next).toBe(backlinksOctopus.continue.gblcontinue);
-    });
-
-    it('passes the cursor back on the next backlinks call', async () => {
-      const { http, queries } = fakeHttp(() => withoutContinue(backlinksOctopus));
-
-      const page = await createWikiApi(http).backlinks('Octopus', '0|6446');
-
-      expect(queries[0].gblcontinue).toBe('0|6446');
-      expect(page.next).toBeNull();
-    });
-
     it('orders morelike results by search rank, not page id', async () => {
       const { http, queries } = fakeHttp(() => morelikeOctopus);
 
@@ -170,13 +210,21 @@ describe('createWikiApi', () => {
       expect(queries[0].gsrsearch).toBe('morelike:Octopus');
     });
 
-    it('runs topic searches verbatim and pages by offset', async () => {
+    it('runs searches verbatim, by relevance, and pages by offset', async () => {
       const { http, queries } = fakeHttp(() => topicSpace);
 
-      const page = await createWikiApi(http).topicSearch('articletopic:space incategory:Featured_articles', '10');
+      const page = await createWikiApi(http).search('articletopic:space incategory:Featured_articles', '10');
 
-      expect(queries[0]).toMatchObject({ gsrsearch: 'articletopic:space incategory:Featured_articles', gsroffset: '10' });
+      expect(queries[0]).toMatchObject({ gsrsearch: 'articletopic:space incategory:Featured_articles', gsroffset: '10', gsrsort: 'relevance' });
       expect(page.next).toBe(String(topicSpace.continue.gsroffset));
+    });
+
+    it('can ask for a random slice of the results', async () => {
+      const { http, queries } = fakeHttp(() => topicSpace);
+
+      await createWikiApi(http).search('articletopic:space', null, 'random');
+
+      expect(queries[0].gsrsort).toBe('random');
     });
   });
 

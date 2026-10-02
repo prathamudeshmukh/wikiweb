@@ -50,7 +50,8 @@
     "test:watch": "jest --watchAll",
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
-    "test:live": "jest -c jest.live.config.js"
+    "test:live": "jest -c jest.live.config.js",
+    "eval:feeds": "node --env-file=.env.local node_modules/.bin/jest -c jest.eval.config.js"
   },
   "private": true,
   "jest": {

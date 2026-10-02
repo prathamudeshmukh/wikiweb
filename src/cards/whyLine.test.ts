@@ -9,6 +9,7 @@ const card = (source: CardSource, tileId: string | null = null): Card => ({
   thumbnail: null,
   topic: { tileId, territory: tileId ? 'life' : null },
   topicIsFallback: false,
+  incomingLinks: null,
   source,
   visited: false,
   read: false,
@@ -23,6 +24,14 @@ describe('whyLine', () => {
     ['home_wildcard', '✦ WILDCARD'],
   ] as const)('explains a %s card', (source, expected) => {
     expect(whyLine(card(source), 'Octopus')).toBe(expected);
+  });
+
+  it('names the territory a sideways card detours into', () => {
+    expect(whyLine(card('sideways', 'art'), 'Octopus')).toBe('⤳ DETOUR INTO ART · LINKS TO OCTOPUS');
+  });
+
+  it('still marks a sideways card as a detour when its topic has no label', () => {
+    expect(whyLine(card('sideways'), 'Octopus')).toBe('⤳ DETOUR · LINKS TO OCTOPUS');
   });
 
   it('names the interest a Home card came from', () => {

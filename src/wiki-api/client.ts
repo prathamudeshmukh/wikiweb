@@ -11,12 +11,12 @@ import {
   sectionTextResponseSchema,
   summarySchema,
 } from './schemas';
-import type { Article, PageRef, Paged, WikiApi } from './types';
+import type { Article, PageRef, PageSignals, Paged, SearchSort, WikiApi } from './types';
 
 type Params = Readonly<Record<string, string>>;
 type PageWithId = QueryPage & { pageid: number };
 
-// SPEC.md §6 — card fields only; topics come from a separate background call (cirrusdoc is slow).
+// SPEC.md §6 — card fields only; topics and ranking signals come from a parallel cirrusdoc call (SIGNAL_PROPS).
 const CARD_PROPS: Params = {
   prop: 'pageimages|description|extracts|pageprops',
   piprop: 'thumbnail',
@@ -27,6 +27,8 @@ const CARD_PROPS: Params = {
   exlimit: String(FEED.hydrateBatch),
   ppprop: 'disambiguation',
 };
+
+const SIGNAL_PROPS: Params = { prop: 'cirrusdoc', cdincludes: 'incoming_links|weighted_tags' };
 
 const SECTION_TEXT_PROPS: Params = { action: 'parse', prop: 'text', disableeditsection: '1', disablelimitreport: '1' };
 
@@ -44,6 +46,11 @@ function pagesOf(response: QueryResponse): PageWithId[] {
 
 // Prose can link to talk or project pages; only articles become cards.
 const articlePagesOf = (response: QueryResponse) => pagesOf(response).filter((page) => (page.ns ?? ARTICLE_NAMESPACE) === ARTICLE_NAMESPACE);
+
+const toSignals = (page: PageWithId): PageSignals => {
+  const source = page.cirrusdoc?.[0]?.source;
+  return { incomingLinks: source?.incoming_links ?? null, weightedTags: source?.weighted_tags ?? [] };
+};
 
 const toRef = (page: PageWithId): PageRef => ({ pageId: page.pageid, title: page.title });
 
@@ -104,8 +111,26 @@ export function createWikiApi(http: WikiHttp): WikiApi {
     return { items, next: continueParams(response)?.[cursorKey] ?? null };
   }
 
-  const searchPage = (search: string, cursor: string | null) =>
-    paged({ generator: 'search', gsrsearch: search, gsrnamespace: '0', gsrlimit: String(FEED.listPageSize), gsroffset: cursor ?? '0' }, 'gsroffset');
+  const searchPage = (search: string, cursor: string | null, sort: SearchSort = 'relevance') =>
+    paged(
+      { generator: 'search', gsrsearch: search, gsrnamespace: '0', gsrlimit: String(FEED.listPageSize), gsroffset: cursor ?? '0', gsrsort: sort },
+      'gsroffset',
+    );
+
+  /** One query per batch of titles, its pages keyed back to the titles as requested (redirects resolved). */
+  async function byRequestedTitle<T>(titles: readonly string[], params: Params, map: (page: PageWithId) => T): Promise<Map<string, T>> {
+    assertBatchSize(titles.length);
+    if (titles.length === 0) return new Map();
+    const response = await query({ titles: titles.join('|'), redirects: '1', ...params });
+    const resolve = titleResolver(response);
+    const byTitle = new Map(articlePagesOf(response).map((page) => [page.title, page]));
+    return new Map(
+      titles.flatMap((requested) => {
+        const page = byTitle.get(resolve(requested));
+        return page ? [[requested, map(page)] as const] : [];
+      }),
+    );
+  }
 
   return {
     async sections(title) {
@@ -121,14 +146,9 @@ export function createWikiApi(http: WikiHttp): WikiApi {
       return extractArticleLinks(response.parse.text);
     },
 
-    backlinks(title, cursor) {
-      const params: Params = { generator: 'backlinks', gbltitle: title, gblnamespace: '0', gblfilterredir: 'nonredirects', gbllimit: String(FEED.listPageSize) };
-      return paged(cursor ? { ...params, gblcontinue: cursor } : params, 'gblcontinue');
-    },
-
     moreLike: (title, cursor) => searchPage(`morelike:${title}`, cursor),
 
-    topicSearch: (search, cursor) => searchPage(search, cursor),
+    search: searchPage,
 
     async featured(date) {
       const feed = parse(featuredFeedSchema, await http.rest(`/feed/featured/${utcDatePath(date)}`));
@@ -151,18 +171,14 @@ export function createWikiApi(http: WikiHttp): WikiApi {
       };
     },
 
-    async hydrate(titles) {
-      assertBatchSize(titles.length);
-      if (titles.length === 0) return new Map();
-      const response = await query({ titles: titles.join('|'), redirects: '1', ...CARD_PROPS });
-      const resolve = titleResolver(response);
-      const byTitle = new Map(articlePagesOf(response).map((page) => [page.title, page]));
-      return new Map(
-        titles.flatMap((requested) => {
-          const page = byTitle.get(resolve(requested));
-          return page ? [[requested, toArticle(page)] as const] : [];
-        }),
-      );
+    hydrate: (titles) => byRequestedTitle(titles, CARD_PROPS, toArticle),
+
+    pageSignals: (titles) => byRequestedTitle(titles, SIGNAL_PROPS, toSignals),
+
+    async linkingTo(titles, target) {
+      // With `pltitles`, each page lists only its links to the target, so a 20-title batch fits in one response.
+      const links = await byRequestedTitle(titles, { prop: 'links', pltitles: target, pllimit: 'max' }, (page) => (page.links ?? []).length > 0);
+      return new Set([...links].flatMap(([title, linksBack]) => (linksBack ? [title] : [])));
     },
 
     async topicTags(pageIds) {

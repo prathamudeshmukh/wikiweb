@@ -65,9 +65,12 @@ await save(
   }),
 );
 await save('topics-mixed', await action({ pageids: '38011|20976520|15292|153008|18079|27973567', prop: 'cirrusdoc', cdincludes: 'weighted_tags' }));
+// A hub (United Kingdom), a redirect, a normalisation and a missing page.
+const SIGNAL_TITLES = 'Squid|Cephalopods|cuttlefish|United Kingdom|No such page xyzzy';
+await save('signals-mixed', await action({ titles: SIGNAL_TITLES, redirects: '1', prop: 'cirrusdoc', cdincludes: 'incoming_links|weighted_tags' }));
 await save(
-  'backlinks-octopus',
-  await action({ generator: 'backlinks', gbltitle: 'Octopus', gblnamespace: '0', gblfilterredir: 'nonredirects', gbllimit: '10', prop: 'pageprops', ppprop: 'disambiguation' }),
+  'links-to-octopus',
+  await action({ titles: 'Squid|Cephalopods|Mollusca|United Kingdom|No such page xyzzy', redirects: '1', prop: 'links', pltitles: 'Octopus', pllimit: 'max' }),
 );
 await save('morelike-octopus', await action({ generator: 'search', gsrsearch: 'morelike:Octopus', gsrlimit: '10', gsroffset: '0', gsrnamespace: '0' }));
 await save(

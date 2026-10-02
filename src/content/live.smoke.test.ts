@@ -2,11 +2,15 @@
 //   WIKI_API_CONTACT=<url-or-email> npm run test:live
 import { buildUserAgent } from '../config/constants';
 import { HOME_TITLE_BLOCKLIST } from '../config/homeBlocklist';
+import { PREFETCH, REQUEST_BUDGET } from '../config/constants';
+import { columnFeedFor } from '../explore/columnFeedFor';
+import { createColumnPrefetcher } from '../explore/columnPrefetch';
+import { childEntry, initialStack, topOf } from '../explore/columnStack';
 import { createWikiApi } from '../wiki-api/client';
 import { createWikiHttp } from '../wiki-api/http';
+import { createRequestBudget, type Lane } from '../wiki-api/requestBudget';
 import { createColumnFeed } from './columnFeed';
 import { createHomeFeed } from './homeFeed';
-import { resolveTopics } from './topicResolution';
 
 const contact = process.env.WIKI_API_CONTACT;
 const describeLive = contact ? describe : describe.skip;
@@ -37,10 +41,7 @@ describeLive('live Wikipedia', () => {
 
       const started = Date.now();
       const { cards: page } = await feed.nextPage();
-      const pageMs = Date.now() - started;
-      const resolved = await resolveTopics(api, page);
-      const topicsMs = Date.now() - started - pageMs;
-      console.log(`Octopus column — first page ${pageMs} ms, topics +${topicsMs} ms:\n${summary(resolved)}`);
+      console.log(`Octopus column — first page with topics and ranking ${Date.now() - started} ms:\n${summary(page)}`);
 
       expect(page.length).toBe(20);
     },
@@ -54,7 +55,7 @@ describeLive('live Wikipedia', () => {
         interestTileIds: ['animals', 'space', 'history'],
         today: new Date(),
         visitedIds: new Set(),
-        readIds: new Set(),
+        isRead: () => false,
         blocklist: HOME_TITLE_BLOCKLIST,
       });
 
@@ -63,6 +64,26 @@ describeLive('live Wikipedia', () => {
       console.log(`Home — first page ${Date.now() - started} ms:\n${summary(page)}`);
 
       expect(page.length).toBeGreaterThanOrEqual(18);
+    },
+    LIVE_TIMEOUT_MS,
+  );
+
+  it(
+    'has a dwelt-on column ready by the time the user hops',
+    async () => {
+      const READING_MS = 3_000;
+      const budget = createRequestBudget({ ...REQUEST_BUDGET, now: Date.now, sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)) });
+      const apiOn = (lane: Lane) => createWikiApi(createWikiHttp({ fetchFn: loggingFetch, userAgent: buildUserAgent(contact ?? ''), budget, lane }));
+      const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry, lane) => columnFeedFor(apiOn(lane), entry) });
+      const column = childEntry(topOf(initialStack()), { ref: { pageId: 22780, title: 'Octopus' }, topic: { tileId: 'animals', territory: 'life' } });
+
+      prefetcher.prefetch(column);
+      await new Promise((resolve) => setTimeout(resolve, READING_MS));
+      const started = Date.now();
+      const page = await prefetcher.take(column.id)?.nextPage();
+      console.log(`Hop after ${READING_MS} ms of reading — first page in ${Date.now() - started} ms`);
+
+      expect(page?.cards.length).toBeGreaterThan(0);
     },
     LIVE_TIMEOUT_MS,
   );

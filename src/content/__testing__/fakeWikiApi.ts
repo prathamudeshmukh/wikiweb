@@ -1,4 +1,4 @@
-import type { Article, ArticleSection, PageRef, Paged, WikiApi } from '../../wiki-api/types';
+import type { Article, ArticleLink, ArticleSection, PageRef, PageSignals, Paged, SearchSort, WikiApi } from '../../wiki-api/types';
 
 export const STEM_BIOLOGY = 'classification.prediction.articletopic/STEM.Biology|950';
 export const CULTURE_MUSIC = 'classification.prediction.articletopic/Culture.Media.Music|950';
@@ -35,19 +35,24 @@ export interface FakeWikiData {
   links?: readonly string[];
   sections?: readonly ArticleSection[];
   sectionLinks?: Readonly<Record<number, readonly string[]>>;
+  /** Title → how often the seed links it (default 1). */
+  mentions?: Readonly<Record<string, number>>;
   /** Requested title → redirect target title. */
   redirects?: Readonly<Record<string, string>>;
-  backlinks?: readonly string[];
   moreLike?: readonly string[];
   /** Search query → result titles. */
   searches?: Readonly<Record<string, readonly string[]>>;
   featured?: readonly string[];
   /** Title → raw weighted tags. */
   tags?: Readonly<Record<string, readonly string[]>>;
+  /** Title → incoming-link count (default: unknown). */
+  incomingLinks?: Readonly<Record<string, number>>;
+  /** Titles whose article links back to whatever target is asked about. */
+  linksBack?: readonly string[];
   pageSize?: number;
 }
 
-type FailingCall = 'sections' | 'backlinks' | 'featured' | 'topicSearch';
+type FailingCall = 'sections' | 'featured' | 'search' | 'pageSignals' | 'linkingTo';
 
 /**
  * In-memory WikiApi with fault injection:
@@ -58,7 +63,15 @@ export function fakeWikiApi(data: FakeWikiData) {
   const size = data.pageSize ?? 10;
   const overrides = new Map((data.articles ?? []).map((a) => [a.title, a]));
   const tagsById = new Map(Object.entries(data.tags ?? {}).map(([title, tags]) => [idOf(title), tags]));
-  const calls = { hydrate: [] as string[][], searches: [] as string[], sections: 0, sectionLinks: [] as number[], topicTags: [] as number[][] };
+  const calls = {
+    hydrate: [] as string[][],
+    searches: [] as { query: string; sort: SearchSort }[],
+    sections: 0,
+    sectionLinks: [] as number[],
+    topicTags: [] as number[][],
+    pageSignals: [] as string[][],
+    linkingTo: [] as { titles: string[]; target: string }[],
+  };
   const state = { failNextHydrate: false, failHydrateCall: 0, failures: {} as Partial<Record<FailingCall, number>> };
   const maybeFail = (call: FailingCall) => {
     const remaining = state.failures[call] ?? 0;
@@ -76,16 +89,12 @@ export function fakeWikiApi(data: FakeWikiData) {
     async sectionLinks(_title, index) {
       calls.sectionLinks.push(index);
       const links = index === 0 ? (data.sectionLinks?.[0] ?? data.links ?? []) : (data.sectionLinks?.[index] ?? []);
-      return [...links];
-    },
-    async backlinks(_title, cursor) {
-      maybeFail('backlinks');
-      return pageOf(data.backlinks ?? [], cursor, size);
+      return links.map((title): ArticleLink => ({ title, mentions: data.mentions?.[title] ?? 1 }));
     },
     moreLike: async (_title, cursor) => pageOf(data.moreLike ?? [], cursor, size),
-    async topicSearch(query, cursor) {
-      calls.searches.push(query);
-      maybeFail('topicSearch');
+    async search(query, cursor, sort = 'relevance') {
+      calls.searches.push({ query, sort });
+      maybeFail('search');
       return pageOf(data.searches?.[query] ?? [], cursor, size);
     },
     async featured() {
@@ -107,6 +116,22 @@ export function fakeWikiApi(data: FakeWikiData) {
     },
     articleHtml: async (title) => `<html><head></head><body><p>${title} article</p></body></html>`,
     summary: async (title) => overrides.get(title) ?? makeArticle(title),
+    async pageSignals(titles) {
+      calls.pageSignals.push([...titles]);
+      maybeFail('pageSignals');
+      return new Map(
+        titles.map((requested) => {
+          const resolved = data.redirects?.[requested] ?? requested;
+          const signals: PageSignals = { incomingLinks: data.incomingLinks?.[resolved] ?? null, weightedTags: data.tags?.[resolved] ?? [] };
+          return [requested, signals] as const;
+        }),
+      );
+    },
+    async linkingTo(titles, target) {
+      calls.linkingTo.push({ titles: [...titles], target });
+      maybeFail('linkingTo');
+      return new Set(titles.filter((title) => data.linksBack?.includes(title)));
+    },
     async topicTags(pageIds) {
       calls.topicTags.push([...pageIds]);
       return new Map(pageIds.flatMap((id) => (tagsById.has(id) ? [[id, tagsById.get(id) ?? []] as const] : [])));

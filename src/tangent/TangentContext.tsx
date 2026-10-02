@@ -38,6 +38,7 @@ export function cardFromArticle(article: Article): Card {
     thumbnail: article.thumbnail,
     topic: NO_TOPIC,
     topicIsFallback: true,
+    incomingLinks: null,
     source: 'link',
     visited: false,
     read: false,

@@ -10,6 +10,7 @@ const card = (overrides: Partial<Card> = {}): Card => ({
   thumbnail: { url: 'https://upload.wikimedia.org/squid.jpg', width: 500, height: 300 },
   topic: { tileId: 'animals', territory: 'life' },
   topicIsFallback: false,
+  incomingLinks: null,
   source: 'link',
   visited: false,
   read: false,

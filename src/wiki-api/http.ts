@@ -1,4 +1,5 @@
 import { HTTP_RETRY, WIKI } from '../config/constants';
+import { createLane, type Lane, type RequestBudget } from './requestBudget';
 
 export interface WikiHttp {
   /** Action API (`api.php?action=query`) — standard format flags are added for you. */
@@ -24,7 +25,13 @@ export interface WikiHttpConfig {
   userAgent: string;
   sleep?: (ms: number) => Promise<void>;
   timeoutMs?: number;
+  /** Shared by every client so all requests together stay under Wikimedia's burst limit. Omit for unlimited (tests, scripts). */
+  budget?: RequestBudget;
+  /** Whose requests these are; defaults to on-screen. */
+  lane?: Lane;
 }
+
+const UNLIMITED: RequestBudget = { acquire: async () => undefined };
 
 export interface WikiApiErrorDetails {
   retryable: boolean;
@@ -109,11 +116,13 @@ async function readText(response: FetchResponse): Promise<string> {
 
 type BodyReader<T> = (response: FetchResponse) => Promise<T>;
 
-export function createWikiHttp({ fetchFn, userAgent, sleep = defaultSleep, timeoutMs = HTTP_RETRY.timeoutMs }: WikiHttpConfig): WikiHttp {
+export function createWikiHttp(config: WikiHttpConfig): WikiHttp {
+  const { fetchFn, userAgent, sleep = defaultSleep, timeoutMs = HTTP_RETRY.timeoutMs, budget = UNLIMITED, lane = createLane('foreground') } = config;
   // Native apps can set the real User-Agent (Wikimedia policy); Api-User-Agent covers browser builds where it is locked.
   const headers = { 'User-Agent': userAgent, 'Api-User-Agent': userAgent };
 
   async function attempt<T>(url: string, read: BodyReader<T>): Promise<T> {
+    await budget.acquire(lane);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {

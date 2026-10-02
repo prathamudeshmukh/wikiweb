@@ -1,45 +1,37 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { HOME_TITLE_BLOCKLIST } from '../config/homeBlocklist';
-import { createColumnFeed } from '../content/columnFeed';
 import { createHomeFeed } from '../content/homeFeed';
 import { type FeedView, useFeed } from '../feeds/useFeed';
 import { useAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
-import type { ColumnEntry } from './columnStack';
+import { columnFeedFor } from './columnFeedFor';
+import { type ColumnEntry, isSeeded } from './columnStack';
 
-// Expedition history (visited / read) arrives with Journeys in M4.
 const NO_IDS: ReadonlySet<number> = new Set();
 
 const onSourceError = (error: unknown) => reportError('feed.source', error);
-const onBackgroundError = (error: unknown) => reportError('feed.topics', error);
 
-/** The feed behind one column: Home for the root entry, the seed's column otherwise. */
+/** The feed behind one column: Home for the root entry, the seed's column otherwise — prefetched if it was dwelt on. */
 export function useColumnFeed(entry: ColumnEntry, interests: readonly string[]): FeedView {
-  const { api } = useAppServices();
+  const { api, journeys, prefetcher } = useAppServices();
   const interestsKey = interests.join('|');
 
   const feed = useMemo(() => {
-    if (!entry.seed) {
-      return createHomeFeed(api, {
-        interestTileIds: interestsKey.split('|'),
-        today: new Date(),
-        visitedIds: NO_IDS,
-        readIds: NO_IDS,
-        blocklist: HOME_TITLE_BLOCKLIST,
-        onSourceError,
-      });
-    }
-    return createColumnFeed(api, {
-      seed: entry.seed,
-      pathIds: new Set(entry.path.map((ref) => ref.pageId)),
+    if (isSeeded(entry)) return prefetcher.take(entry.id) ?? columnFeedFor(api, entry);
+    return createHomeFeed(api, {
+      interestTileIds: interestsKey.split('|'),
+      today: new Date(),
       visitedIds: NO_IDS,
-      readIds: NO_IDS,
-      seedTopic: entry.seedTopic,
+      // Read history loads asynchronously and grows while browsing, so ask the session each batch instead of rebuilding Home.
+      isRead: (pageId) => journeys.getState().readIds.has(pageId),
+      blocklist: HOME_TITLE_BLOCKLIST,
       onSourceError,
     });
     // A column's feed is fixed for its lifetime; entry.id captures seed and path.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api, entry.id, interestsKey]);
+  }, [api, journeys, prefetcher, entry.id, interestsKey]);
 
-  return useFeed(feed, { api, onBackgroundError });
+  useEffect(() => () => prefetcher.release(entry.id), [prefetcher, entry.id]);
+
+  return useFeed(feed);
 }
