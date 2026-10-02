@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: 22
+  JAVA_VERSION: 17
+
+jobs:
+  checks:
+    name: Lint, typecheck & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test (with coverage thresholds)
+        run: npm run test:coverage -- --ci
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
+
+  android-apk:
+    name: Build & release Android APK
+    needs: checks
+    # Only merges to main (or a manual run) produce a release; pull requests stop at the checks.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      # Baked into the JS bundle at build time; Wikimedia requires a contact in the user agent.
+      EXPO_PUBLIC_WIKI_API_CONTACT: ${{ vars.EXPO_PUBLIC_WIKI_API_CONTACT }}
+    steps:
+      - name: Require the Wikipedia API contact
+        if: env.EXPO_PUBLIC_WIKI_API_CONTACT == ''
+        run: |
+          echo "::error::Set the EXPO_PUBLIC_WIKI_API_CONTACT repository variable (Settings → Secrets and variables → Actions → Variables)."
+          exit 1
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - run: npm ci
+
+      # android/ is generated from app.json (Continuous Native Generation), never committed.
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Assemble release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Name the APK
+        id: apk
+        run: |
+          version=$(node -p "require('./app.json').expo.version")
+          tag="v${version}-build.${{ github.run_number }}"
+          file="tangent-${tag}.apk"
+          mv android/app/build/outputs/apk/release/app-release.apk "$file"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.apk.outputs.file }}
+          path: ${{ steps.apk.outputs.file }}
+          retention-days: 30
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.apk.outputs.tag }}" "${{ steps.apk.outputs.file }}" \
+            --target "${{ github.sha }}" \
+            --title "Tangent ${{ steps.apk.outputs.tag }}" \
+            --generate-notes \
+            --prerelease
