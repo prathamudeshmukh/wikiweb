@@ -16,6 +16,7 @@ const entry: ColumnEntry = {
   seed: octopus,
   seedTopic: { tileId: 'animals', territory: 'life' },
   seedThumbnailUrl: null,
+  seedQuote: 'It has three hearts.',
   path: [octopus],
   nodeId: null,
 };
@@ -32,9 +33,8 @@ const hop: HopController = {
 const FEATURED_SPACE = 'articletopic:space incategory:Featured_articles';
 const HOME = initialStack().columns[0];
 
-function renderColumn(entryProgress: ReturnType<typeof makeMutable<number>> | null = null, journeys: JourneySession = memoryJourneySession(), column = entry) {
-  const { api } = fakeWikiApi({ links: ['Squid', 'Cuttlefish', 'Ink'], searches: { [FEATURED_SPACE]: Array.from({ length: 60 }, (_, i) => `Space ${i + 1}`) } });
-  return renderWithServices(
+function columnView(column: ColumnEntry, entryProgress: ReturnType<typeof makeMutable<number>> | null = null) {
+  return (
     <ColumnView
       entry={column}
       interests={['space']}
@@ -47,10 +47,13 @@ function renderColumn(entryProgress: ReturnType<typeof makeMutable<number>> | nu
       onBack={jest.fn()}
       onJump={jest.fn()}
       onOpenLogbook={jest.fn()}
-    />,
-    api,
-    journeys,
+    />
   );
+}
+
+function renderColumn(entryProgress: ReturnType<typeof makeMutable<number>> | null = null, journeys: JourneySession = memoryJourneySession(), column = entry) {
+  const { api } = fakeWikiApi({ links: ['Squid', 'Cuttlefish', 'Ink'], searches: { [FEATURED_SPACE]: Array.from({ length: 60 }, (_, i) => `Space ${i + 1}`) } });
+  return renderWithServices(columnView(column, entryProgress), api, journeys);
 }
 
 // Jest's ScrollView never mounts its refresh control, so reach it through the list it was handed to.
@@ -68,6 +71,20 @@ describe('ColumnView', () => {
     expect(screen.getByText('OCTOPUS')).toBeOnTheScreen();
     expect(screen.getByLabelText('Exploring from Octopus')).toBeOnTheScreen();
     expect(screen.getAllByText('↳ LINKED FROM OCTOPUS').length).toBeGreaterThan(0);
+  });
+
+  it('sets a course with the compass card while the first cards load', async () => {
+    const { api } = fakeWikiApi({ links: ['Squid'] });
+    const held = Promise.withResolvers<void>();
+    const hydrate = api.hydrate.bind(api);
+    await renderWithServices(columnView(entry), { ...api, hydrate: (titles) => held.promise.then(() => hydrate(titles)) });
+    await layOutColumns();
+    expect(screen.getByLabelText('Setting a course')).toBeOnTheScreen();
+
+    await act(async () => held.resolve());
+
+    expect(await screen.findByText('Squid')).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Setting a course')).toBeNull();
   });
 
   it('leaves the seed header to the hop overlay while flying in', async () => {

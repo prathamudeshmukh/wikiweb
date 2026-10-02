@@ -28,6 +28,7 @@ export const TYPE = {
   typographicTitle: { fontSize: 34, lineHeight: 38 },
   body: { fontSize: 17, lineHeight: 27 },
   meta: { fontSize: 11, lineHeight: 16, letterSpacing: 0.9 },
+  travelQuote: { fontSize: 22, lineHeight: 28 },
   crumb: { fontSize: 12, lineHeight: 16, letterSpacing: 0.7 },
   extractLines: 4,
 } as const;

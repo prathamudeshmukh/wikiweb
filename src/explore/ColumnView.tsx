@@ -3,9 +3,9 @@ import { type RefreshControlProps, StyleSheet, useWindowDimensions, View } from 
 import { FlatList, GestureDetector, RefreshControl } from 'react-native-gesture-handler';
 import Animated, { type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CompassCard } from '../cards/CompassCard';
 import { FeedStatusCard } from '../cards/FeedStatusCard';
 import { SeedHeader } from '../cards/SeedHeader';
-import { SkeletonCard } from '../cards/SkeletonCard';
 import type { Card } from '../content/card';
 import type { FeedView } from '../feeds/useFeed';
 import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
@@ -167,7 +167,9 @@ function ColumnBody({ entry, isTop, entryProgress, candidateCardId, pulse, hop, 
               onScrollBeginDrag={feed.onUserScroll}
               onEndReached={view.loadMore}
               onEndReachedThreshold={LOAD_MORE_THRESHOLD}
-              ListEmptyComponent={view.status === 'loading' ? <SkeletonCard width={cardWidth} height={cardHeight} /> : null}
+              ListEmptyComponent={
+                view.status === 'loading' ? <CompassCard width={cardWidth} height={cardHeight} quote={entry.seedQuote} topic={entry.seedTopic} /> : null
+              }
               ListFooterComponent={
                 view.cards.length === 0 && view.status === 'loading' ? null : <FeedStatusCard status={view.status} isHome={isHome} onRetry={view.retry} />
               }

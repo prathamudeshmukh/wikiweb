@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { travelQuote } from '../cards/travelQuote';
 import type { Card } from '../content/card';
 import type { JourneySession } from '../journeys/journeySession';
 import { nodePageOf, resumedColumnOf } from '../journeys/nodePages';
@@ -30,7 +31,7 @@ export function useStackNavigation(journeys: JourneySession) {
 
   const prepareFrom = useCallback((card: Card, from: HopOrigin) => {
     origin.current = from;
-    const next = prepareHop(stackRef.current, { ref: card, topic: card.topic, thumbnailUrl: card.thumbnail?.url ?? null });
+    const next = prepareHop(stackRef.current, { ref: card, topic: card.topic, thumbnailUrl: card.thumbnail?.url ?? null, quote: travelQuote(card) });
     if (next === stackRef.current) return;
     setPreparedCard(card);
     setStack(next);

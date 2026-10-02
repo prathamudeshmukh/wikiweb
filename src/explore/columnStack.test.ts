@@ -30,6 +30,12 @@ describe('column stack', () => {
     expect(state.prepared?.seedThumbnailUrl).toBe('https://img/octopus.jpg');
   });
 
+  it('carries the dragged card’s travel quote into the column it lands in', () => {
+    const state = landHop(prepareHop(initialStack(), { ref: octopus, topic: life, quote: 'It has three hearts.' }));
+
+    expect(topOf(state).seedQuote).toBe('It has three hearts.');
+  });
+
   it('keeps the same prepared column when the same card is dragged again', () => {
     const once = prepareHop(initialStack(), { ref: octopus, topic: life });
 
@@ -93,6 +99,12 @@ describe('column stack', () => {
 
     expect(state.columns.map((c) => c.nodeId)).toEqual([null, 'n1', 'n2']);
     expect(topOf(state)).toMatchObject({ path: [octopus, squid], seedThumbnailUrl: 'https://img/squid.jpg' });
+  });
+
+  it('has no travel quote for a resumed column', () => {
+    const state = resumeStack([{ ref: octopus, topic: life, nodeId: 'n1' }]);
+
+    expect(topOf(state).seedQuote).toBeNull();
   });
 
   it('gives a resumed column the same id as when it was first opened', () => {

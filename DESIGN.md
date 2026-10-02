@@ -57,7 +57,7 @@ All pairs below pass **WCAG AA for normal text (≥ 4.5:1)**:
 Dark mode typographic blocks use `bg.paper` (dark) text on the dark territory colour (min 6.9).
 
 ### 2.4 Rules
-- Territory colour appears **only** in: topic dot + label, typographic card block, stamps (+ the explore label behind a dragged card and the route strip in the Logbook, which are the same accent).
+- Territory colour appears **only** in: topic dot + label, typographic card block, stamps (+ the explore label behind a dragged card, the route strip in the Logbook and the loading compass needle, which are the same accent).
 - Never as body text, never tinting photos, never as a full-screen background.
 - Theme follows system; override in Settings (System / Paper / Night atlas).
 
@@ -224,7 +224,7 @@ Interests (re-open tile picker) · Theme (System / Paper / Night atlas) · Reduc
 ### 6.7 States
 | State | Visual |
 |---|---|
-| Loading card | skeleton card: hairline frame, shimmering paper |
+| Loading card | compass card: hairline frame, a needle (territory colour; ink on Home) hunting in ≤ 400 ms swings above `SETTING A COURSE…`. If the column is still empty after 400 ms, `WHILE YOU TRAVEL` + a quote from the seed card fade in (Fraunces 600 italic 22/28): its extract's second sentence if ≤ 140 chars, else the first (trimmed with `…`), else its description; none on Home or resumed columns. Picked once, never swapped. Reduce Motion: needle rests at 45°. |
 | Dead end | `Compass` icon + `DEAD END — SWIPE RIGHT TO GO BACK` |
 | Offline | `CloudSlash` icon + `YOU'RE OFFLINE — YOUR LOGBOOK STILL WORKS` |
 | Error | `Warning` icon + `COULDN'T LOAD — TAP TO RETRY` |

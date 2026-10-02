@@ -8,6 +8,8 @@ export interface ColumnEntry {
   seed: PageRef | null;
   seedTopic: CardTopic;
   seedThumbnailUrl: string | null;
+  /** Shown by the compass card while the column loads; null for Home and resumed columns (DESIGN.md §6.7). */
+  seedQuote: string | null;
   /** Seeds from Home down to and including this column's seed. */
   path: readonly PageRef[];
   /** The Journey node this column belongs to; null for Home and until the hop into it lands. */
@@ -29,6 +31,7 @@ export interface HopTarget {
   ref: PageRef;
   topic: CardTopic;
   thumbnailUrl?: string | null;
+  quote?: string | null;
 }
 
 /** A column to reopen when resuming an expedition. */
@@ -36,7 +39,7 @@ export interface ResumedColumn extends HopTarget {
   nodeId: string;
 }
 
-const HOME: ColumnEntry = { id: 'home', seed: null, seedTopic: NO_TOPIC, seedThumbnailUrl: null, path: [], nodeId: null };
+const HOME: ColumnEntry = { id: 'home', seed: null, seedTopic: NO_TOPIC, seedThumbnailUrl: null, seedQuote: null, path: [], nodeId: null };
 
 export const topOf = (state: StackState): ColumnEntry => state.columns[state.columns.length - 1];
 
@@ -52,6 +55,7 @@ function entryBelow(parent: ColumnEntry, target: HopTarget, nodeId: string | nul
     seed: target.ref,
     seedTopic: target.topic,
     seedThumbnailUrl: target.thumbnailUrl ?? null,
+    seedQuote: target.quote ?? null,
     path,
     nodeId,
   };

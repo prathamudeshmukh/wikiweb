@@ -11,6 +11,7 @@ const entry = (id: string): ColumnEntry => ({
   seed: { pageId: id.length, title: id },
   seedTopic: { tileId: null, territory: null },
   seedThumbnailUrl: null,
+  seedQuote: null,
   path: [],
   nodeId: null,
 });
