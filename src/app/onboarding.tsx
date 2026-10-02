@@ -1,26 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Alert } from 'react-native';
-import { useInterests } from '../interests/InterestsContext';
+import { useSaveInterests } from '../interests/useSaveInterests';
 import { OnboardingScreen } from '../onboarding/OnboardingScreen';
-import { reportError } from '../services/reportError';
 
 export default function Onboarding() {
-  const { saveInterests } = useInterests();
   const router = useRouter();
-
-  const finish = useCallback(
-    async (tileIds: readonly string[]) => {
-      try {
-        await saveInterests(tileIds);
-        router.replace('/');
-      } catch (error) {
-        reportError('interests.save', error);
-        Alert.alert('Couldn’t save your picks', 'Please try again.');
-      }
-    },
-    [saveInterests, router],
-  );
-
-  return <OnboardingScreen onDone={(ids) => void finish(ids)} />;
+  const goHome = useCallback(() => router.replace('/'), [router]);
+  const save = useSaveInterests(goHome);
+  return <OnboardingScreen onDone={(ids) => void save(ids)} />;
 }
