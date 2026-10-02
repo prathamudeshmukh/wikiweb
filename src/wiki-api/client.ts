@@ -23,7 +23,7 @@ const CARD_PROPS: Params = {
   pithumbsize: String(WIKI.thumbnailWidth),
   exintro: '1',
   explaintext: '1',
-  exsentences: String(WIKI.extractSentences),
+  exchars: String(WIKI.extractChars),
   exlimit: String(FEED.hydrateBatch),
   ppprop: 'disambiguation',
 };

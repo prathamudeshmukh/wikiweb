@@ -72,7 +72,7 @@ Dark mode typographic blocks use `bg.paper` (dark) text on the dark territory co
 | Reader H1 | Fraunces | 600 | 30/36 | |
 | Reader H2 | Fraunces | 600 | 22/28 | |
 | Recap headline | Fraunces | 600 italic | 26/32 | |
-| Body / extract | Literata | 400 | 17/27 | extract max 4 lines on cards |
+| Body / extract | Literata | 400 | 17/27 | extract fills the card's free height in whole lines, then ellipsis |
 | Meta label | IBM Plex Mono | 500, caps, +8 % tracking | 11/16 | `● BIOLOGY · 4 MIN` |
 | Breadcrumb | IBM Plex Mono | 500, caps | 12/16 | middle crumbs collapse to `…` beyond 4 |
 | Why-line | IBM Plex Mono | 400 | 11/16 | `↳ LINKED FROM OCTOPUS` |
@@ -117,7 +117,7 @@ Packages: `@expo-google-fonts/fraunces`, `@expo-google-fonts/literata`, `@expo-g
 │ intelligence                 │
 │ ● BIOLOGY · 4 MIN       ◌ ✓  │  meta · visited ◌ / read ✓ badges
 │                              │
-│ Octopuses can open jars,     │  Literata 17/27, ≤ 4 lines
+│ Octopuses can open jars,     │  Literata 17/27, fills free height
 │ escape tanks and recognise   │
 │ individual human faces…      │
 │                              │

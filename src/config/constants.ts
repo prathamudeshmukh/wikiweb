@@ -4,7 +4,8 @@ export const WIKI = {
   clientName: 'Tangent/0.1',
   /** Standard thumbnail step — non-standard widths are rejected by the thumbnail server. */
   thumbnailWidth: 500,
-  extractSentences: 2,
+  /** Enough intro text to fill a card's free height on a tall phone; the card trims the rest with an ellipsis. */
+  extractChars: 600,
 } as const;
 
 export const HTTP_RETRY = {

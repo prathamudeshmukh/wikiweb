@@ -98,6 +98,15 @@ describe('createWikiApi', () => {
       expect(queries[0].prop).not.toContain('cirrusdoc');
     });
 
+    it('caps extracts by characters so a card has enough text to fill its height', async () => {
+      const { http, queries } = fakeHttp(() => hydrateTitles);
+
+      await createWikiApi(http).hydrate(REQUESTED);
+
+      expect(queries[0]).toMatchObject({ exintro: '1', exchars: '600' });
+      expect(queries[0]).not.toHaveProperty('exsentences');
+    });
+
     it('ignores pages outside the article namespace', async () => {
       const talk = { pageid: 99, ns: 5, title: 'Wikipedia talk:Foo', extract: 'Talk' };
       const { http } = fakeHttp(() => ({ batchcomplete: true, query: { pages: [talk] } }));

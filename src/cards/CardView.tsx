@@ -5,6 +5,7 @@ import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { type Palette, territoryColor } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { useFittedLineCount } from './fittedLineCount';
 import { TopicIcon } from './TopicIcon';
 import { topicLabel, whyLine } from './whyLine';
 
@@ -57,10 +58,18 @@ export function CardView({ card, seedTitle }: CardViewProps) {
         </Text>
         <Badges visited={card.visited} read={card.read} color={palette.muted} />
       </View>
-      {card.extract ? (
-        <Text style={[styles.extract, { color: palette.ink }]} numberOfLines={TYPE.extractLines}>{card.extract}</Text>
-      ) : null}
+      {card.extract ? <Extract text={card.extract} color={palette.ink} /> : null}
       <Text style={[styles.why, { color: palette.muted }]} numberOfLines={1}>{whyLine(card, seedTitle)}</Text>
+    </View>
+  );
+}
+
+/** The extract takes whatever height the card has left and fills it with whole lines (DESIGN.md §5.1). */
+function Extract({ text, color }: { text: string; color: string }) {
+  const { lines, onLayout } = useFittedLineCount(TYPE.body.lineHeight, TYPE.extractFallbackLines);
+  return (
+    <View testID="card-extract-area" style={styles.extractArea} onLayout={onLayout}>
+      <Text style={[styles.extract, { color }]} numberOfLines={lines}>{text}</Text>
     </View>
   );
 }
@@ -92,6 +101,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   meta: { fontFamily: FONT.mono, ...TYPE.meta },
   metaText: { flex: 1 },
+  extractArea: { flex: 1, overflow: 'hidden' },
   extract: { fontFamily: FONT.body, ...TYPE.body },
   why: { marginTop: 'auto', fontFamily: FONT.monoLight, ...TYPE.meta },
 });

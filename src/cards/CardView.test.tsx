@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { Card } from '../content/card';
 import { CardView } from './CardView';
 
@@ -43,6 +43,14 @@ describe('CardView', () => {
     await render(<CardView card={card()} seedTitle="Octopus" />);
 
     expect(screen.getByLabelText('Superorder of cephalopod molluscs')).toBeOnTheScreen();
+  });
+
+  it('fills the space left on the card with extract lines', async () => {
+    await render(<CardView card={card()} seedTitle="Octopus" />);
+
+    await fireEvent(screen.getByTestId('card-extract-area'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 27 * 10 } } });
+
+    expect(screen.getByText('A squid is a mollusc with an elongated soft body.')).toHaveProp('numberOfLines', 10);
   });
 
   it('draws a typographic card when there is no image', async () => {

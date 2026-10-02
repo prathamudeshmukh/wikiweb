@@ -33,7 +33,7 @@ Tangent is a phone app (iOS + Android) for exploring Wikipedia through swipe dec
 
 | Term | Meaning |
 |---|---|
-| **Card** | One article preview: title, image (or typographic fallback), topic label, 2–3 sentence extract, why-line (how it connects to the seed), visited/read badges |
+| **Card** | One article preview: title, image (or typographic fallback), topic label, extract (intro capped at ~600 characters, trimmed to fit the card), why-line (how it connects to the seed), visited/read badges |
 | **Territory** | One of 7 colour groups (Life, Cosmos, Earth, Past, Culture, Mind, Craft) that the 20 topics map into |
 | **Stamp** | Collectible badge for a topic, earned the first time the user reads an article tagged with it |
 | **Column** | Vertical, infinitely paginated feed of cards built around one **seed** article. Home is the root column (seeded by interests, not an article). |
@@ -222,7 +222,7 @@ All requests to `https://en.wikipedia.org` send both `User-Agent` and `Api-User-
 
 | Need | Endpoint |
 |---|---|
-| Card data (by title) | `w/api.php?action=query&titles=…&redirects=1&prop=pageimages\|description\|extracts\|pageprops&piprop=thumbnail&pithumbsize=500&exintro&explaintext&exsentences=2&exlimit=20&ppprop=disambiguation&format=json&formatversion=2` |
+| Card data (by title) | `w/api.php?action=query&titles=…&redirects=1&prop=pageimages\|description\|extracts\|pageprops&piprop=thumbnail&pithumbsize=500&exintro&explaintext&exchars=600&exlimit=20&ppprop=disambiguation&format=json&formatversion=2` |
 | Sideways | `generator=search&gsrsearch=linksto:"S" "S" -articletopic:…&gsrsort=relevance` |
 | Ranking signals (≤20 titles) | `titles=…&redirects=1&prop=cirrusdoc&cdincludes=incoming_links\|weighted_tags` |
 | Links back to S (≤20 titles) | `titles=…&redirects=1&prop=links&pltitles=S&pllimit=max` |

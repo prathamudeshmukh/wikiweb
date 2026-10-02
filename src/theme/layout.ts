@@ -30,5 +30,6 @@ export const TYPE = {
   meta: { fontSize: 11, lineHeight: 16, letterSpacing: 0.9 },
   travelQuote: { fontSize: 22, lineHeight: 28 },
   crumb: { fontSize: 12, lineHeight: 16, letterSpacing: 0.7 },
-  extractLines: 4,
+  /** Extract lines shown before the card has measured its free space. */
+  extractFallbackLines: 4,
 } as const;
