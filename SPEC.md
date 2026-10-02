@@ -64,6 +64,12 @@ Infinite column composed per page of 20 cards:
 
 Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`) so the feed never clumps. Within each batch, hub interest cards sink (§5.6; Home skips the graded specificity penalty so well-known picks stay in the mix) — today and wildcard cards keep their slots. Articles already **read** are left out of Home (visited-but-unread ones stay, badged).
 
+**Refresh.** Home is rebuilt — a new random slice, same mix — so it never goes stale after an exploration:
+- **Returning from an expedition** (back, swipe or breadcrumb from a column to Home) swaps in a fresh Home, scrolled to the top. Opening an article straight from Home and coming back keeps Home as it was.
+- The next Home is **built in the background** as soon as the user leaves Home and swapped in, still hidden under the column, the moment its first page is ready — so they land on it with no loading state. If it is late, the old Home stays until it arrives; if the user has already scrolled or opened a card by then, the fresh Home is held for the next pull or return instead of yanking the list away. If it fails, the old Home stays (error reported, never a blank Home).
+- **Pull-to-refresh** on Home (only — columns are deterministic reading order) does the same on demand.
+- No refreshed Home repeats a card an earlier Home showed this app session (in memory only), nor one read since it was built.
+
 ### 3.3 Exploring
 - **Left swipe** a card → new column seeded by it, pushed onto the path. If no Journey is active, one is created (first hop from Home starts a Journey).
 - **Right swipe** anywhere → pop to parent column, restored at its previous scroll offset; the card we came from pulses briefly.

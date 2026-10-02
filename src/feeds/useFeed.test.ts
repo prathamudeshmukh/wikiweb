@@ -97,4 +97,41 @@ describe('useFeed', () => {
 
     expect(feed.calls).toBe(2);
   });
+
+  describe('switching to another feed', () => {
+    it('starts from a page that is already loaded, without loading it again', async () => {
+      const feed = scriptedFeed([]);
+
+      const { result } = await renderHook(() => useFeed(feed, { cards: [card('Moon')], done: false }));
+
+      expect(result.current.cards.map((c) => c.title)).toEqual(['Moon']);
+      expect(result.current.status).toBe('idle');
+      expect(feed.calls).toBe(0);
+    });
+
+    it('replaces the old feed’s cards instead of appending to them', async () => {
+      const first = scriptedFeed([{ cards: [card('Squid')], done: false }]);
+      const { result, rerender } = await renderHook(({ feed, loaded }: { feed: Feed; loaded?: FeedPage }) => useFeed(feed, loaded), {
+        initialProps: { feed: first },
+      });
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await rerender({ feed: scriptedFeed([]), loaded: { cards: [card('Moon')], done: false } });
+
+      expect(result.current.cards.map((c) => c.title)).toEqual(['Moon']);
+    });
+
+    it('drops a page that arrives for the feed it moved on from', async () => {
+      let releaseOld: (page: FeedPage) => void = () => undefined;
+      const old: Feed = { nextPage: () => new Promise((resolve) => (releaseOld = resolve)) };
+      const { result, rerender } = await renderHook(({ feed, loaded }: { feed: Feed; loaded?: FeedPage }) => useFeed(feed, loaded), {
+        initialProps: { feed: old },
+      });
+
+      await rerender({ feed: scriptedFeed([]), loaded: { cards: [card('Moon')], done: false } });
+      await act(() => releaseOld({ cards: [card('Squid')], done: false }));
+
+      expect(result.current.cards.map((c) => c.title)).toEqual(['Moon']);
+    });
+  });
 });

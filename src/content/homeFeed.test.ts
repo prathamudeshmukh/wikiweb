@@ -16,6 +16,7 @@ function context(overrides: Partial<HomeContext> = {}): HomeContext {
     today: new Date(Date.UTC(2026, 9, 1)),
     visitedIds: new Set(),
     isRead: () => false,
+    wasShown: () => false,
     blocklist: ['sex'],
     ...overrides,
   };
@@ -162,6 +163,14 @@ describe('createHomeFeed', () => {
     const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: ['Moon', 'Mars'] } });
 
     const page = (await createHomeFeed(api, context({ isRead: (pageId) => pageId === idOf('Moon') })).nextPage()).cards;
+
+    expect(page.map((c) => c.title)).toEqual(['Mars']);
+  });
+
+  it('leaves out articles an earlier Home already showed', async () => {
+    const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: ['Moon', 'Mars'] } });
+
+    const page = (await createHomeFeed(api, context({ wasShown: (pageId) => pageId === idOf('Moon') })).nextPage()).cards;
 
     expect(page.map((c) => c.title)).toEqual(['Mars']);
   });
