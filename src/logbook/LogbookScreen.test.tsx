@@ -20,7 +20,7 @@ describe('LogbookScreen', () => {
     await renderLogbook();
 
     expect(await screen.findByText(/No expeditions yet/)).toBeOnTheScreen();
-    expect(screen.getByText('0 / 20')).toBeOnTheScreen();
+    expect(screen.getByText('0 / 24')).toBeOnTheScreen();
   });
 
   it('lists expeditions with their tangent count and opens one', async () => {
@@ -40,7 +40,7 @@ describe('LogbookScreen', () => {
     journeys.markRead(nodePage('Euler'), { tileId: 'maths', territory: 'cosmos' });
     await renderLogbook(journeys);
 
-    expect(await screen.findByText('1 / 20')).toBeOnTheScreen();
+    expect(await screen.findByText('1 / 24')).toBeOnTheScreen();
     expect(screen.getByLabelText('Maths stamp')).toBeOnTheScreen();
     expect(screen.getByLabelText('Space stamp, not collected yet')).toBeOnTheScreen();
   });

@@ -200,7 +200,7 @@ Stamp drops in at centre-top, mono caption `NEW TERRITORY · PHILOSOPHY`, auto-d
 │ │ icon │ │ icon │ │ icon │   │  unselected: card surface, icon in territory colour
 │ │Space │ │Animals││History│   │  selected: filled territory colour, rotates ±2°, check badge
 │ └──────┘ └──────┘ └──────┘   │
-│   … 20 tiles, 4 columns …    │
+│   … 24 tiles, 4 columns …    │
 │                              │
 │ [ Set off → ]   skip         │  disabled until 3 picked
 └──────────────────────────────┘
@@ -218,7 +218,7 @@ Header = breadcrumb route, then seed header, then snapping cards. No Logbook but
 Full-height sheet over the column, grabber on top, `bg.card` surface, injected CSS (fonts, colours, hides edit links, max measure 68 ch, images framed like cards). Footer: `FROM WIKIPEDIA · CC BY-SA 4.0` + link to source.
 
 ### 6.5 Logbook
-Back, title `LOGBOOK`, gear. Stamps grid (5 per row, `6 / 20` count). Expeditions list: title, date, hop count, territory route strip. Tap → recap card.
+Back, title `LOGBOOK`, gear. Stamps grid (5 per row, `6 / 24` count). Expeditions list: title, date, hop count, territory route strip. Tap → recap card.
 
 ### 6.6 Settings
 Interests (re-open tile picker) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · About & attributions.
@@ -300,6 +300,8 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Tech | `Cpu` | Earth | `Mountains` |
 | Art | `PaintBrush` | Society | `UsersThree` |
 | Business | `ChartLineUp` | Transport | `Train` |
+| Architecture | `Buildings` | Engineering | `Crane` |
+| Comics & Anime | `ChatCircleDots` | Military | `Sword` |
 
 ---
 

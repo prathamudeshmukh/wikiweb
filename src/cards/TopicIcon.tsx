@@ -3,8 +3,11 @@ import {
   Bank,
   BookOpen,
   Brain,
+  Buildings,
   ChartLineUp,
+  ChatCircleDots,
   Cpu,
+  Crane,
   FilmSlate,
   FirstAidKit,
   ForkKnife,
@@ -18,12 +21,13 @@ import {
   PawPrint,
   Planet,
   SoccerBall,
+  Sword,
   Train,
   UsersThree,
 } from 'phosphor-react-native';
 
 // DESIGN.md §9 topic icon map.
-const TOPIC_ICONS: Readonly<Record<string, Icon>> = {
+export const TOPIC_ICONS: Readonly<Record<string, Icon>> = {
   space: Planet,
   animals: PawPrint,
   history: Bank,
@@ -44,6 +48,10 @@ const TOPIC_ICONS: Readonly<Record<string, Icon>> = {
   earth: Mountains,
   society: UsersThree,
   transport: Train,
+  architecture: Buildings,
+  engineering: Crane,
+  comics: ChatCircleDots,
+  military: Sword,
 };
 
 interface TopicIconProps {

@@ -6,7 +6,7 @@ const titles = (prefix: string, count: number) => Array.from({ length: count }, 
 const featuredQuery = (topics: string) => `articletopic:${topics} incategory:Featured_articles`;
 const FEATURED_SPACE = featuredQuery('space');
 const GOOD_SPACE = 'articletopic:space incategory:Good_articles';
-const FEATURED_HISTORY = featuredQuery('history|military-and-warfare');
+const FEATURED_HISTORY = featuredQuery('history');
 // First tile in TOPIC_TILES order that the user did not pick (when they picked Space).
 const WILDCARD_ANIMALS = 'articletopic:biology incategory:Featured_articles';
 
