@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../logbook/ScreenHeader';
 import { useTheme } from '../theme/useTheme';
-import { canSave } from './interestSelection';
+import { canContinue, canSave, MIN_INTERESTS } from './interestSelection';
 import { pickerScreenStyles as layout } from './pickerScreenStyles';
 import { PrimaryButton } from './PrimaryButton';
 import { TopicPicker } from './TopicPicker';
@@ -19,6 +19,7 @@ export function EditInterestsScreen({ saved, onSave, onBack }: EditInterestsScre
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<readonly string[]>(saved);
+  const saveHint = canContinue(selected) ? 'Change your picks to save' : `Pick at least ${MIN_INTERESTS} to save`;
 
   return (
     <View style={[layout.root, { backgroundColor: palette.paper, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -29,7 +30,7 @@ export function EditInterestsScreen({ saved, onSave, onBack }: EditInterestsScre
         <TopicPicker selected={selected} onChange={setSelected} />
       </ScrollView>
       <View style={layout.actions}>
-        <PrimaryButton label="Save" enabled={canSave(saved, selected)} onPress={() => onSave(selected)} />
+        <PrimaryButton label="Save" enabled={canSave(saved, selected)} onPress={() => onSave(selected)} disabledHint={saveHint} />
       </View>
     </View>
   );

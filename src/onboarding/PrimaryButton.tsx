@@ -7,12 +7,14 @@ interface PrimaryButtonProps {
   label: string;
   enabled: boolean;
   onPress: () => void;
+  /** Read to screen readers while the button is off, to say what turns it on. */
+  disabledHint?: string;
 }
 
 const DISABLED_OPACITY = 0.4;
 
 /** The full-width ink pill that commits a topic pick. */
-export function PrimaryButton({ label, enabled, onPress }: PrimaryButtonProps) {
+export function PrimaryButton({ label, enabled, onPress, disabledHint }: PrimaryButtonProps) {
   const palette = useTheme();
   return (
     <Pressable
@@ -20,6 +22,7 @@ export function PrimaryButton({ label, enabled, onPress }: PrimaryButtonProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ disabled: !enabled }}
+      accessibilityHint={enabled ? undefined : disabledHint}
       style={[styles.button, { backgroundColor: palette.ink, opacity: enabled ? 1 : DISABLED_OPACITY }]}
     >
       <Text style={[styles.label, { color: palette.card }]}>{label}</Text>

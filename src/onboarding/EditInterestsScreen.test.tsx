@@ -68,4 +68,10 @@ describe('EditInterestsScreen', () => {
 
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
+
+  it('tells screen readers why Save is off', async () => {
+    await renderScreen();
+
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveProp('accessibilityHint', 'Change your picks to save');
+  });
 });

@@ -43,4 +43,15 @@ describe('useSaveInterests', () => {
     expect(alert).toHaveBeenCalledWith('Couldn’t save your picks', 'Please try again.');
     expect(report).toHaveBeenCalledWith('interests.save', expect.any(Error));
   });
+
+  it('ignores a second tap while the first save is still running', async () => {
+    const store = memoryInterestsStore(['music', 'food', 'sport']);
+    const save = jest.spyOn(store, 'save');
+    const { result, onSaved } = await renderSave(store);
+
+    await act(() => Promise.all([result.current.save(PICKS), result.current.save(PICKS)]));
+
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(onSaved).toHaveBeenCalledTimes(1);
+  });
 });
