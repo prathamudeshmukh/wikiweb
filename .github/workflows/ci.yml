@@ -13,7 +13,6 @@ concurrency:
 
 env:
   NODE_VERSION: 22
-  JAVA_VERSION: 17
 
 jobs:
   checks:
@@ -52,17 +51,17 @@ jobs:
     # Releases are cut by hand: Actions → CI → Run workflow. Pushes and pull requests stop at the checks.
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # The free EAS plan builds from a low-priority queue, so the wait can be long.
+    timeout-minutes: 120
     permissions:
       contents: write
-    env:
-      # Baked into the JS bundle at build time; Wikimedia requires a contact in the user agent.
-      EXPO_PUBLIC_WIKI_API_CONTACT: ${{ vars.EXPO_PUBLIC_WIKI_API_CONTACT }}
     steps:
-      - name: Require the Wikipedia API contact
-        if: env.EXPO_PUBLIC_WIKI_API_CONTACT == ''
+      - name: Require the Expo token
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        if: env.EXPO_TOKEN == ''
         run: |
-          echo "::error::Set the EXPO_PUBLIC_WIKI_API_CONTACT repository variable (Settings → Secrets and variables → Actions → Variables)."
+          echo "::error::Set the EXPO_TOKEN repository secret (expo.dev → Account settings → Access tokens)."
           exit 1
 
       - uses: actions/checkout@v7
@@ -72,30 +71,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - uses: actions/setup-java@v6
+      - uses: expo/expo-github-action@v9
         with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - uses: gradle/actions/setup-gradle@v6
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - run: npm ci
 
-      # android/ is generated from app.json (Continuous Native Generation), never committed.
-      - name: Generate native Android project
-        run: npx expo prebuild --platform android --no-install
+      # Builds and signs on Expo's servers with the keystore EAS holds; EXPO_PUBLIC_* values come from the "preview" EAS environment.
+      - name: Build APK on EAS
+        id: build
+        run: |
+          eas build --platform android --profile preview --non-interactive --wait --json > build.json
+          echo "url=$(jq -r '.[0].artifacts.buildUrl' build.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Assemble release APK
-        working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
-
-      - name: Name the APK
+      - name: Download the APK
         id: apk
         run: |
           version=$(node -p "require('./app.json').expo.version")
           tag="v${version}-build.${{ github.run_number }}"
           file="tangent-${tag}.apk"
-          mv android/app/build/outputs/apk/release/app-release.apk "$file"
+          curl --fail --location --silent --show-error --output "$file" "${{ steps.build.outputs.url }}"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "file=$file" >> "$GITHUB_OUTPUT"
 

@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.prathamudeshmukh.tangent",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -33,6 +34,13 @@
     "scheme": "tangent",
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cb3128fc-3c20-4bbe-b34a-cb9610fab9c4"
+      }
+    },
+    "owner": "prathamudeshmukh"
   }
 }
