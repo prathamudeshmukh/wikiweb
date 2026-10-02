@@ -10,6 +10,8 @@ export interface JourneyRepository {
   recordRead(read: { pageId: number; at: number; journeyId: string | null }): Promise<void>;
   /** Saves a stamp unless that topic is already stamped; returns whether it was new. */
   awardStamp(stamp: Stamp): Promise<boolean>;
+  /** Whether any hop has ever been saved. */
+  hasNodes(): Promise<boolean>;
   readPageIds(): Promise<number[]>;
   stamps(): Promise<Stamp[]>;
   /** Every expedition, most recently active first. */
@@ -129,6 +131,12 @@ export function createJourneyRepository(openDatabase: () => Promise<SqlDatabase>
       const db = await open();
       const { changes } = await db.runAsync('INSERT OR IGNORE INTO stamps (topic, page_id, earned_at) VALUES (?, ?, ?)', [tileId, pageId, earnedAt]);
       return changes > 0;
+    },
+
+    async hasNodes() {
+      const db = await open();
+      const rows = await db.getAllAsync<{ found: number }>('SELECT 1 AS found FROM journey_nodes LIMIT 1', []);
+      return rows.length > 0;
     },
 
     async readPageIds() {

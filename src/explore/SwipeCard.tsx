@@ -1,21 +1,28 @@
-import { memo, useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  cancelAnimation,
+  Easing,
   Extrapolation,
   interpolate,
   measure,
+  type SharedValue,
   useAnimatedReaction,
   useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { CardView } from '../cards/CardView';
+import { HINT } from '../config/constants';
 import type { Card } from '../content/card';
+import { HintChip } from '../hints/HintChip';
+import type { HintKind } from '../hints/hintRules';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { territoryColor } from '../theme/tokens';
@@ -35,13 +42,17 @@ interface SwipeCardProps {
   /** Tap: open the article in the reader. */
   onOpen: (card: Card) => void;
   pulseToken?: number;
+  /** The first-hop hint this card carries, if any. */
+  hint: HintKind | null;
+  /** The column's peel count while this card carries the hint; each new value peels it. */
+  peelToken: number | null;
 }
 
 const RELEASE_HINT_FADE_MS = 120;
 const PULSE_SCALE = 1.03;
 const PULSE_UP_MS = 120;
 
-function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, onOpen, pulseToken }: SwipeCardProps) {
+function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, onOpen, pulseToken, hint, peelToken }: SwipeCardProps) {
   const palette = useTheme();
   const tx = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -58,6 +69,8 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
     if (!candidate) tx.value = 0;
   }, [candidate, tx]);
 
+  usePeel(tx, hint === 'swipe' ? peelToken : null);
+
   useAnimatedReaction(
     () => -tx.value >= commitDistance,
     (past, wasPast) => {
@@ -73,6 +86,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
         .failOffsetX([-GESTURE.unreachable, GESTURE.lockSlop])
         .failOffsetY([-GESTURE.lockSlop, GESTURE.lockSlop])
         .onStart(() => {
+          cancelAnimation(tx);
           scheduleOnRN(hop.prepare, card);
         })
         .onUpdate((e) => {
@@ -123,7 +137,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
   const releaseStyle = useAnimatedStyle(() => ({ opacity: releaseHint.value }));
 
   return (
-    <Animated.View ref={wrapperRef} style={{ width, height, marginHorizontal: LAYOUT.gutter }}>
+    <Animated.View ref={wrapperRef} testID={`card-${card.pageId}`} style={{ width, height, marginHorizontal: LAYOUT.gutter }}>
       <Animated.View pointerEvents="none" style={[styles.behind, labelStyle]} importantForAccessibility="no-hide-descendants">
         <Text style={[styles.label, { color: territoryColor(palette, card.topic.territory) }]}>TAKE A TANGENT →</Text>
         <Animated.Text style={[styles.release, { color: palette.ink }, releaseStyle]}>RELEASE TO GO DEEPER</Animated.Text>
@@ -131,6 +145,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
       <GestureDetector gesture={gesture}>
         <Animated.View style={[styles.card, cardStyle]} accessibilityRole="button" accessibilityHint="Opens the article" accessible>
           <CardView card={card} seedTitle={seedTitle} />
+          {hint && <HintChip kind={hint} />}
         </Animated.View>
       </GestureDetector>
     </Animated.View>
@@ -138,6 +153,26 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
 }
 
 export const SwipeCard = memo(SwipeCardImpl);
+
+/**
+ * The hint peel (DESIGN.md §7): out far enough to show the label behind, a hold, then the swipe's spring back,
+ * clamped so it never swings past rest and reads as a shake. Only a token that changes while the card carries the
+ * hint peels, so a card that comes into focus mid-schedule waits for the next one.
+ */
+function usePeel(tx: SharedValue<number>, peelToken: number | null) {
+  const lastToken = useRef(peelToken);
+  useEffect(() => {
+    const fresh = lastToken.current !== null && peelToken !== null && peelToken !== lastToken.current;
+    lastToken.current = peelToken;
+    if (!fresh) return;
+    tx.set(
+      withSequence(
+        withTiming(-HINT.peelDistance, { duration: HINT.peelOutMs, easing: Easing.out(Easing.cubic) }),
+        withDelay(HINT.peelHoldMs, withSpring(0, { ...GESTURE.spring, overshootClamping: true })),
+      ),
+    );
+  }, [tx, peelToken]);
+}
 
 const styles = StyleSheet.create({
   behind: { ...StyleSheet.absoluteFill, alignItems: 'flex-end', justifyContent: 'center', paddingRight: 8, gap: 6 },

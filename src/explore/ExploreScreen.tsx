@@ -5,6 +5,7 @@ import { useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { Card } from '../content/card';
+import { useHints } from '../hints/HintsContext';
 import { useAppServices } from '../services/AppServices';
 import type { ResumePoint, Tangent } from '../tangent/tangentQueue';
 import { LAYOUT } from '../theme/layout';
@@ -90,7 +91,9 @@ export function ExploreScreen(props: ExploreScreenProps) {
   const { journeys } = useAppServices();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { stack, preparedCard, pulse, prepare, prepareTangent, land, back, jump, resume } = useStackNavigation(journeys);
+  const { hopped, returned } = useHints();
+  const milestones = useMemo(() => ({ hopped, returned }), [hopped, returned]);
+  const { stack, preparedCard, pulse, prepare, prepareTangent, land, back, jump, resume } = useStackNavigation(journeys, milestones);
   const progress = useSharedValue(0);
   const from = useSharedValue<Rect>(EMPTY_RECT);
   const tiltDeg = useSharedValue(0);
@@ -138,6 +141,7 @@ export function ExploreScreen(props: ExploreScreenProps) {
               onBack={onBack}
               onJump={jump}
               onOpenLogbook={onOpenLogbook}
+              isScreenFocused={isFocused}
             />
           </View>
         );

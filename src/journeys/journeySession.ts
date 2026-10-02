@@ -46,6 +46,8 @@ export interface JourneySession {
   resume(journeyId: string): Promise<Expedition | null>;
   logbook(): Promise<Logbook>;
   expedition(journeyId: string): Promise<Expedition | null>;
+  /** Whether the user has ever hopped, including hops still being saved. */
+  hasExplored(): Promise<boolean>;
   /** Resolves once every write so far has been saved (or reported as failed). */
   whenSaved(): Promise<void>;
 }
@@ -182,6 +184,11 @@ export function createJourneySession({ repo, now, newId, resolveTopic, onError }
     async expedition(journeyId) {
       await saving;
       return repo.expedition(journeyId);
+    },
+
+    async hasExplored() {
+      await saving;
+      return repo.hasNodes();
     },
 
     whenSaved: () => saving,

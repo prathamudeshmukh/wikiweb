@@ -150,7 +150,7 @@ Two in-place hints teach the first hop and the first return. Each stays until th
 - **Any** first hop clears it: a left swipe or *Take a tangent* from the reader.
 
 **Back hint** — until the first return (`backHintShown`):
-- Chip `SWIPE RIGHT TO GO BACK →` on the first card of the first column the user lands in. No peel.
+- Chip `SWIPE RIGHT TO GO BACK →` on the first card of every column until then (so a second hop before any return still shows it). No peel.
 - **Any** first return clears it: right swipe, breadcrumb crumb tap, or system back.
 
 **Existing users:** if any `journey_nodes` row exists at launch, both flags are set and neither hint shows.

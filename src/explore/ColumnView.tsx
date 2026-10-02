@@ -1,5 +1,5 @@
 import { memo, type ReactElement, useCallback, useState } from 'react';
-import { type RefreshControlProps, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { FlatList, GestureDetector, RefreshControl } from 'react-native-gesture-handler';
 import Animated, { type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { FeedStatusCard } from '../cards/FeedStatusCard';
 import { SeedHeader } from '../cards/SeedHeader';
 import type { Card } from '../content/card';
 import type { FeedView } from '../feeds/useFeed';
+import { useColumnHint } from '../hints/useColumnHint';
 import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
@@ -38,6 +39,8 @@ interface ColumnViewProps {
   onBack: () => void;
   onJump: (columnIndex: number) => void;
   onOpenLogbook: () => void;
+  /** Nothing (the reader, the Logbook) is over the explore screen. */
+  isScreenFocused: boolean;
 }
 
 /** A column's cards, plus what Home adds: pull-to-refresh, and a list that starts over with each fresh Home. */
@@ -106,7 +109,8 @@ function ColumnViewImpl(props: ColumnViewProps) {
   return isSeeded(entry) ? <SeededColumn {...props} entry={entry} /> : <HomeColumn {...props} />;
 }
 
-function ColumnBody({ entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, feed }: ColumnViewProps & { feed: ColumnFeed }) {
+function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
+  const { entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, isScreenFocused, feed } = props;
   const palette = useTheme();
   const marks = useJourneyMarks();
   const { width: screenWidth } = useWindowDimensions();
@@ -121,9 +125,17 @@ function ColumnBody({ entry, isTop, entryProgress, candidateCardId, pulse, hop, 
   const cardHeight = listHeight - LAYOUT.listTopPadding - LAYOUT.cardGap - LAYOUT.peek;
   const interval = cardHeight + LAYOUT.cardGap;
   const seedTitle = entry.seed?.title ?? null;
+  const hint = useColumnHint({ isHome, isTop, isScreenFocused, listKey: feed.listKey, cardCount: view.cards.length });
+  const { settled, touchStarted, touchEnded } = hint;
+
+  // Momentum end is the usual signal; a drag released without momentum (iOS, at a snap point) only ends the drag.
+  const onScrollSettled = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => settled(Math.round(e.nativeEvent.contentOffset.y / interval)),
+    [settled, interval],
+  );
 
   const renderCard = useCallback(
-    ({ item }: { item: Card }) => (
+    ({ item, index }: { item: Card; index: number }) => (
       <SwipeCard
         card={withMarks(item, marks)}
         seedTitle={seedTitle}
@@ -134,16 +146,25 @@ function ColumnBody({ entry, isTop, entryProgress, candidateCardId, pulse, hop, 
         hop={hop}
         onOpen={onOpen}
         pulseToken={pulse?.cardId === item.pageId ? pulse.token : undefined}
+        hint={index === hint.cardIndex ? hint.kind : null}
+        peelToken={index === hint.cardIndex ? hint.peelToken : null}
       />
     ),
-    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks],
+    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken],
   );
 
   return (
     <GestureDetector gesture={backPan}>
       <Animated.View style={[styles.column, { backgroundColor: palette.paper, paddingTop: insets.top }, !isHome && styles.pushed, columnStyle]}>
         <ColumnHeader entry={entry} entryProgress={entryProgress} onJump={onJump} onOpenLogbook={onOpenLogbook} />
-        <Animated.View testID="column-list-area" style={[styles.listArea, riseStyle]} onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}>
+        <Animated.View
+          testID="column-list-area"
+          style={[styles.listArea, riseStyle]}
+          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+          onTouchStart={touchStarted}
+          onTouchEnd={touchEnded}
+          onTouchCancel={touchEnded}
+        >
           {cardHeight > 0 && (
             <FlatList
               key={feed.listKey}
@@ -165,6 +186,8 @@ function ColumnBody({ entry, isTop, entryProgress, candidateCardId, pulse, hop, 
               viewabilityConfigCallbackPairs={dwellPrefetch}
               refreshControl={feed.refreshControl}
               onScrollBeginDrag={feed.onUserScroll}
+              onScrollEndDrag={onScrollSettled}
+              onMomentumScrollEnd={onScrollSettled}
               onEndReached={view.loadMore}
               onEndReachedThreshold={LOAD_MORE_THRESHOLD}
               ListEmptyComponent={

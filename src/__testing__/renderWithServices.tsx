@@ -4,6 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { InterestsStore } from '../interests/interestsStore';
 import { PREFETCH } from '../config/constants';
 import { columnFeedFor } from '../explore/columnFeedFor';
+import { memoryHintStore } from '../hints/__testing__/memoryHintStore';
+import { HintsProvider } from '../hints/HintsContext';
 import { createColumnPrefetcher } from '../explore/columnPrefetch';
 import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
 import type { JourneySession } from '../journeys/journeySession';
@@ -25,7 +27,7 @@ export function memoryInterestsStore(initial: string[] | null = null): Interests
 /** The app's services over a fake Wikipedia API and in-memory stores. */
 export function testServices(api: WikiApi, journeys: JourneySession = memoryJourneySession()): AppServices {
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry) => columnFeedFor(api, entry) });
-  return { api, interests: memoryInterestsStore(), journeys, prefetcher };
+  return { api, interests: memoryInterestsStore(), hints: memoryHintStore(), journeys, prefetcher };
 }
 
 /** Renders UI inside the same providers the app uses, with a fake Wikipedia API and in-memory journeys. */
@@ -34,7 +36,11 @@ export function renderWithServices(ui: ReactElement, api: WikiApi, journeys: Jou
   // A wrapper, so `rerender` keeps the same providers and services.
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={SAFE_AREA}>
-      <AppServicesProvider services={services}>{children}</AppServicesProvider>
+      <AppServicesProvider services={services}>
+        <HintsProvider store={services.hints} journeys={services.journeys}>
+          {children}
+        </HintsProvider>
+      </AppServicesProvider>
     </SafeAreaProvider>
   );
   return render(ui, { wrapper });

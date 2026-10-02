@@ -4,6 +4,7 @@ import { buildUserAgent, PREFETCH, REQUEST_BUDGET } from '../config/constants';
 import { topicOfPage } from '../content/topicResolution';
 import { columnFeedFor } from '../explore/columnFeedFor';
 import { type ColumnPrefetcher, createColumnPrefetcher } from '../explore/columnPrefetch';
+import { createHintStore, type HintStore } from '../hints/hintStore';
 import { createInterestsStore, type InterestsStore } from '../interests/interestsStore';
 import { createJourneyRepository } from '../journeys/journeyRepository';
 import { createJourneySession, type JourneySession } from '../journeys/journeySession';
@@ -18,6 +19,7 @@ import { reportError } from './reportError';
 export interface AppServices {
   api: WikiApi;
   interests: InterestsStore;
+  hints: HintStore;
   journeys: JourneySession;
   prefetcher: ColumnPrefetcher;
 }
@@ -40,7 +42,7 @@ export function createAppServices(contact: string | undefined): ServicesResult {
     resolveTopic: (pageId) => topicOfPage(api, pageId),
     onError: reportError,
   });
-  return { ok: true, services: { api, interests: createInterestsStore(Storage), journeys, prefetcher } };
+  return { ok: true, services: { api, interests: createInterestsStore(Storage), hints: createHintStore(Storage), journeys, prefetcher } };
 }
 
 const ServicesContext = createContext<AppServices | null>(null);
