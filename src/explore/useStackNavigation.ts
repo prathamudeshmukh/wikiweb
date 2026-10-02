@@ -15,8 +15,15 @@ interface HopOrigin {
   fromNodeId: string | null;
 }
 
+/** Moments the first-hop hints wait for (SPEC.md §4.4). */
+export interface NavigationMilestones {
+  hopped(): void;
+  /** Left a column for one below it: back swipe, system back or a breadcrumb jump. */
+  returned(): void;
+}
+
 /** The column stack, with every landed hop recorded in the Journey and the top column reported to it. */
-export function useStackNavigation(journeys: JourneySession) {
+export function useStackNavigation(journeys: JourneySession, milestones: NavigationMilestones) {
   const [stack, setStack] = useState<StackState>(initialStack);
   const [preparedCard, setPreparedCard] = useState<Card | null>(null);
   const [pulse, setPulse] = useState<ColumnPulse | null>(null);
@@ -28,6 +35,10 @@ export function useStackNavigation(journeys: JourneySession) {
     preparedCardRef.current = preparedCard;
   }, [stack, preparedCard]);
   const origin = useRef<HopOrigin>({ via: 'swipe', fromNodeId: null });
+  const milestonesRef = useRef(milestones);
+  useLayoutEffect(() => {
+    milestonesRef.current = milestones;
+  }, [milestones]);
 
   const prepareFrom = useCallback((card: Card, from: HopOrigin) => {
     origin.current = from;
@@ -46,6 +57,7 @@ export function useStackNavigation(journeys: JourneySession) {
     const node = journeys.hop({ ...origin.current, page: nodePageOf(card) });
     setStack(landHop(stackRef.current, node.id));
     setPreparedCard(null);
+    milestonesRef.current.hopped();
   }, [journeys]);
 
   const back = useCallback(() => {
@@ -55,12 +67,15 @@ export function useStackNavigation(journeys: JourneySession) {
     setPulse({ columnId: parent.id, cardId: cameFrom.pageId, token: Date.now() });
     setPreparedCard(null);
     setStack(state);
+    milestonesRef.current.returned();
     return true;
   }, []);
 
   const jump = useCallback((columnIndex: number) => {
+    const next = jumpTo(stackRef.current, columnIndex);
+    if (next.columns.length < stackRef.current.columns.length) milestonesRef.current.returned();
     setPreparedCard(null);
-    setStack(jumpTo(stackRef.current, columnIndex));
+    setStack(next);
   }, []);
 
   const resume = useCallback((point: ResumePoint) => {

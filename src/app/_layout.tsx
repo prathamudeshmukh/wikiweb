@@ -6,6 +6,7 @@ import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { HintsProvider } from '../hints/HintsContext';
 import { InterestsProvider } from '../interests/InterestsContext';
 import { AppServicesProvider, createAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
@@ -52,17 +53,19 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AppServicesProvider services={result.services}>
           <InterestsProvider store={result.services.interests}>
-            <TangentProvider>
-              {/* Paper behind every screen, so dismissing the reader never flashes white. */}
-              <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: palette.paper } }}>
-                <Stack.Screen name="index" />
-                {/* The reader slides up over the column it was opened from (SPEC.md §3.4). */}
-                <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="logbook" options={{ animation: 'slide_from_right' }} />
-                <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
-              </Stack>
-              <StatusBar style="auto" />
-            </TangentProvider>
+            <HintsProvider store={result.services.hints} journeys={result.services.journeys}>
+              <TangentProvider>
+                {/* Paper behind every screen, so dismissing the reader never flashes white. */}
+                <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: palette.paper } }}>
+                  <Stack.Screen name="index" />
+                  {/* The reader slides up over the column it was opened from (SPEC.md §3.4). */}
+                  <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+                  <Stack.Screen name="logbook" options={{ animation: 'slide_from_right' }} />
+                  <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
+                </Stack>
+                <StatusBar style="auto" />
+              </TangentProvider>
+            </HintsProvider>
           </InterestsProvider>
         </AppServicesProvider>
       </SafeAreaProvider>

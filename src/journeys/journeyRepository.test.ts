@@ -34,6 +34,16 @@ describe('journey repository', () => {
     expect(saved?.journey).toMatchObject({ lastNodeId: 'n2', updatedAt: T0 + 1000 });
   });
 
+  it('knows whether any node has ever been saved', async () => {
+    const { repo } = await openRepository();
+    await expect(repo.hasNodes()).resolves.toBe(false);
+    await repo.createJourney(makeJourney('j1'));
+
+    await repo.addNode(makeNode('n1', 'Octopus'));
+
+    await expect(repo.hasNodes()).resolves.toBe(true);
+  });
+
   it('lists expeditions with the most recently active first', async () => {
     const { repo } = await openRepository();
     await repo.createJourney(makeJourney('old'));

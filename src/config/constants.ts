@@ -78,6 +78,18 @@ export const TOPICS = {
   minScore: 500,
 } as const;
 
+/** First-hop hints (SPEC.md §4.2, §4.4). */
+export const HINT = {
+  /** How far the focused Home card peels; the label behind it only reads past ~90 pt (drag ÷ commit distance). */
+  peelDistance: 96,
+  peelOutMs: 380,
+  peelHoldMs: 600,
+  /** After Home appears (first load, back from a column, the reader closing). */
+  firstPeelDelayMs: 800,
+  /** Idle time on Home before the next peel. */
+  idleMs: 8000,
+} as const;
+
 /**
  * Wikimedia asks every client to identify itself with contact details; requests without them risk being blocked.
  * The contact (URL or email) is configuration, not code — it comes from EXPO_PUBLIC_WIKI_API_CONTACT.

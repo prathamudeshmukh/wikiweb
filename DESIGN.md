@@ -207,10 +207,12 @@ Stamp drops in at centre-top, mono caption `NEW TERRITORY · PHILOSOPHY`, auto-d
 ```
 
 ### 6.2 Home
-Header: wordmark left, Logbook (`BookOpen`) right. One snapping card + 56 pt peek. First launch: card 2 wiggles once, caption `SWIPE LEFT TO TAKE A TANGENT`.
+Header: wordmark left, Logbook (`BookOpen`) right. One snapping card + 56 pt peek.
+
+**First-hop hint** (until the first hop; rules in SPEC §4.4): a chip straddles the focused card's bottom edge, 14 pt from its right edge — `ink.primary` pill, `bg.card` text, IBM Plex Mono 500 11/16 caps, padding 3 × 10, moves with the card. The card peels (§7). No chip on compass, error or offline cards.
 
 ### 6.3 Column
-Header = breadcrumb route, then seed header, then snapping cards. No Logbook button mid-expedition.
+Header = breadcrumb route, then seed header, then snapping cards. No Logbook button mid-expedition. Until the first return, each column's first card carries the same chip with the back copy (§8); no peel.
 
 ### 6.4 Reader sheet
 Full-height sheet over the column, grabber on top, `bg.card` surface, injected CSS (fonts, colours, hides edit links, max measure 68 ch, images framed like cards). Footer: `FROM WIKIPEDIA · CC BY-SA 4.0` + link to source.
@@ -242,6 +244,7 @@ Interests (re-open tile picker) · Theme (System / Paper / Night atlas) · Reduc
 | **Below threshold** | Spring back to 0, no haptic |
 | **Home right swipe** | Rubber-band to max 24 pt, spring back |
 | **Snap scroll** | Platform paging spring |
+| **Hint peel** | Focused Home card eases out to `−96` pt (380 ms, ease-out cubic) with the drag's tilt and label fade, holds 600 ms, springs back (damping 18, stiffness 180, overshoot clamped — an overshoot past rest read as a shake on device). No haptic. Reduce Motion: none |
 | **Stamp toast** | Scale 1.4 → 1.0 with −8°→ seeded rotation, 220 ms; ink-spread mask 0 → 100 % 180 ms; medium haptic |
 | **Reader** | Platform bottom sheet |
 | **Reduce Motion** | All of the above → 200 ms cross-fades; no tilt, no scale, no route drawing |
@@ -259,6 +262,8 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Where | Copy |
 |---|---|
 | Swipe label | Take a tangent → |
+| First-hop hint chip | ← Swipe left to take a tangent |
+| First-return hint chip | Swipe right to go back → |
 | Onboarding | Where shall we start? |
 | Onboarding CTA | Set off → |
 | Seed header | Exploring from {title} |

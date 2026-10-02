@@ -161,6 +161,15 @@ describe('journey session — storage', () => {
     expect([...session.getState().stampTileIds].sort()).toEqual(['maths', 'space']);
   });
 
+  it('reports whether the user has ever hopped, counting hops not yet saved', async () => {
+    const { session } = await setUp();
+    await expect(session.hasExplored()).resolves.toBe(false);
+
+    session.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
+
+    await expect(session.hasExplored()).resolves.toBe(true);
+  });
+
   it('resumes a saved expedition as the active one', async () => {
     const { session, octopus } = await twoHops();
     session.focus(null);
