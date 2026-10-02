@@ -55,6 +55,7 @@ describeLive('live Wikipedia', () => {
         today: new Date(),
         visitedIds: new Set(),
         isRead: () => false,
+        wasShown: () => false,
         blocklist: HOME_TITLE_BLOCKLIST,
       });
 

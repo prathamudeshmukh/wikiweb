@@ -13,6 +13,8 @@ export interface HomeContext {
   visitedIds: ReadonlySet<number>;
   /** Already-read articles are left out of Home. Asked per batch, so reads made while browsing count too. */
   isRead: (pageId: number) => boolean;
+  /** Cards an earlier Home this session already showed are left out, so a refreshed Home never repeats them. */
+  wasShown: (pageId: number) => boolean;
   /** Whole-word title blocklist applied to every Home card (SPEC.md §3.2). */
   blocklist: readonly string[];
   /** Told when an optional source (today's feed, wildcards) fails and its slots go to interests, or ranking signals fail. */
@@ -95,7 +97,7 @@ function homeCandidates(api: WikiApi, context: HomeContext): CandidateSource {
       const fallback = slot === 'interest' ? null : await nextInterest();
       return fallback ? { ...fallback, source: 'home_interest' } : null;
     },
-    accepts: (card: Card) => !matchesBlocklist(card.title) && !context.isRead(card.pageId),
+    accepts: (card: Card) => !matchesBlocklist(card.title) && !context.isRead(card.pageId) && !context.wasShown(card.pageId),
   };
 }
 

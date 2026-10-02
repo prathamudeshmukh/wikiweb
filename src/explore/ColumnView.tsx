@@ -1,23 +1,25 @@
-import { memo, useCallback, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import { FlatList, GestureDetector } from 'react-native-gesture-handler';
+import { memo, type ReactElement, useCallback, useState } from 'react';
+import { type RefreshControlProps, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { FlatList, GestureDetector, RefreshControl } from 'react-native-gesture-handler';
 import Animated, { type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FeedStatusCard } from '../cards/FeedStatusCard';
 import { SeedHeader } from '../cards/SeedHeader';
 import { SkeletonCard } from '../cards/SkeletonCard';
 import type { Card } from '../content/card';
+import type { FeedView } from '../feeds/useFeed';
 import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { Breadcrumb } from './Breadcrumb';
-import type { ColumnEntry } from './columnStack';
+import { type ColumnEntry, isSeeded, type SeededEntry } from './columnStack';
 import { useDwellPrefetch } from './dwellPrefetch';
 import { HomeHeader } from './HomeHeader';
 import type { HopController } from './hopController';
 import { SwipeCard } from './SwipeCard';
 import { useColumnFeed } from './useColumnFeed';
 import { useColumnMotion } from './useColumnMotion';
+import { useHomeFeed } from './useHomeFeed';
 
 export interface PulseTarget {
   cardId: number;
@@ -36,6 +38,14 @@ interface ColumnViewProps {
   onBack: () => void;
   onJump: (columnIndex: number) => void;
   onOpenLogbook: () => void;
+}
+
+/** A column's cards, plus what Home adds: pull-to-refresh, and a list that starts over with each fresh Home. */
+interface ColumnFeed {
+  view: FeedView;
+  listKey?: string;
+  refreshControl?: ReactElement<RefreshControlProps>;
+  onUserScroll?: () => void;
 }
 
 // FlatList measures this in screen-heights; one card fills a screen, so this is ~5 cards from the end (SPEC.md §7).
@@ -68,14 +78,42 @@ function ColumnHeader({ entry, entryProgress, onJump, onOpenLogbook }: ColumnHea
   );
 }
 
-function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook }: ColumnViewProps) {
+function HomeColumn(props: ColumnViewProps) {
+  const { interests, isTop, onOpen } = props;
+  const palette = useTheme();
+  const home = useHomeFeed(interests, isTop);
+  const { touched } = home;
+  const openFromHome = useCallback(
+    (card: Card) => {
+      touched();
+      onOpen(card);
+    },
+    [touched, onOpen],
+  );
+  const refreshControl = (
+    <RefreshControl refreshing={home.refreshing} onRefresh={home.refresh} tintColor={palette.muted} colors={[palette.ink]} progressBackgroundColor={palette.card} />
+  );
+  return <ColumnBody {...props} onOpen={openFromHome} feed={{ view: home, listKey: String(home.generation), refreshControl, onUserScroll: touched }} />;
+}
+
+function SeededColumn(props: ColumnViewProps & { entry: SeededEntry }) {
+  const view = useColumnFeed(props.entry);
+  return <ColumnBody {...props} feed={{ view }} />;
+}
+
+function ColumnViewImpl(props: ColumnViewProps) {
+  const { entry } = props;
+  return isSeeded(entry) ? <SeededColumn {...props} entry={entry} /> : <HomeColumn {...props} />;
+}
+
+function ColumnBody({ entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, feed }: ColumnViewProps & { feed: ColumnFeed }) {
   const palette = useTheme();
   const marks = useJourneyMarks();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [listHeight, setListHeight] = useState(0);
   const isHome = entry.seed === null;
-  const feed = useColumnFeed(entry, interests);
+  const { view } = feed;
   const dwellPrefetch = useDwellPrefetch(entry, isTop);
   const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, entry: entryProgress, onBack });
 
@@ -108,7 +146,9 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
         <Animated.View testID="column-list-area" style={[styles.listArea, riseStyle]} onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}>
           {cardHeight > 0 && (
             <FlatList
-              data={feed.cards}
+              key={feed.listKey}
+              testID="column-list"
+              data={view.cards}
               keyExtractor={(card) => String(card.pageId)}
               renderItem={renderCard}
               extraData={renderCard}
@@ -123,11 +163,13 @@ function ColumnViewImpl({ entry, interests, isTop, entryProgress, candidateCardI
               windowSize={5}
               // No removeClippedSubviews: on Android it left cards blank after the column re-rendered while hidden.
               viewabilityConfigCallbackPairs={dwellPrefetch}
-              onEndReached={feed.loadMore}
+              refreshControl={feed.refreshControl}
+              onScrollBeginDrag={feed.onUserScroll}
+              onEndReached={view.loadMore}
               onEndReachedThreshold={LOAD_MORE_THRESHOLD}
-              ListEmptyComponent={feed.status === 'loading' ? <SkeletonCard width={cardWidth} height={cardHeight} /> : null}
+              ListEmptyComponent={view.status === 'loading' ? <SkeletonCard width={cardWidth} height={cardHeight} /> : null}
               ListFooterComponent={
-                feed.cards.length === 0 && feed.status === 'loading' ? null : <FeedStatusCard status={feed.status} isHome={isHome} onRetry={feed.retry} />
+                view.cards.length === 0 && view.status === 'loading' ? null : <FeedStatusCard status={view.status} isHome={isHome} onRetry={view.retry} />
               }
             />
           )}

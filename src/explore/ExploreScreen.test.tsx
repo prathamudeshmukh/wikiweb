@@ -14,8 +14,8 @@ const nodePage = (title: string) => ({ pageId: idOf(title), title, tileId: null,
 
 type Props = ComponentProps<typeof ExploreScreen>;
 
-function renderExplore(api: WikiApi, overrides: Partial<Props> = {}, journeys: JourneySession = memoryJourneySession()) {
-  const props: Props = {
+function exploreProps(overrides: Partial<Props> = {}): Props {
+  return {
     interests: ['space'],
     onOpenArticle: jest.fn(),
     onOpenLogbook: jest.fn(),
@@ -26,7 +26,10 @@ function renderExplore(api: WikiApi, overrides: Partial<Props> = {}, journeys: J
     onResumed: jest.fn(),
     ...overrides,
   };
-  return renderWithServices(<ExploreScreen {...props} />, api, journeys);
+}
+
+function renderExplore(api: WikiApi, overrides: Partial<Props> = {}, journeys: JourneySession = memoryJourneySession()) {
+  return renderWithServices(<ExploreScreen {...exploreProps(overrides)} />, api, journeys);
 }
 
 describe('ExploreScreen', () => {
@@ -84,6 +87,21 @@ describe('ExploreScreen', () => {
     await renderExplore(api, {}, journeys);
 
     expect(journeys.getState().active).toBeNull();
+  });
+
+  it('opens a fresh Home, without the cards already seen, after an expedition', async () => {
+    const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: titles('Space', 60) }, links: ['Cuttlefish'] });
+    const journeys = memoryJourneySession();
+    const octopus = journeys.hop({ fromNodeId: null, page: nodePage('Octopus'), via: 'swipe' });
+    const { rerender } = await renderExplore(api, {}, journeys);
+    await layOutColumns();
+    expect(await screen.findByText('Space 1')).toBeOnTheScreen();
+    await rerender(<ExploreScreen {...exploreProps({ incomingResume: [octopus] })} />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Back to HOME' }));
+
+    expect(await screen.findByText('Space 21')).toBeOnTheScreen();
+    expect(screen.queryByText('Space 1')).toBeNull();
   });
 
   it('leaves Android back to the screen on top while it isn’t focused', async () => {

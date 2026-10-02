@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { InterestsStore } from '../interests/interestsStore';
 import { PREFETCH } from '../config/constants';
@@ -30,11 +30,14 @@ export function testServices(api: WikiApi, journeys: JourneySession = memoryJour
 
 /** Renders UI inside the same providers the app uses, with a fake Wikipedia API and in-memory journeys. */
 export function renderWithServices(ui: ReactElement, api: WikiApi, journeys: JourneySession = memoryJourneySession()) {
-  return render(
+  const services = testServices(api, journeys);
+  // A wrapper, so `rerender` keeps the same providers and services.
+  const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={SAFE_AREA}>
-      <AppServicesProvider services={testServices(api, journeys)}>{ui}</AppServicesProvider>
-    </SafeAreaProvider>,
+      <AppServicesProvider services={services}>{children}</AppServicesProvider>
+    </SafeAreaProvider>
   );
+  return render(ui, { wrapper });
 }
 
 const PHONE_LIST_HEIGHT = 700;

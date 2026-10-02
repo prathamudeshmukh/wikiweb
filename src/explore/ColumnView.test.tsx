@@ -1,10 +1,12 @@
-import { screen } from '@testing-library/react-native';
+import { act, screen } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
+import type { RefreshControlProps } from 'react-native';
 import { makeMutable } from 'react-native-reanimated';
 import { layOutColumns, renderWithServices } from '../__testing__/renderWithServices';
 import { fakeWikiApi, idOf } from '../content/__testing__/fakeWikiApi';
 import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
 import type { JourneySession } from '../journeys/journeySession';
-import type { ColumnEntry } from './columnStack';
+import { type ColumnEntry, initialStack } from './columnStack';
 import { ColumnView } from './ColumnView';
 import type { HopController } from './hopController';
 
@@ -27,11 +29,14 @@ const hop: HopController = {
   landed: jest.fn(),
 };
 
-function renderColumn(entryProgress: ReturnType<typeof makeMutable<number>> | null = null, journeys: JourneySession = memoryJourneySession()) {
-  const { api } = fakeWikiApi({ links: ['Squid', 'Cuttlefish', 'Ink'] });
+const FEATURED_SPACE = 'articletopic:space incategory:Featured_articles';
+const HOME = initialStack().columns[0];
+
+function renderColumn(entryProgress: ReturnType<typeof makeMutable<number>> | null = null, journeys: JourneySession = memoryJourneySession(), column = entry) {
+  const { api } = fakeWikiApi({ links: ['Squid', 'Cuttlefish', 'Ink'], searches: { [FEATURED_SPACE]: Array.from({ length: 60 }, (_, i) => `Space ${i + 1}`) } });
   return renderWithServices(
     <ColumnView
-      entry={entry}
+      entry={column}
       interests={['space']}
       isTop
       entryProgress={entryProgress}
@@ -47,6 +52,10 @@ function renderColumn(entryProgress: ReturnType<typeof makeMutable<number>> | nu
     journeys,
   );
 }
+
+// Jest's ScrollView never mounts its refresh control, so reach it through the list it was handed to.
+const refreshControl = () => screen.getByTestId('column-list').props.refreshControl as ReactElement<RefreshControlProps> | undefined;
+const pullToRefresh = () => refreshControl()?.props.onRefresh?.();
 
 const nodePage = (title: string) => ({ pageId: idOf(title), title, tileId: null, territory: null, thumbnailUrl: null });
 
@@ -95,5 +104,24 @@ describe('ColumnView', () => {
 
     expect(screen.queryByText('◌')).toBeNull();
     expect(screen.queryByText('✓')).toBeNull();
+  });
+
+  it('lets Home be pulled down for a fresh set of cards', async () => {
+    await renderColumn(null, memoryJourneySession(), HOME);
+    await layOutColumns();
+    expect(await screen.findByText('Space 1')).toBeOnTheScreen();
+
+    await act(() => pullToRefresh());
+
+    expect(await screen.findByText('Space 21')).toBeOnTheScreen();
+    expect(screen.queryByText('Space 1')).toBeNull();
+  });
+
+  it('has no pull-to-refresh on an explored column', async () => {
+    await renderColumn();
+    await layOutColumns();
+    await screen.findByText('Squid');
+
+    expect(refreshControl()).toBeUndefined();
   });
 });
