@@ -33,6 +33,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
@@ -54,7 +55,8 @@
     "typecheck": "tsc --noEmit",
     "test:live": "jest -c jest.live.config.js",
     "eval:feeds": "node --env-file=.env.local node_modules/.bin/jest -c jest.eval.config.js",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-icons.ts"
   },
   "private": true,
   "jest": {

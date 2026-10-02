@@ -1,6 +1,7 @@
 import { BookOpen } from 'phosphor-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { TANGENT_GLYPH } from '../brand/tangentGlyph';
 import { FONT } from '../theme/fonts';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
@@ -9,13 +10,14 @@ const GLYPH_SIZE = 22;
 const WORDMARK_SIZE = 24;
 const LOGBOOK_ICON_SIZE = 24;
 
-/** A circle with a line leaving it at a tangent — the wordmark glyph (DESIGN.md §9 app icon). */
+/** The wordmark glyph — the same shape the app icon is built around. */
 function TangentGlyph({ color }: { color: string }) {
+  const { viewBox, strokeWidth, circle, tangent, dot } = TANGENT_GLYPH;
   return (
-    <Svg width={GLYPH_SIZE} height={GLYPH_SIZE} viewBox="0 0 24 24" accessibilityElementsHidden>
-      <Circle cx={10} cy={13} r={6.5} fill="none" stroke={color} strokeWidth={2} />
-      <Path d="M10 6.5 L21 6.5" stroke={color} strokeWidth={2} strokeLinecap="round" />
-      <Circle cx={21} cy={6.5} r={1.8} fill={color} />
+    <Svg width={GLYPH_SIZE} height={GLYPH_SIZE} viewBox={`0 0 ${viewBox} ${viewBox}`} accessibilityElementsHidden>
+      <Circle cx={circle.cx} cy={circle.cy} r={circle.r} fill="none" stroke={color} strokeWidth={strokeWidth} />
+      <Path d={`M${tangent.x1} ${tangent.y1} L${tangent.x2} ${tangent.y2}`} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Circle cx={dot.cx} cy={dot.cy} r={dot.r} fill={color} />
     </Svg>
   );
 }
