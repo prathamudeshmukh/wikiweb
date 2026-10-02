@@ -49,12 +49,14 @@ function useIncomingTangent({ tangent, onStarted, prepare, hop, startRect }: Inc
     if (!tangent) return;
     onStarted();
     prepare(tangent);
-    hop.from.value = { x, y, width, height };
-    hop.tiltDeg.value = 0;
-    hop.progress.value = 0;
-    hop.progress.value = withSpring(1, { ...GESTURE.spring, overshootClamping: true }, (finished) => {
-      if (finished) scheduleOnRN(hop.landed);
-    });
+    hop.from.set({ x, y, width, height });
+    hop.tiltDeg.set(0);
+    hop.progress.set(0);
+    hop.progress.set(
+      withSpring(1, { ...GESTURE.spring, overshootClamping: true }, (finished) => {
+        if (finished) scheduleOnRN(hop.landed);
+      }),
+    );
     hop.committed();
   }, [tangent, onStarted, prepare, hop, x, y, width, height]);
 }
@@ -103,7 +105,7 @@ export function ExploreScreen(props: ExploreScreenProps) {
 
   // Once the landed column is in the stack (and no longer follows progress), rearm for the next hop.
   useEffect(() => {
-    if (!stack.prepared) progress.value = 0;
+    if (!stack.prepared) progress.set(0);
   }, [stack.prepared, progress]);
 
   useEffect(() => {

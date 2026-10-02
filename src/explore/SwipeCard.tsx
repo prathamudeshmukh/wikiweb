@@ -76,23 +76,27 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
           scheduleOnRN(hop.prepare, card);
         })
         .onUpdate((e) => {
-          tx.value = Math.min(0, e.translationX);
+          tx.set(Math.min(0, e.translationX));
         })
+        // wrapperRef is an animated ref that measure() reads on the UI thread when the gesture ends, never during render.
+        // eslint-disable-next-line react-hooks/refs
         .onEnd((e) => {
-          const ratio = -tx.value / width;
+          const ratio = -tx.get() / width;
           const commit = ratio >= GESTURE.commitRatio || e.velocityX <= -GESTURE.commitVelocity;
           const frame = commit ? measure(wrapperRef) : null;
           if (!frame) {
-            tx.value = withSpring(0, GESTURE.spring);
+            tx.set(withSpring(0, GESTURE.spring));
             return;
           }
           // Everything below runs in this UI frame — no React work before motion starts.
-          hop.from.value = { x: frame.pageX + tx.value, y: frame.pageY, width: frame.width, height: frame.height };
-          hop.tiltDeg.value = (tx.value / width) * -GESTURE.maxTiltDeg;
-          hop.progress.value = 0;
-          hop.progress.value = withSpring(1, { ...GESTURE.spring, overshootClamping: true }, (finished) => {
-            if (finished) scheduleOnRN(hop.landed);
-          });
+          hop.from.set({ x: frame.pageX + tx.get(), y: frame.pageY, width: frame.width, height: frame.height });
+          hop.tiltDeg.set((tx.get() / width) * -GESTURE.maxTiltDeg);
+          hop.progress.set(0);
+          hop.progress.set(
+            withSpring(1, { ...GESTURE.spring, overshootClamping: true }, (finished) => {
+              if (finished) scheduleOnRN(hop.landed);
+            }),
+          );
           scheduleOnRN(hop.committed);
         }),
     [enabled, card, width, hop, tx, wrapperRef],

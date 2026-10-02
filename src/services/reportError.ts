@@ -4,7 +4,6 @@
  */
 export function reportError(scope: string, error: unknown): void {
   if (__DEV__) {
-    // eslint-disable-next-line no-console
     console.warn(`[tangent:${scope}]`, error instanceof Error ? error.message : error);
   }
 }

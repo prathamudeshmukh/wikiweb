@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Card } from '../content/card';
 import type { JourneySession } from '../journeys/journeySession';
 import { nodePageOf, resumedColumnOf } from '../journeys/nodePages';
@@ -21,9 +21,11 @@ export function useStackNavigation(journeys: JourneySession) {
   const [pulse, setPulse] = useState<ColumnPulse | null>(null);
   // Handlers read state through refs so their identity never changes and memoized columns don't re-render.
   const stackRef = useRef(stack);
-  stackRef.current = stack;
   const preparedCardRef = useRef(preparedCard);
-  preparedCardRef.current = preparedCard;
+  useLayoutEffect(() => {
+    stackRef.current = stack;
+    preparedCardRef.current = preparedCard;
+  }, [stack, preparedCard]);
   const origin = useRef<HopOrigin>({ via: 'swipe', fromNodeId: null });
 
   const prepareFrom = useCallback((card: Card, from: HopOrigin) => {

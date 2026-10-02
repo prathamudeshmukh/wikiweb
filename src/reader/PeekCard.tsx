@@ -18,6 +18,8 @@ interface PeekCardProps {
 
 type Preview = { status: 'loading' } | { status: 'ready'; article: Article } | { status: 'error' };
 
+const LOADING: Preview = { status: 'loading' };
+
 const THUMB = 72;
 const BUTTON_HEIGHT = 48;
 
@@ -26,15 +28,17 @@ export function PeekCard({ title, onTangent, onRead, onClose }: PeekCardProps) {
   const { api } = useAppServices();
   const palette = useTheme();
   const insets = useSafeAreaInsets();
-  const [preview, setPreview] = useState<Preview>({ status: 'loading' });
+  // A preview is kept with the title it answers; a newly tapped title reads as loading until its own preview lands.
+  const [settled, setSettled] = useState<{ title: string; preview: Preview } | null>(null);
+  const preview: Preview = settled?.title === title ? settled.preview : LOADING;
 
   useEffect(() => {
     let current = true;
-    setPreview({ status: 'loading' });
+    const settle = (next: Preview) => current && setSettled({ title, preview: next });
     api
       .summary(title)
-      .then((article) => current && setPreview({ status: 'ready', article }))
-      .catch(() => current && setPreview({ status: 'error' }));
+      .then((article) => settle({ status: 'ready', article }))
+      .catch(() => settle({ status: 'error' }));
     return () => {
       current = false;
     };

@@ -1,8 +1,7 @@
 // Opt-in check against the real Wikipedia API (network). Not part of the normal suite:
 //   WIKI_API_CONTACT=<url-or-email> npm run test:live
-import { buildUserAgent } from '../config/constants';
+import { buildUserAgent, PREFETCH, REQUEST_BUDGET } from '../config/constants';
 import { HOME_TITLE_BLOCKLIST } from '../config/homeBlocklist';
-import { PREFETCH, REQUEST_BUDGET } from '../config/constants';
 import { columnFeedFor } from '../explore/columnFeedFor';
 import { createColumnPrefetcher } from '../explore/columnPrefetch';
 import { childEntry, initialStack, topOf } from '../explore/columnStack';

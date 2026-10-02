@@ -55,17 +55,19 @@ export function useColumnMotion({ isHome, isTop, screenWidth, entry, onBack }: C
         .failOffsetY([-GESTURE.lockSlop, GESTURE.lockSlop])
         .onUpdate((e) => {
           const dx = Math.max(0, e.translationX);
-          x.value = isHome ? LAYOUT.homeRubberBandMax * (1 - Math.exp(-dx / LAYOUT.homeRubberBandFalloff)) : dx;
+          x.set(isHome ? LAYOUT.homeRubberBandMax * (1 - Math.exp(-dx / LAYOUT.homeRubberBandFalloff)) : dx);
         })
         .onEnd((e) => {
           const commit = !isHome && (x.value >= screenWidth * GESTURE.commitRatio || e.velocityX >= GESTURE.commitVelocity);
           if (!commit) {
-            x.value = withSpring(0, GESTURE.spring);
+            x.set(withSpring(0, GESTURE.spring));
             return;
           }
-          x.value = withTiming(screenWidth, { duration: LAYOUT.backCommitDurationMs }, (finished) => {
-            if (finished) scheduleOnRN(onBack);
-          });
+          x.set(
+            withTiming(screenWidth, { duration: LAYOUT.backCommitDurationMs }, (finished) => {
+              if (finished) scheduleOnRN(onBack);
+            }),
+          );
         }),
     [isTop, isHome, screenWidth, onBack, x],
   );
