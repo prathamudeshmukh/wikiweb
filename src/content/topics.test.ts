@@ -47,4 +47,16 @@ describe('topicFromWeightedTags', () => {
     expect(topicFromWeightedTags(['classification.prediction.articletopic/garbage', ''])).toEqual({ tileId: null, territory: null });
     expect(topicFromWeightedTags([])).toEqual({ tileId: null, territory: null });
   });
+
+  it('files war articles under Military, not History', () => {
+    expect(topicFromWeightedTags([tag('History_and_Society.Military_and_warfare', 900)])).toEqual({ tileId: 'military', territory: 'past' });
+  });
+
+  it.each([
+    ['Culture.Visual_arts.Architecture', { tileId: 'architecture', territory: 'earth' }],
+    ['STEM.Engineering', { tileId: 'engineering', territory: 'craft' }],
+    ['Culture.Visual_arts.Comics_and_Anime', { tileId: 'comics', territory: 'culture' }],
+  ])('maps %s to its new tile', (name, expected) => {
+    expect(topicFromWeightedTags([tag(name, 900)])).toEqual(expected);
+  });
 });

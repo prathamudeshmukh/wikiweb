@@ -11,7 +11,7 @@ import { reportError } from '../services/reportError';
 jest.mock('../services/reportError');
 
 const FEATURED_SPACE = 'articletopic:space incategory:Featured_articles';
-const FEATURED_HISTORY = 'articletopic:history|military-and-warfare incategory:Featured_articles';
+const FEATURED_HISTORY = 'articletopic:history incategory:Featured_articles';
 const titles = (prefix: string, count: number) => Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}`);
 
 const SEARCHES = { [FEATURED_SPACE]: titles('Space', 60), [FEATURED_HISTORY]: titles('History', 60) };

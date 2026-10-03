@@ -8,11 +8,11 @@ export interface TopicTile {
   searchTopics: readonly string[];
 }
 
-// SPEC.md §5.5 — every keyword verified against live search on 2026-10-01.
+// SPEC.md §5.5 — every keyword verified against live search on 2026-10-01 (the last four on 2026-10-03).
 export const TOPIC_TILES: readonly TopicTile[] = [
   { id: 'space', label: 'Space', territory: 'cosmos', searchTopics: ['space'] },
   { id: 'animals', label: 'Animals', territory: 'life', searchTopics: ['biology'] },
-  { id: 'history', label: 'History', territory: 'past', searchTopics: ['history', 'military-and-warfare'] },
+  { id: 'history', label: 'History', territory: 'past', searchTopics: ['history'] },
   { id: 'music', label: 'Music', territory: 'culture', searchTopics: ['music'] },
   { id: 'film', label: 'Film & TV', territory: 'culture', searchTopics: ['films', 'television'] },
   { id: 'food', label: 'Food', territory: 'life', searchTopics: ['food-and-drink'] },
@@ -30,6 +30,10 @@ export const TOPIC_TILES: readonly TopicTile[] = [
   { id: 'society', label: 'Society', territory: 'past', searchTopics: ['society', 'politics-and-government'] },
   { id: 'business', label: 'Business', territory: 'past', searchTopics: ['business-and-economics'] },
   { id: 'transport', label: 'Transport', territory: 'earth', searchTopics: ['transportation'] },
+  { id: 'architecture', label: 'Architecture', territory: 'earth', searchTopics: ['architecture'] },
+  { id: 'engineering', label: 'Engineering', territory: 'craft', searchTopics: ['engineering'] },
+  { id: 'comics', label: 'Comics & Anime', territory: 'culture', searchTopics: ['comics-and-anime'] },
+  { id: 'military', label: 'Military', territory: 'past', searchTopics: ['military-and-warfare'] },
 ];
 
 /** Territory for articles that only carry a broad bucket such as `STEM.STEM*` (SPEC.md §6 topic note). */

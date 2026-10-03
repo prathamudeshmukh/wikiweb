@@ -34,7 +34,7 @@ Tangent is a phone app (iOS + Android) for exploring Wikipedia through swipe dec
 | Term | Meaning |
 |---|---|
 | **Card** | One article preview: title, image (or typographic fallback), topic label, extract (intro capped at ~600 characters, trimmed to fit the card), why-line (how it connects to the seed), visited/read badges |
-| **Territory** | One of 7 colour groups (Life, Cosmos, Earth, Past, Culture, Mind, Craft) that the 20 topics map into |
+| **Territory** | One of 7 colour groups (Life, Cosmos, Earth, Past, Culture, Mind, Craft) that the 24 topics map into |
 | **Stamp** | Collectible badge for a topic, earned the first time the user reads an article tagged with it |
 | **Column** | Vertical, infinitely paginated feed of cards built around one **seed** article. Home is the root column (seeded by interests, not an article). |
 | **Hop** | A left swipe (or peek-card *Explore*) that opens a new column |
@@ -47,11 +47,11 @@ Tangent is a phone app (iOS + Android) for exploring Wikipedia through swipe dec
 ## 3. User flows
 
 ### 3.1 Onboarding (first launch only)
-1. Screen shows 20 typographic tiles (territory colour, topic icon, name).
+1. Screen shows 24 typographic tiles (territory colour, topic icon, name).
 2. User selects ≥ 3. **Continue** disabled until 3 are picked. **Skip** uses defaults (`Science`, `History`, `Culture`).
 3. Selections persisted; user lands on Home.
 
-Interests are editable later from Settings.
+Interests are editable later from Settings (Logbook gear → Interests): the same tile picker, starting from the saved picks, with **Save** enabled only when the picks changed and still number ≥ 3. Saving returns straight to Home, which rebuilds from the new picks.
 
 ### 3.2 Home feed
 Infinite column composed per page of 20 cards:
@@ -89,7 +89,7 @@ Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`
 - "Take a tangent" hands the card to the explore screen only after the reader's closing animation ends (fallback 600 ms), so the flight is visible.
 
 ### 3.5 Journeys
-- **Logbook** screen (from Home header): stamps grid (collected / 20) and expeditions list (title, date, hop count, territory route strip).
+- **Logbook** screen (from Home header): stamps grid (collected / 24) and expeditions list (title, date, hop count, territory route strip).
 - Opening an expedition shows its **recap card** (start → end, route strip, tangents/read counts, furthest leap). **Continue expedition** restores its path to the most recent node; a node list reopens any column.
 
 ### 3.6 Learning layer
@@ -202,7 +202,7 @@ Tiles map to one or more ORES `articletopic` IDs. Initial set (tunable):
 |---|---|
 | Space | `space` |
 | Animals | `biology` |
-| History | `history`, `military-and-warfare` |
+| History | `history` |
 | Music | `music` |
 | Film & TV | `films`, `television` |
 | Food | `food-and-drink` |
@@ -220,6 +220,12 @@ Tiles map to one or more ORES `articletopic` IDs. Initial set (tunable):
 | Society | `society`, `politics-and-government` |
 | Business | `business-and-economics` |
 | Transport | `transportation` |
+| Architecture | `architecture` |
+| Engineering | `engineering` |
+| Comics & Anime | `comics-and-anime` |
+| Military | `military-and-warfare` |
+
+The last four were added 2026-10-03 (Featured / Good pools: architecture 136 / 1103, engineering 86 / 583, comics-and-anime 67 / 1176, military-and-warfare 1123 / 5321). Military was split out of History. Broad labels (`biography`, `media`, `entertainment`) stay unmapped on purpose: a card takes its highest-scoring mapped tag, so they would relabel large parts of other tiles. Thin pools (`fashion`, `linguistics`, `software`, `radio`, …) can't fill Home.
 
 Mapping lives in a config file, not code.
 

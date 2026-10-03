@@ -62,6 +62,8 @@ export default function RootLayout() {
                   <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
                   <Stack.Screen name="logbook" options={{ animation: 'slide_from_right' }} />
                   <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
+                  <Stack.Screen name="settings/index" options={{ animation: 'slide_from_right' }} />
+                  <Stack.Screen name="settings/interests" options={{ animation: 'slide_from_right' }} />
                 </Stack>
                 <StatusBar style="auto" />
               </TangentProvider>

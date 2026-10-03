@@ -1,3 +1,4 @@
+import { GearSix } from 'phosphor-react-native';
 import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,11 +20,13 @@ import { useLoaded } from './useLoaded';
 interface LogbookScreenProps {
   onBack: () => void;
   onOpenExpedition: (journeyId: string) => void;
+  onOpenSettings: () => void;
 }
 
 const STAMPS_PER_ROW = 5;
 const STAMP_GAP = 8;
 const MAX_STAMP = 72;
+const GEAR_ICON_SIZE = 22;
 
 function StampGrid({ collected }: { collected: ReadonlySet<string> }) {
   const palette = useTheme();
@@ -85,7 +88,7 @@ function LogbookContent({ logbook, onOpenExpedition }: { logbook: Logbook; onOpe
 }
 
 /** Stamps collected and every expedition so far (DESIGN.md §6.5). */
-export function LogbookScreen({ onBack, onOpenExpedition }: LogbookScreenProps) {
+export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings }: LogbookScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const { journeys } = useAppServices();
@@ -94,7 +97,15 @@ export function LogbookScreen({ onBack, onOpenExpedition }: LogbookScreenProps) 
 
   return (
     <View style={[styles.root, { backgroundColor: palette.paper, paddingTop: insets.top }]}>
-      <ScreenHeader title="LOGBOOK" onBack={onBack} />
+      <ScreenHeader
+        title="LOGBOOK"
+        onBack={onBack}
+        trailing={
+          <Pressable onPress={onOpenSettings} accessibilityRole="button" accessibilityLabel="Settings" hitSlop={8} style={styles.gear}>
+            <GearSix size={GEAR_ICON_SIZE} color={palette.ink} />
+          </Pressable>
+        }
+      />
       {state.status === 'ready' ? <LogbookContent logbook={state.value} onOpenExpedition={onOpenExpedition} /> : <LoadStatus status={state.status} onRetry={retry} />}
     </View>
   );
@@ -102,6 +113,7 @@ export function LogbookScreen({ onBack, onOpenExpedition }: LogbookScreenProps) 
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  gear: { width: LAYOUT.minTouchTarget, height: LAYOUT.minTouchTarget, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: LAYOUT.gutter, gap: 28, paddingTop: 8 },
   section: { gap: 12 },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between' },
