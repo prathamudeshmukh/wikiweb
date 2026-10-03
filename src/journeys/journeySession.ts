@@ -52,6 +52,14 @@ export interface JourneySession {
   whenSaved(): Promise<void>;
 }
 
+/** Moments outside the session care about (analytics). */
+export interface JourneyEvents {
+  stampEarned(topic: CardTopic, expeditionId: string | null): void;
+  expeditionEnded(expedition: Expedition): void;
+}
+
+const NO_EVENTS: JourneyEvents = { stampEarned: () => undefined, expeditionEnded: () => undefined };
+
 export interface JourneySessionDeps {
   repo: JourneyRepository;
   now: () => number;
@@ -59,6 +67,7 @@ export interface JourneySessionDeps {
   /** Looks up an article's topic for stamps when the reader doesn't know it. */
   resolveTopic: (pageId: number) => Promise<CardTopic>;
   onError: (scope: string, error: unknown) => void;
+  events?: JourneyEvents;
 }
 
 const EMPTY_STATE: JourneySessionState = { active: null, readIds: new Set(), stampTileIds: new Set() };
@@ -69,7 +78,7 @@ const withNode = (expedition: Expedition, node: JourneyNode): Expedition => ({
   nodes: [...expedition.nodes, node],
 });
 
-export function createJourneySession({ repo, now, newId, resolveTopic, onError }: JourneySessionDeps): JourneySession {
+export function createJourneySession({ repo, now, newId, resolveTopic, onError, events = NO_EVENTS }: JourneySessionDeps): JourneySession {
   let state = EMPTY_STATE;
   let focused: string | null = null;
   let saving: Promise<void> = Promise.resolve();
@@ -109,6 +118,7 @@ export function createJourneySession({ repo, now, newId, resolveTopic, onError }
     if (!tileId || state.stampTileIds.has(tileId)) return;
     setState({ ...state, stampTileIds: new Set([...state.stampTileIds, tileId]) });
     persist('journeys.stamp', () => repo.awardStamp({ tileId, pageId, earnedAt: now() }));
+    events.stampEarned(topic, state.active?.journey.id ?? null);
   }
 
   return {
@@ -131,7 +141,10 @@ export function createJourneySession({ repo, now, newId, resolveTopic, onError }
 
     focus(nodeId) {
       focused = nodeId;
-      if (nodeId === null && state.active) setState({ ...state, active: null });
+      if (nodeId !== null || !state.active) return;
+      const ended = state.active;
+      setState({ ...state, active: null });
+      events.expeditionEnded(ended);
     },
 
     focusedNodeId: () => focused,

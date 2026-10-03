@@ -10,6 +10,7 @@ import type { Card } from '../content/card';
 import type { FeedView } from '../feeds/useFeed';
 import { useColumnHint } from '../hints/useColumnHint';
 import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
+import { useAppServices } from '../services/AppServices';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { Breadcrumb } from './Breadcrumb';
@@ -20,6 +21,7 @@ import type { HopController } from './hopController';
 import { SwipeCard } from './SwipeCard';
 import { useColumnFeed } from './useColumnFeed';
 import { useColumnMotion } from './useColumnMotion';
+import { useColumnVisit } from './useExploreAnalytics';
 import { useHomeFeed } from './useHomeFeed';
 
 export interface PulseTarget {
@@ -85,7 +87,12 @@ function HomeColumn(props: ColumnViewProps) {
   const { interests, isTop, onOpen } = props;
   const palette = useTheme();
   const home = useHomeFeed(interests, isTop);
-  const { touched } = home;
+  const { columnVisits } = useAppServices();
+  const { touched, refresh } = home;
+  const pullToRefresh = useCallback(() => {
+    columnVisits.restart('refresh');
+    refresh();
+  }, [columnVisits, refresh]);
   const openFromHome = useCallback(
     (card: Card) => {
       touched();
@@ -94,7 +101,7 @@ function HomeColumn(props: ColumnViewProps) {
     [touched, onOpen],
   );
   const refreshControl = (
-    <RefreshControl refreshing={home.refreshing} onRefresh={home.refresh} tintColor={palette.muted} colors={[palette.ink]} progressBackgroundColor={palette.card} />
+    <RefreshControl refreshing={home.refreshing} onRefresh={pullToRefresh} tintColor={palette.muted} colors={[palette.ink]} progressBackgroundColor={palette.card} />
   );
   return <ColumnBody {...props} onOpen={openFromHome} feed={{ view: home, listKey: String(home.generation), refreshControl, onUserScroll: touched }} />;
 }
@@ -118,7 +125,8 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const [listHeight, setListHeight] = useState(0);
   const isHome = entry.seed === null;
   const { view } = feed;
-  const dwellPrefetch = useDwellPrefetch(entry, isTop);
+  const dwell = useDwellPrefetch(entry, isTop);
+  useColumnVisit({ entry, isTop, status: view.status, dwelling: dwell.dwelling });
   const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, entry: entryProgress, onBack });
 
   const cardWidth = screenWidth - LAYOUT.gutter * 2;
@@ -183,7 +191,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
               maxToRenderPerBatch={3}
               windowSize={5}
               // No removeClippedSubviews: on Android it left cards blank after the column re-rendered while hidden.
-              viewabilityConfigCallbackPairs={dwellPrefetch}
+              viewabilityConfigCallbackPairs={dwell.viewabilityPairs}
               refreshControl={feed.refreshControl}
               onScrollBeginDrag={feed.onUserScroll}
               onScrollEndDrag={onScrollSettled}

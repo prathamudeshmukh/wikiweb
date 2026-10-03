@@ -1,5 +1,12 @@
 import Storage from 'expo-sqlite/kv-store';
+import { PostHog } from 'posthog-react-native';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
+import type { Analytics } from '../analytics/analytics';
+import { type AnalyticsConsent, createAnalyticsConsent } from '../analytics/analyticsConsent';
+import { type ColumnVisits, createColumnVisits } from '../analytics/columnVisits';
+import { createAnalytics, type PostHogFactory } from '../analytics/createAnalytics';
+import { errorReason } from '../analytics/errorReason';
+import { createExpeditionReporter, type ExpeditionReporter } from '../analytics/expeditionReport';
 import { buildUserAgent, PREFETCH, REQUEST_BUDGET } from '../config/constants';
 import { topicOfPage } from '../content/topicResolution';
 import { columnFeedFor } from '../explore/columnFeedFor';
@@ -14,7 +21,7 @@ import { createWikiApi } from '../wiki-api/client';
 import { createWikiHttp } from '../wiki-api/http';
 import { createRequestBudget, type Lane } from '../wiki-api/requestBudget';
 import type { WikiApi } from '../wiki-api/types';
-import { reportError } from './reportError';
+import { reportError, setErrorSink } from './reportError';
 
 export interface AppServices {
   api: WikiApi;
@@ -22,12 +29,29 @@ export interface AppServices {
   hints: HintStore;
   journeys: JourneySession;
   prefetcher: ColumnPrefetcher;
+  analytics: Analytics;
+  /** The PostHog client, for touch autocapture; null when events aren't sent. */
+  analyticsClient: PostHog | null;
+  analyticsConsent: AnalyticsConsent;
+  columnVisits: ColumnVisits;
+  expeditions: ExpeditionReporter;
 }
 
 export type ServicesResult = { ok: true; services: AppServices } | { ok: false; problem: string };
 
+/** Read from the environment (`EXPO_PUBLIC_*`); only the Wikipedia contact is required. */
+export interface AppConfig {
+  wikiContact: string | undefined;
+  posthogKey: string | undefined;
+  posthogHost: string | undefined;
+  isDev: boolean;
+}
+
+const newPostHog: PostHogFactory = (key, options) => new PostHog(key, options);
+
 /** Builds the app's services from configuration, failing fast with a readable reason. */
-export function createAppServices(contact: string | undefined): ServicesResult {
+export function createAppServices(config: AppConfig, clientFor: PostHogFactory = newPostHog): ServicesResult {
+  const contact = config.wikiContact;
   if (!contact?.trim()) {
     return { ok: false, problem: 'Set EXPO_PUBLIC_WIKI_API_CONTACT (a URL or email) — Wikipedia requires contact details from every app.' };
   }
@@ -35,14 +59,32 @@ export function createAppServices(contact: string | undefined): ServicesResult {
   const apiOn = (lane?: Lane) => createWikiApi(createWikiHttp({ fetchFn: fetch, userAgent: buildUserAgent(contact), budget, lane }));
   const api = apiOn();
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry, lane) => columnFeedFor(apiOn(lane), entry) });
+  const { analytics, client } = createAnalytics({ key: config.posthogKey, host: config.posthogHost, isDev: config.isDev }, clientFor);
+  setErrorSink((scope, error) => analytics.track({ name: 'app_error', properties: { scope, reason: errorReason(error) } }));
+  const expeditions = createExpeditionReporter({ analytics, now: Date.now });
   const journeys = createJourneySession({
     repo: createJourneyRepository(openJourneyDatabase),
     now: Date.now,
     newId,
     resolveTopic: (pageId) => topicOfPage(api, pageId),
     onError: reportError,
+    events: { stampEarned: expeditions.stampEarned, expeditionEnded: (expedition) => expeditions.ended(expedition, 'home') },
   });
-  return { ok: true, services: { api, interests: createInterestsStore(Storage), hints: createHintStore(Storage), journeys, prefetcher } };
+  return {
+    ok: true,
+    services: {
+      api,
+      interests: createInterestsStore(Storage),
+      hints: createHintStore(Storage),
+      journeys,
+      prefetcher,
+      analytics,
+      analyticsClient: client,
+      analyticsConsent: createAnalyticsConsent(Storage, analytics),
+      columnVisits: createColumnVisits({ analytics, now: Date.now }),
+      expeditions,
+    },
+  };
 }
 
 const ServicesContext = createContext<AppServices | null>(null);

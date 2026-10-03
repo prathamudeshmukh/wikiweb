@@ -27,6 +27,7 @@ export function CardView({ card, seedTitle }: CardViewProps) {
     // Keyed by theme: on Android, switching Night atlas → Paper adds elevation at runtime, which left the clipping
     // outline stale and hid every child of the card. A fresh view per theme gets a fresh outline.
     <View
+      ph-no-capture
       key={palette.cardShadow ? 'paper' : 'night'}
       style={[styles.card, surface(palette)]}
       accessible

@@ -54,6 +54,7 @@ function ExpeditionRow({ expedition, onOpen }: { expedition: Expedition; onOpen:
   const meta = `${logDate(journey.createdAt)} · ${tangentCount(recap.tangents)}`;
   return (
     <Pressable
+      ph-no-capture
       onPress={() => onOpen(journey.id)}
       accessibilityRole="button"
       accessibilityLabel={`${journey.title}. ${meta}`}

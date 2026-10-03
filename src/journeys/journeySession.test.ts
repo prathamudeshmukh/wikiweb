@@ -215,3 +215,41 @@ describe('journey session — storage', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('journey session — events', () => {
+  const eventsSpy = () => ({ stampEarned: jest.fn(), expeditionEnded: jest.fn() });
+
+  it('tells its listener an expedition ended when the user returns Home', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+    session.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
+    const expedition = session.getState().active;
+
+    session.focus(null);
+    session.focus(null);
+
+    expect(events.expeditionEnded).toHaveBeenCalledTimes(1);
+    expect(events.expeditionEnded).toHaveBeenCalledWith(expedition);
+  });
+
+  it('tells its listener about each new stamp and the expedition it was earned on', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+    const octopus = session.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
+
+    session.markRead(page('Euler'), MATHS);
+    session.markRead(page('Gauss'), MATHS);
+
+    expect(events.stampEarned).toHaveBeenCalledTimes(1);
+    expect(events.stampEarned).toHaveBeenCalledWith(MATHS, octopus.journeyId);
+  });
+
+  it('reports a stamp earned on Home without an expedition', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+
+    session.markRead(page('Euler'), MATHS);
+
+    expect(events.stampEarned).toHaveBeenCalledWith(MATHS, null);
+  });
+});

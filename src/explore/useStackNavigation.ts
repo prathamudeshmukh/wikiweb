@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { HopRoute, ReturnRoute } from '../analytics/events';
 import { travelQuote } from '../cards/travelQuote';
 import type { Card } from '../content/card';
 import type { JourneySession } from '../journeys/journeySession';
 import { nodePageOf, resumedColumnOf } from '../journeys/nodePages';
 import type { ResumePoint, Tangent } from '../tangent/tangentQueue';
 import type { PulseTarget } from './ColumnView';
-import { goBack, initialStack, jumpTo, landHop, prepareHop, resumeStack, type StackState, topOf } from './columnStack';
+import { type ColumnEntry, goBack, initialStack, jumpTo, landHop, prepareHop, resumeStack, type StackState, topOf } from './columnStack';
 
 type ColumnPulse = PulseTarget & { columnId: string };
 
@@ -15,15 +16,33 @@ interface HopOrigin {
   fromNodeId: string | null;
 }
 
-/** Moments the first-hop hints wait for (SPEC.md §4.4). */
-export interface NavigationMilestones {
-  hopped(): void;
+const HOP_ROUTE: Record<HopOrigin['via'], HopRoute> = { swipe: 'swipe', peek_explore: 'tangent' };
+
+export interface LandedHop {
+  card: Card;
+  /** The column the hop left. */
+  from: ColumnEntry;
+  route: HopRoute;
+}
+
+export interface Return {
+  /** The column that was on top. */
+  from: ColumnEntry;
+  route: ReturnRoute;
+  columnsPopped: number;
+}
+
+/** Navigation moments the hints (SPEC.md §4.4) and analytics (§11) follow. */
+export interface NavigationListener {
+  hopped(hop: LandedHop): void;
   /** Left a column for one below it: back swipe, system back or a breadcrumb jump. */
-  returned(): void;
+  returned(ret: Return): void;
+  /** A saved expedition replaced the stack. */
+  resumed(): void;
 }
 
 /** The column stack, with every landed hop recorded in the Journey and the top column reported to it. */
-export function useStackNavigation(journeys: JourneySession, milestones: NavigationMilestones) {
+export function useStackNavigation(journeys: JourneySession, listener: NavigationListener) {
   const [stack, setStack] = useState<StackState>(initialStack);
   const [preparedCard, setPreparedCard] = useState<Card | null>(null);
   const [pulse, setPulse] = useState<ColumnPulse | null>(null);
@@ -35,10 +54,10 @@ export function useStackNavigation(journeys: JourneySession, milestones: Navigat
     preparedCardRef.current = preparedCard;
   }, [stack, preparedCard]);
   const origin = useRef<HopOrigin>({ via: 'swipe', fromNodeId: null });
-  const milestonesRef = useRef(milestones);
+  const listenerRef = useRef(listener);
   useLayoutEffect(() => {
-    milestonesRef.current = milestones;
-  }, [milestones]);
+    listenerRef.current = listener;
+  }, [listener]);
 
   const prepareFrom = useCallback((card: Card, from: HopOrigin) => {
     origin.current = from;
@@ -54,26 +73,30 @@ export function useStackNavigation(journeys: JourneySession, milestones: Navigat
   const land = useCallback(() => {
     const card = preparedCardRef.current;
     if (!stackRef.current.prepared || !card) return;
+    const from = topOf(stackRef.current);
     const node = journeys.hop({ ...origin.current, page: nodePageOf(card) });
     setStack(landHop(stackRef.current, node.id));
     setPreparedCard(null);
-    milestonesRef.current.hopped();
+    listenerRef.current.hopped({ card, from, route: HOP_ROUTE[origin.current.via] });
   }, [journeys]);
 
-  const back = useCallback(() => {
+  const back = useCallback((route: Exclude<ReturnRoute, 'crumb'>) => {
+    const from = topOf(stackRef.current);
     const { state, cameFrom } = goBack(stackRef.current);
     if (!cameFrom) return false;
     const parent = state.columns[state.columns.length - 1];
     setPulse({ columnId: parent.id, cardId: cameFrom.pageId, token: Date.now() });
     setPreparedCard(null);
     setStack(state);
-    milestonesRef.current.returned();
+    listenerRef.current.returned({ from, route, columnsPopped: 1 });
     return true;
   }, []);
 
   const jump = useCallback((columnIndex: number) => {
-    const next = jumpTo(stackRef.current, columnIndex);
-    if (next.columns.length < stackRef.current.columns.length) milestonesRef.current.returned();
+    const before = stackRef.current;
+    const next = jumpTo(before, columnIndex);
+    const columnsPopped = before.columns.length - next.columns.length;
+    if (columnsPopped > 0) listenerRef.current.returned({ from: topOf(before), route: 'crumb', columnsPopped });
     setPreparedCard(null);
     setStack(next);
   }, []);
@@ -81,6 +104,7 @@ export function useStackNavigation(journeys: JourneySession, milestones: Navigat
   const resume = useCallback((point: ResumePoint) => {
     setPreparedCard(null);
     setStack(resumeStack(point.map(resumedColumnOf)));
+    listenerRef.current.resumed();
   }, []);
 
   // Home ends the expedition; any other column is where the next read or hop joins it.

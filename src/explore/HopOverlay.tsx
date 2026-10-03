@@ -42,7 +42,7 @@ export function HopOverlay({ card, seedTitle, hop, to }: HopOverlayProps) {
   const seedFaceStyle = useAnimatedStyle(() => ({ opacity: interpolate(hop.progress.value, SEED_FADE, [0, 1], Extrapolation.CLAMP) }));
 
   return (
-    <Animated.View pointerEvents="none" style={[styles.frame, { backgroundColor: palette.card, borderColor: palette.line }, frameStyle]}>
+    <Animated.View ph-no-capture pointerEvents="none" style={[styles.frame, { backgroundColor: palette.card, borderColor: palette.line }, frameStyle]}>
       <Animated.View style={[StyleSheet.absoluteFill, cardFaceStyle]}>
         <CardView card={card} seedTitle={seedTitle} />
       </Animated.View>

@@ -78,7 +78,7 @@ export function ReaderScreen({ initialTitle, onTangent, onReadLink, onClose }: R
   );
 
   return (
-    <View style={[styles.root, { backgroundColor: palette.paper, paddingTop: insets.top }]}>
+    <View ph-no-capture style={[styles.root, { backgroundColor: palette.paper, paddingTop: insets.top }]}>
       <View style={[styles.bar, { borderColor: palette.line }]}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close article" hitSlop={8} style={styles.closeButton}>
           <CaretDown size={22} color={palette.ink} />

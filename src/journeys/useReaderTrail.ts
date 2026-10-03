@@ -10,7 +10,7 @@ import { nodePageOf } from './nodePages';
  * a peek card join the expedition, and a tangent leaves from wherever the reader has got to.
  */
 export function useReaderTrail(target: ReaderTarget | null) {
-  const { journeys } = useAppServices();
+  const { journeys, analytics } = useAppServices();
   // The column the reader was opened over; moves along as peeked articles are read in place.
   const at = useRef(journeys.focusedNodeId());
 
@@ -26,8 +26,9 @@ export function useReaderTrail(target: ReaderTarget | null) {
       const node = journeys.peekRead(at.current, nodePageOf(cardFromArticle(article)));
       if (node) at.current = node.id;
       journeys.markRead(article, null);
+      analytics.track({ name: 'read_open', properties: { entry: 'peek_read', card_title: article.title } });
     },
-    [journeys],
+    [journeys, analytics],
   );
 
   const tangentOrigin = useCallback(() => at.current, []);

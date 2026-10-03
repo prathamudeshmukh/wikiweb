@@ -14,10 +14,9 @@ function setUp() {
   const journeys = memoryJourneySession();
   const octopus = journeys.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
   journeys.focus(octopus.id);
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <AppServicesProvider services={testServices(fakeWikiApi({}).api, journeys)}>{children}</AppServicesProvider>
-  );
-  return { journeys, octopus, wrapper };
+  const services = testServices(fakeWikiApi({}).api, journeys);
+  const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
+  return { journeys, octopus, wrapper, analytics: services.analytics };
 }
 
 const renderTrail = (journeys: JourneySession, wrapper: ({ children }: { children: ReactNode }) => ReactNode, title = 'Euler') =>
@@ -41,6 +40,15 @@ describe('useReaderTrail', () => {
 
     const added = journeys.getState().active?.nodes.at(-1);
     expect(added).toMatchObject({ title: 'Ink', via: 'peek_read', parentNodeId: octopus.id });
+  });
+
+  it('reports an article read from a peek card by its title only', async () => {
+    const { journeys, wrapper, analytics } = setUp();
+    const { result } = await renderTrail(journeys, wrapper);
+
+    await act(async () => result.current.readInPlace(makeArticle('Ink')));
+
+    expect(analytics.named('read_open')).toEqual([{ entry: 'peek_read', card_title: 'Ink' }]);
   });
 
   it('sends a tangent from wherever the reader has got to', async () => {

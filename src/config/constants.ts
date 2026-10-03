@@ -99,3 +99,8 @@ export function buildUserAgent(contact: string): string {
   if (!trimmed) throw new Error('A contact (URL or email) is required for the Wikipedia API user agent.');
   return `${WIKI.clientName} (${trimmed})`;
 }
+
+/** PostHog (SPEC.md §11). The project key comes from EXPO_PUBLIC_POSTHOG_KEY; without one analytics is off. */
+export const ANALYTICS = {
+  defaultHost: 'https://eu.i.posthog.com',
+} as const;

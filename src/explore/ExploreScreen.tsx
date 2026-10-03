@@ -5,7 +5,7 @@ import { useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { Card } from '../content/card';
-import { useHints } from '../hints/HintsContext';
+import { useAppActive } from '../hints/useAppActive';
 import { useAppServices } from '../services/AppServices';
 import type { ResumePoint, Tangent } from '../tangent/tangentQueue';
 import { LAYOUT } from '../theme/layout';
@@ -13,6 +13,7 @@ import { useTheme } from '../theme/useTheme';
 import { ColumnView } from './ColumnView';
 import { GESTURE, type HopController, type Rect } from './hopController';
 import { HopOverlay } from './HopOverlay';
+import { useHomeStopwatch, useNavigationAnalytics, useRunWhile } from './useExploreAnalytics';
 import { useStackNavigation } from './useStackNavigation';
 
 const EMPTY_RECT: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -88,12 +89,13 @@ interface ExploreScreenProps {
 export function ExploreScreen(props: ExploreScreenProps) {
   const { interests, onOpenArticle, onOpenLogbook, isFocused, incomingTangent, onTangentStarted, incomingResume, onResumed } = props;
   const palette = useTheme();
-  const { journeys } = useAppServices();
+  const { journeys, columnVisits } = useAppServices();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { hopped, returned } = useHints();
-  const milestones = useMemo(() => ({ hopped, returned }), [hopped, returned]);
-  const { stack, preparedCard, pulse, prepare, prepareTangent, land, back, jump, resume } = useStackNavigation(journeys, milestones);
+  const appActive = useAppActive();
+  const homeTime = useHomeStopwatch();
+  const listener = useNavigationAnalytics(homeTime);
+  const { stack, preparedCard, pulse, prepare, prepareTangent, land, back, jump, resume } = useStackNavigation(journeys, listener);
   const progress = useSharedValue(0);
   const from = useSharedValue<Rect>(EMPTY_RECT);
   const tiltDeg = useSharedValue(0);
@@ -113,14 +115,22 @@ export function ExploreScreen(props: ExploreScreenProps) {
 
   useEffect(() => {
     if (!isFocused) return undefined;
-    const sub = BackHandler.addEventListener('hardwareBackPress', back);
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => back('system_back'));
     return () => sub.remove();
   }, [back, isFocused]);
 
   const depth = stack.columns.length - 1;
+  useRunWhile(homeTime, depth === 0 && isFocused && appActive);
   // The prepared column renders as the next item of the same keyed list, so landing never remounts it.
   const columns = stack.prepared ? [...stack.columns, stack.prepared] : stack.columns;
-  const onBack = useCallback(() => void back(), [back]);
+  const onBack = useCallback(() => void back('swipe'), [back]);
+  const openArticle = useCallback(
+    (card: Card) => {
+      columnVisits.cardOpened(card);
+      onOpenArticle(card);
+    },
+    [columnVisits, onOpenArticle],
+  );
 
   return (
     <View style={[styles.root, { backgroundColor: palette.paper }]}>
@@ -137,7 +147,7 @@ export function ExploreScreen(props: ExploreScreenProps) {
               candidateCardId={i === depth && preparedCard ? preparedCard.pageId : null}
               pulse={pulse?.columnId === entry.id ? pulse : null}
               hop={hop}
-              onOpen={onOpenArticle}
+              onOpen={openArticle}
               onBack={onBack}
               onJump={jump}
               onOpenLogbook={onOpenLogbook}
