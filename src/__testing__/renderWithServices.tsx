@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { type MemoryAnalytics, memoryAnalytics } from '../analytics/__testing__/memoryAnalytics';
+import { createAnalyticsConsent } from '../analytics/analyticsConsent';
+import { createColumnVisits } from '../analytics/columnVisits';
+import { createExpeditionReporter } from '../analytics/expeditionReport';
 import type { InterestsStore } from '../interests/interestsStore';
 import { PREFETCH } from '../config/constants';
 import { columnFeedFor } from '../explore/columnFeedFor';
@@ -24,14 +28,38 @@ export function memoryInterestsStore(initial: string[] | null = null): Interests
   };
 }
 
-/** The app's services over a fake Wikipedia API and in-memory stores. */
-export function testServices(api: WikiApi, journeys: JourneySession = memoryJourneySession()): AppServices {
+function memoryKv() {
+  let values: Record<string, string> = {};
+  return {
+    getItem: async (key: string) => values[key] ?? null,
+    setItem: async (key: string, value: string) => {
+      values = { ...values, [key]: value };
+    },
+  };
+}
+
+export type TestServices = AppServices & { analytics: MemoryAnalytics };
+
+/** The app's services over a fake Wikipedia API and in-memory stores; `analytics` records every event. */
+export function testServices(api: WikiApi, journeys: JourneySession = memoryJourneySession()): TestServices {
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry) => columnFeedFor(api, entry) });
-  return { api, interests: memoryInterestsStore(), hints: memoryHintStore(), journeys, prefetcher };
+  const analytics = memoryAnalytics();
+  return {
+    api,
+    interests: memoryInterestsStore(),
+    hints: memoryHintStore(),
+    journeys,
+    prefetcher,
+    analytics,
+    analyticsClient: null,
+    analyticsConsent: createAnalyticsConsent(memoryKv(), analytics),
+    columnVisits: createColumnVisits({ analytics, now: Date.now }),
+    expeditions: createExpeditionReporter({ analytics, now: Date.now }),
+  };
 }
 
 /** Renders UI inside the same providers the app uses, with a fake Wikipedia API and in-memory journeys. */
-export function renderWithServices(ui: ReactElement, api: WikiApi, journeys: JourneySession = memoryJourneySession()) {
+export async function renderWithServices(ui: ReactElement, api: WikiApi, journeys: JourneySession = memoryJourneySession()) {
   const services = testServices(api, journeys);
   // A wrapper, so `rerender` keeps the same providers and services.
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -43,7 +71,7 @@ export function renderWithServices(ui: ReactElement, api: WikiApi, journeys: Jou
       </AppServicesProvider>
     </SafeAreaProvider>
   );
-  return render(ui, { wrapper });
+  return { ...(await render(ui, { wrapper })), services };
 }
 
 const PHONE_LIST_HEIGHT = 700;

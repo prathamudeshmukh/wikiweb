@@ -80,7 +80,7 @@ function RecapContent({ expedition, onContinue }: { expedition: Expedition; onCo
   const { id } = expedition.journey;
   const resumeAt = resumeNodeId(expedition);
   return (
-    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + LAYOUT.gutter }]}>
+    <ScrollView ph-no-capture contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + LAYOUT.gutter }]}>
       <RecapCard expedition={expedition} onContinue={() => resumeAt && onContinue(id, resumeAt)} />
       <View>
         <Text style={[styles.eyebrow, styles.listHead, { color: palette.muted }]}>ROUTE · TAP TO REOPEN</Text>

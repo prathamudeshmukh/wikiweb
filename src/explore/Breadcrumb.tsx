@@ -40,7 +40,7 @@ export function Breadcrumb({ path, onJump, entry }: BreadcrumbProps) {
   }));
 
   return (
-    <View style={styles.row} accessibilityRole="toolbar" accessibilityLabel="Route">
+    <View ph-no-capture style={styles.row} accessibilityRole="toolbar" accessibilityLabel="Route">
       {crumbs.map((crumb, i) => {
         const isLast = i === crumbs.length - 1;
         const target = crumb.columnIndex;

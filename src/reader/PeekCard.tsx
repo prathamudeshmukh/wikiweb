@@ -49,7 +49,7 @@ export function PeekCard({ title, onTangent, onRead, onClose }: PeekCardProps) {
   const canTangent = article !== null && !article.isDisambiguation;
 
   return (
-    <View style={[styles.sheet, { backgroundColor: palette.card, borderColor: palette.line, paddingBottom: insets.bottom + 16 }]} accessibilityViewIsModal>
+    <View ph-no-capture style={[styles.sheet, { backgroundColor: palette.card, borderColor: palette.line, paddingBottom: insets.bottom + 16 }]} accessibilityViewIsModal>
       <View style={styles.row}>
         {article?.thumbnail ? <Image source={{ uri: article.thumbnail.url }} style={[styles.thumb, { borderColor: palette.line }]} contentFit="cover" /> : null}
         <View style={styles.text}>
