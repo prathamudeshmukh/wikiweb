@@ -30,7 +30,7 @@ export function SettingsScreen({ interests, onBack, onOpenInterests }: SettingsS
         >
           <View style={styles.rowText}>
             <Text style={[styles.rowTitle, { color: palette.ink }]}>Interests</Text>
-            <Text style={[styles.rowValue, { color: palette.muted }]} numberOfLines={1}>{summary}</Text>
+            <Text style={[styles.rowValue, { color: palette.muted }]} numberOfLines={2}>{summary}</Text>
           </View>
           <CaretRight size={18} color={palette.muted} />
         </Pressable>
