@@ -115,7 +115,7 @@ Packages: `@expo-google-fonts/fraunces`, `@expo-google-fonts/literata`, `@expo-g
 │ └──────────────────────────┘ │
 │ Cephalopod                   │  Fraunces 28/32
 │ intelligence                 │
-│ ● BIOLOGY · 4 MIN       ◌ ✓  │  meta · visited ◌ / read ✓ badges
+│ ● BIOLOGY · 4 MIN     ◌ ✓ ✦  │  meta · visited ◌ / read ✓ badges · Find ✦ (§5.11)
 │                              │
 │ Octopuses can open jars,     │  Literata 17/27, fills free height
 │ escape tanks and recognise   │
@@ -137,7 +137,7 @@ Same layout; image slot replaced by a territory-colour block (16:10) containing 
 | morelike | `≈ SIMILAR TO {SEED}` |
 | Home – interest | `★ YOU LIKE {TOPIC}` |
 | Home – today | `☀ TODAY ON WIKIPEDIA` |
-| Home – wildcard | `✦ WILDCARD` |
+| Home – wildcard | `↯ WILDCARD` (was `✦` until M6 — ✦ now means Find) |
 
 ### 5.4 Badges
 - **Visited** (seen on another branch of this expedition): dashed circle `◌` in `ink.muted`.
@@ -177,7 +177,7 @@ Stamp drops in at centre-top, mono caption `NEW TERRITORY · PHILOSOPHY`, auto-d
 │ ●───●───●───●───●───●───●    │  route strip, dots in territory colours
 │ LIFE      EARTH      PAST    │
 │                              │
-│ 7 tangents · 3 read          │  Literata
+│ 7 tangents · 3 read · 2 finds│  Literata; "· finds" hidden when 0
 │ Furthest leap:               │
 │ Iron gall ink → Magna Carta  │
 │                              │
@@ -185,6 +185,14 @@ Stamp drops in at centre-top, mono caption `NEW TERRITORY · PHILOSOPHY`, auto-d
 └──────────────────────────────┘
 ```
 "Furthest leap" = consecutive hop pair whose territories differ and whose nodes are deepest; ties → latest.
+
+### 5.11 Find mark ✦ (M6)
+The four-point star from the app-icon rim (§9) — the same vector, no new art.
+- **Off:** outline ✦ in `ink.muted`. **On:** solid ✦ in the card's territory colour (ink when the card has no territory).
+- **Card:** end of the meta row after ◌ ✓, ~16 pt (a touch larger than the badges), padded to a 44 pt touch target. Visible on every card, found or not.
+- **Reader:** ✦ button at the right end of the header bar, opposite close.
+- **Peek card** for a Find: ✦ in the title row, solid.
+- Never on compass, dead-end, error or offline cards.
 
 ---
 
@@ -215,10 +223,10 @@ Header: wordmark left, Logbook (`BookOpen`) right. One snapping card + 56 pt pee
 Header = breadcrumb route, then seed header, then snapping cards. No Logbook button mid-expedition. Until the first return, each column's first card carries the same chip with the back copy (§8); no peel.
 
 ### 6.4 Reader sheet
-Full-height sheet over the column, grabber on top, `bg.card` surface, injected CSS (fonts, colours, hides edit links, max measure 68 ch, images framed like cards). Footer: `FROM WIKIPEDIA · CC BY-SA 4.0` + link to source.
+Full-height sheet over the column, grabber on top, header bar with close (left) and Find ✦ (right, §5.11), `bg.card` surface, injected CSS (fonts, colours, hides edit links, max measure 68 ch, images framed like cards). Footer: `FROM WIKIPEDIA · CC BY-SA 4.0` + link to source.
 
 ### 6.5 Logbook
-Back, title `LOGBOOK`, gear. Stamps grid (5 per row, `6 / 24` count). Expeditions list: title, date, hop count, territory route strip. Tap → recap card.
+Back, title `LOGBOOK`, gear. Stamps grid (5 per row, `6 / 24` count). Then `FINDS · {n}` (M6): a horizontal strip of the latest finds (thumbnail or territory swatch, title, solid ✦), newest first, with *See all →* to the `FINDS` list screen (title, `FOUND ON · FROM {first}…` / `FOUND ON HOME` caption). Tap a find → peek card (§5.8). Then the expeditions list: title, date, hop count, territory route strip. Tap → recap card.
 
 ### 6.6 Settings
 Interests (re-open tile picker) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · About & attributions.
@@ -246,6 +254,7 @@ Interests (re-open tile picker) · Theme (System / Paper / Night atlas) · Reduc
 | **Snap scroll** | Platform paging spring |
 | **Hint peel** | Focused Home card eases out to `−96` pt (380 ms, ease-out cubic) with the drag's tilt and label fade, holds 600 ms, springs back (damping 18, stiffness 180, overshoot clamped — an overshoot past rest read as a shake on device). No haptic. Reduce Motion: none |
 | **Stamp toast** | Scale 1.4 → 1.0 with −8°→ seeded rotation, 220 ms; ink-spread mask 0 → 100 % 180 ms; medium haptic |
+| **Find** | Outline → solid: the stamp's ink-spread mask 0 → 100 % in 180 ms; light haptic. Remove: instant to outline, no haptic. Reduce Motion: cross-fade |
 | **Reader** | Platform bottom sheet |
 | **Reduce Motion** | All of the above → 200 ms cross-fades; no tilt, no scale, no route drawing |
 
@@ -268,9 +277,14 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Onboarding CTA | Set off → |
 | Seed header | Exploring from {title} |
 | Recap title | From {first} to {last} |
-| Recap count | {n} tangents · {r} read |
+| Recap count | {n} tangents · {r} read · {f} finds (finds part hidden when 0) |
 | Toast | New territory · {topic} |
 | Logbook empty | No expeditions yet. Swipe left on anything that catches your eye. |
+| Find ✦ label (off / on) | Keep as a find / Remove find |
+| Find removed toast | Find removed · Undo |
+| Logbook Finds section | Finds · {n} — See all → |
+| Find caption | Found on · From {first}… / Found on Home |
+| Finds empty | Nothing found yet. Tap ✦ on anything worth keeping. |
 
 ---
 
@@ -309,6 +323,7 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 
 - AA contrast (§2.3) in both themes.
 - Every gesture has a button equivalent: card long-press → action menu (Read / Take a tangent); column header back button; VoiceOver/TalkBack custom actions on cards.
+- The card is one accessible element, so its ✦ is not separately focusable: cards expose a custom action *Keep as a find* / *Remove find* (M6), and the label gains "Kept as a find" when on.
 - Font scaling respected; minimum touch target 44 pt.
 - Reduce Motion honoured (§7).
 - Haptics off when system haptics are off.
