@@ -95,7 +95,7 @@ Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`
 
 ### 3.5 Journeys
 - **Logbook** screen (from Home header): stamps grid (collected / 24) and expeditions list (title, date, hop count, territory route strip).
-- **Completed** (M8, §3.9): interest-tree nodes the user has read in full, newest first — `STOICISM · 37 ARTICLES · {date}`. Hidden while empty.
+- **Completed** (M8, §3.9): interest-tree nodes the user has read in full, newest first — `STOICISM · 37 ARTICLES · {date}`. Hidden while empty. Tapping a row opens the tree screen of its tile, scrolled to the node's parent.
 - Opening an expedition shows its **recap card** (start → end, route strip, tangents/read counts, furthest leap). **Continue expedition** restores its path to the most recent node; a node list reopens any column.
 
 ### 3.6 Learning layer
@@ -161,7 +161,7 @@ Broad tiles are too coarse for someone into *Stoicism* or *Logic*: ORES `article
 
 **Picking**
 - Onboarding stays flat (§3.1) — the tree is never shown before the first Home.
-- The tree lives in **Settings → Interests**: tapping a tile that has a tree opens its subfields; tapping a subfield opens its leaves. Subfields and leaves are both pickable.
+- The tree lives in **Settings → Interests**: tapping a tile that has a tree opens its **tree screen** (DESIGN.md §5.13) instead of toggling it. One screen per tile, no third level: the broad pick (*All of Philosophy*) at the top, then one card per subfield with its leaves as chips. Subfields and leaves are both pickable. Picks made there are a draft until **Save** on the tile grid, as today.
 - **Most specific pick wins.** A tile with no picks below it means *all of the tile* (its `articletopic` query). Picking any subfield or leaf **narrows** the tile to just those picks; picking a subfield means all of that subfield. Clearing every pick below a tile makes it broad again. A pick and its own ancestor are never both kept — picking a child replaces the ancestor.
 - **Minimum:** at least `MIN_INTEREST_PICKS` **tiles touched** — a tile counts if it is picked itself or has any pick below it. Any number of subfields/leaves within those tiles.
 
@@ -170,12 +170,12 @@ Broad tiles are too coarse for someone into *Stoicism* or *Logic*: ORES `article
 - A card from a subfield/leaf pick carries that node, and its why-line names it: `★ YOU LIKE STOICISM` (DESIGN.md §5.3). Its **colour, topic label and stamp still come from `cirrusdoc`** (§5.4), so an article looks the same on Home and in any column. The fallback topic for an untagged card is the node's tile.
 
 **Nudges into the tree**
-- **Prompt card.** After the user has read `NICHE_NUDGE_READS` (3) articles whose topic is a tile that has a tree and that they picked **broadly**, Home inserts one prompt card: `NARROW PHILOSOPHY?` with chips for the tile's subfields. A chip adds that pick immediately (Home rebuilds as after Settings → Save); tapping the card body opens the tile's tree. Limits: **once per tile, at most one per app session, never again for that tile once dismissed** (swipe right on it, or scrolled past without acting, counts as dismissed).
+- **Prompt card.** After the user has read `NICHE_NUDGE_READS` (3) articles whose topic is a tile that has a tree and that they picked **broadly**, Home inserts one prompt card: `NARROW PHILOSOPHY?` with chips for the tile's subfields (DESIGN.md §5.14). Chips are multi-select: each tap toggles that pick at once, and Home rebuilds (as after Settings → Save) `NICHE_CHIP_SETTLE_MS` after the last tap, with one toast naming every pick. Tapping the card body opens the tile's tree. Limits: **once per tile, at most one per app session, never again for that tile once dismissed** (swipe right on it, or scrolled past without acting, counts as dismissed).
 - **Topic label.** Tapping the topic label on any card whose tile has a tree opens that tile's tree in Settings → Interests.
 
 **When a pick runs dry**
 - A subfield/leaf pool is small (tens to low hundreds of articles; *Stoicism* has 37). A node is **exhausted** when every article in its pool is in `read_history`. Shown-but-unread articles don't count — they come back next session. Checked when the node's stream ends, against `read_history`; not stored, so a category that grows on Wikipedia revives the node by itself.
-- First time a node is found exhausted: Home shows a one-time card `YOU'VE READ ALL OF STOICISM · 37 ARTICLES` with chips for sibling nodes (*Epicureanism, Cynicism*) to add, and the node is written to `completed_leaves` for the Logbook's **Completed** section.
+- First time a node is found exhausted: Home shows a one-time card `YOU'VE READ ALL OF STOICISM · 37 ARTICLES` with chips for sibling nodes not already picked (*Epicureanism, Cynicism*), which behave like the prompt card's chips, and the node is written to `completed_leaves` for the Logbook's **Completed** section.
 - From then on that pick's stream **widens to its parent** (leaf → subfield → tile) until the parent is exhausted too. The saved pick is not changed.
 
 **Tree edits.** Picks are stored as **path ids** (`philosophy/logic/paradoxes`). A saved pick whose node no longer exists resolves to its nearest existing ancestor and reports a warning (`reportError`, reason code only). The first segment is always a tile id, so a pick never resolves below tile level and the tiles-touched minimum can't break. Existing saved tile ids are valid path ids — no migration.
@@ -213,6 +213,7 @@ BACKLINK_EVERY_N         = 4      // insert one backlink per N link cards
 CARD_CACHE_TTL_HOURS     = 24
 MIN_INTEREST_PICKS       = 3      // tiles touched (picked, or with a pick below them)
 NICHE_NUDGE_READS        = 3      // reads in a broad tree tile before its prompt card
+NICHE_CHIP_SETTLE_MS     = 1200   // prompt/exhaustion chips: rebuild Home this long after the last tap
 HINT_PEEL_DISTANCE       = 96     // pt; below the commit distance on the narrowest phone
 HINT_PEEL_HOLD_MS        = 600
 HINT_FIRST_PEEL_DELAY_MS = 800    // after Home appears
@@ -317,7 +318,7 @@ The last four were added 2026-10-03 (Featured / Good pools: architecture 136 / 1
 
 Mapping lives in a config file, not code.
 
-**Interest tree (§3.9).** Also config, next to the tiles: each subfield and leaf has an id (unique among its siblings), a label, and a query:
+**Interest tree (§3.9).** Also config, next to the tiles: each subfield and leaf has an id (unique among its siblings), a label, an approximate pool size (shown on leaf chips), three sample article titles for subfields (shown on their cards), and a query:
 - `incategory:<Category>` — **shallow only**. `deepcat:` is never used: it wanders (`deepcat:Logic` + Good/Featured returns *September 11 attacks, Shakespeare, Tolkien, South Park*, live 2026-10-04) and is capped at depth 5 / 256 categories.
 - optionally `morelike:<Anchor article>` alternated with it, for small categories.
 - **No Featured/Good restriction.** Niche categories have no reviewed articles (`incategory:Stoicism` 37 articles, 0 Featured/Good). The hand-picked category is the quality gate instead of review status; the Home blocklist and §5.3 filter still apply. Order `gsrsort=random`, as for tiles.
@@ -520,7 +521,7 @@ Analytics exists mainly to judge **feed quality**: which columns and Home picks 
 
 | Event | When | Properties |
 |---|---|---|
-| `card_seen` | A card dwells (§7: ≥ 75 % visible for 600 ms) in the column on top; once per card per column visit | `card_title`, `source`, `topic`, `territory`, `position`, `hub`, `seed_title`, `depth` |
+| `card_seen` | A card dwells (§7: ≥ 75 % visible for 600 ms) in the column on top; once per card per column visit | `card_title`, `source`, `topic`, `territory`, `position`, `hub`, `seed_title`, `depth`, `interest_node` (path id of the subfield/leaf a Home card came from, else null) |
 | `column_left` | The column on top stops being on top | `seed_title`, `depth`, `outcome` (`hop`/`swipe`/`crumb`/`system_back`/`refresh`/`resume`/`background`/`replaced`), `cards_seen`, `deepest_position`, `reads`, `seconds`, `feed_end` (`dead_end`/`error`/null) |
 | `hop` | A hop lands | `route` (`swipe`/`tangent`/`atlas`), card properties (`position` null for a tangent, or a card swiped before it dwelt), `seed_title` and `depth` of the column left |
 | `return` | Back to a lower column | `route` (`swipe`/`crumb`/`system_back`), `columns_popped`, `seed_title` and `depth` of the column left |
@@ -529,10 +530,17 @@ Analytics exists mainly to judge **feed quality**: which columns and Home picks 
 | `stamp_earned` | A new stamp | `topic`, `territory` |
 | `first_hop` | Once per install | `route`, `peels_seen`, `seconds_on_home` (Home time this launch, while Home is on top and the app foregrounded) |
 | `first_return` | Once per install | `route` |
+| `interests_saved` | Picks saved (§3.9) | `from` (`onboarding`/`settings`/`prompt`/`exhaustion`), `tiles`, `subfields`, `leaves` (counts after the save), `added` (path ids). Title-free. |
+| `interest_tree_opened` | A tree screen opens | `tile`, `from` (`settings`/`prompt`/`topic_label`/`completed`) |
+| `niche_prompt_shown` | A prompt card dwells | `tile` |
+| `niche_prompt_dismissed` | A prompt card is swiped away or scrolled past without a chip | `tile`, `how` (`swipe`/`scrolled_past`) |
+| `niche_node_exhausted` | A node is first found exhausted | `node` (path id), `articles` |
 | `atlas_set_off` | Set off from the atlas (§3.8), before the column lands | `from` (`place`/`territory_sheet`/`blind_spot`/`zoom`), `territory`, `charted`, `place_count` (in that territory). Title-free. |
 | `app_error` | Anything passed to `reportError` | `scope`, `reason` (`http_429`, `api_<code>`, `network`, `parse`, `cancelled`, or the error class — never the message) |
 
 A column **visit** runs from the column becoming the one on top to it stopping (a hop covering it counts as leaving, with `outcome: hop`); time with the reader, Logbook or Settings over it counts towards the visit. Only the app going to the background ends a visit or reports an expedition — iOS *inactive* (Control Centre, alerts) doesn't. Cards already dwelt on when a column comes on top count as seen, and a feed that ended before then still sets `feed_end`. Opting out also drops events not yet sent, and `Application Opened` is sent without its launch URL (a deep link can name an article). Skip rate is `card_seen` without a matching `hop` or `read_open`; a flat column is a `column_left` with no hop out and no reads.
+
+**Do people drill down?** (§3.9) Read 4 weeks after release: the share of active users with a narrowed tile, `interests_saved` split by `from` (does the prompt card do the work?), prompt dismiss rate, and node-card skip rate against broad interest cards.
 
 **Is the atlas worth it?** (§3.8) Two measures, read 4 weeks after release: the share of new expeditions started from the atlas (`hop` with `route: atlas`), and, for users who set off at least once, the territories per expedition (`expedition_ended.territories`) before and after their first set-off. If under 5 % of expeditions start from the atlas and territory spread doesn't move, reduce the atlas to a per-expedition map (§1 non-goals).
 
@@ -585,5 +593,5 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | Niche: tree curation cost | ~25 nodes per tile, each verified live. Start with 4 tiles; extend only if people drill down. |
 | Niche: Wikipedia categories change | A renamed/emptied category makes a node return nothing; the live config check (§12) catches it, and Home's round-robin skips an empty stream meanwhile. |
 | Niche: unreviewed articles reach Home | Categories are hand-picked and scanned; blocklist and §5.3 filter still apply. Watch skip rate of node cards (`card_seen` without hop/read). |
-| Open: analytics for niche interests | Needed to judge §3.9 scope (do people drill down?): events for pick changes from Settings vs prompt card, prompt shown/dismissed, node exhausted. Define before M8 ships. |
+| Niche: do people drill down? | Decided (§11): `interests_saved` by `from`, `interest_tree_opened` by `from`, prompt shown/dismissed, `niche_node_exhausted`, and `card_seen.interest_node` for node-card skip rate. Extend trees past 4 tiles only if ≥ 15 % of active users narrow a tile within 4 weeks. |
 | Name "Tangent" | Check App Store / Play Store / domain availability. Do not use "Wikipedia" or Wikimedia marks in name or icon |

@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="lavish-design" content="off">
+<title>Niche Interests Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500&family=Literata:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F4EDE0; --card: #FBF7EF; --ink: #1F1B16; --muted: #6B6258; --line: #D9CFBF; --on-terr: #FBF7EF;
+    --mind: #6B3B66; --cosmos: #2E3A7A; --past: #9A3B2E; --culture: #B23A5E; --life: #3F6B3A; --earth: #875C10; --craft: #1F6F6B;
+    --shadow: 0 2px 0 #D9CFBF, 0 12px 24px rgba(31,27,22,.08); --card-border: transparent; --stage: #E7DFD0;
+  }
+  :root[data-theme="dark"] {
+    --paper: #1B1712; --card: #25201A; --ink: #EDE4D3; --muted: #A89C8A; --line: #3A332A; --on-terr: #1B1712;
+    --mind: #C493BF; --cosmos: #9AA6E8; --past: #E08A7A; --culture: #EE8FAA; --life: #8DB880; --earth: #D9A94F; --craft: #6BBDB6;
+    --shadow: none; --card-border: #3A332A; --stage: #100E0B;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--stage); color: var(--ink); font-family: 'Literata', serif; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 28px; margin: 0 0 4px; }
+  h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 15px; margin: 0 0 18px; max-width: 720px; line-height: 1.55; }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .pillbtn { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+  .pillbtn.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  section.piece { margin: 0 0 56px; }
+  .piece-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .num { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .notes { flex: 1 1 280px; min-width: 0; font-size: 14.5px; line-height: 1.55; }
+  .notes ul { padding-left: 18px; margin: 8px 0; }
+  .notes li { margin: 4px 0; }
+  .notes code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+
+  /* decision box */
+  .decide { margin-top: 14px; border: 1px dashed var(--line); border-radius: 14px; padding: 12px 14px; background: color-mix(in srgb, var(--card) 70%, transparent); }
+  .decide .q { font-weight: 600; margin-bottom: 8px; }
+  .opts { display: flex; flex-direction: column; gap: 6px; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer; font-size: 14px; line-height: 1.45; }
+  .opt.sel { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .opt .dot { flex: 0 0 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--ink); margin-top: 3px; }
+  .opt.sel .dot { background: var(--ink); }
+  .rec { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .06em; color: var(--muted); margin-left: 4px; }
+
+  /* phone */
+  .phone { width: 360px; max-width: 100%; height: 740px; border-radius: 40px; background: var(--paper); border: 8px solid #111; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.25); flex: 0 0 auto; }
+  .phone.short { height: auto; padding-bottom: 20px; }
+  .status { height: 30px; }
+  .scr-head { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+  .back { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; color: var(--ink); background: none; border: 0; }
+  .scr-title { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 12px; letter-spacing: .08em; }
+  .scr-body { padding: 8px 16px 16px; overflow-y: auto; height: calc(100% - 78px - 68px); }
+  .heading { font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; line-height: 36px; margin: 8px 0 6px; }
+  .intro { color: var(--muted); font-size: 15px; line-height: 22px; margin: 0 0 8px; }
+  .count { color: var(--muted); padding: 4px 0 10px; }
+  .count b { color: var(--ink); font-weight: 500; }
+  .actions { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px 18px; background: var(--paper); }
+  .primary { width: 100%; height: 48px; border-radius: 999px; border: 0; background: var(--ink); color: var(--card); font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .primary:disabled { opacity: .35; cursor: default; }
+
+  /* tile grid */
+  .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .tile { position: relative; height: 84px; padding: 9px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform .15s; min-width: 0; }
+  .tile .ic { font-size: 22px; line-height: 1; }
+  .tile .lb { font-family: 'Fraunces', serif; font-weight: 600; font-size: 13px; line-height: 16px; overflow: hidden; text-overflow: ellipsis; }
+  .tile.sel { color: var(--on-terr); }
+  .tile .badge { position: absolute; top: 7px; right: 7px; min-width: 20px; height: 20px; border-radius: 10px; background: var(--on-terr); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; padding: 0 5px; }
+  .tile .branch { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+  .tile .narrowed { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: .06em; opacity: .9; margin-top: -2px; }
+
+  /* tree rows */
+  .tree-all { display: flex; align-items: center; gap: 12px; padding: 12px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); margin: 6px 0 16px; cursor: pointer; }
+  .tree-label { color: var(--muted); margin: 0 0 4px; }
+  .trow { display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid var(--line); }
+  .trow:last-child { border-bottom: 0; }
+  .trow .hit { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; padding: 10px 0; cursor: pointer; }
+  .box { flex: 0 0 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--muted); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--on-terr); }
+  .box.on { background: var(--mind); border-color: var(--mind); }
+  .box.part { border-color: var(--mind); color: var(--mind); }
+  .tname { font-size: 17px; line-height: 22px; }
+  .tsub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+  .chev { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 20px; cursor: pointer; border-left: 1px solid var(--line); }
+
+
+  /* tree screen: hero block + route spine */
+  .hero { position: relative; border-radius: 20px; color: var(--on-terr); padding: 16px 16px 14px; margin: 4px 0 18px; overflow: hidden; }
+  .hero-eye { opacity: .9; font-size: 10px; }
+  .hero-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; line-height: 38px; margin: 6px 0 14px; }
+  .hero-icon { position: absolute; right: 14px; top: 12px; font-size: 46px; opacity: .85; }
+  .hero-all { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 6px; border-radius: 999px; border: 1.5px solid var(--on-terr); background: transparent; color: var(--on-terr); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+  .hero-all.on { background: var(--on-terr); color: var(--terr); }
+  .hero-box { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid currentColor; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .hero-all.on .hero-box { background: var(--terr); color: var(--on-terr); border-color: var(--terr); }
+  .spine-label { color: var(--muted); margin: 0 0 10px; }
+  .spine { position: relative; padding-left: 26px; }
+  .spine::before { content: ''; position: absolute; left: 8px; top: -16px; bottom: 24px; width: 2px; background-image: radial-gradient(circle, var(--muted) 1px, transparent 1.3px); background-size: 2px 6px; background-repeat: repeat-y; opacity: .8; }
+  .node { position: relative; margin-bottom: 12px; }
+  .pin { position: absolute; left: -24px; top: 18px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--terr); background: var(--paper); z-index: 1; }
+  .pin::after { content: ''; position: absolute; left: 12px; top: 4px; width: 10px; border-top: 2px dotted var(--muted); }
+  .pin.on { background: var(--terr); }
+  .pin.part { background: linear-gradient(90deg, var(--terr) 50%, var(--paper) 50%); }
+  .sub { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--card-border); padding: 4px 12px 12px; transition: transform .15s, box-shadow .15s; }
+  .sub.on { box-shadow: inset 0 0 0 1.5px var(--terr), var(--shadow); }
+  .sub-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 10px 0 8px; cursor: pointer; }
+  .sub-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; line-height: 23px; }
+  .sub-eg { font-style: italic; color: var(--muted); font-size: 13px; line-height: 18px; margin-top: 2px; }
+  .sub-check { flex: 0 0 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; color: var(--terr); }
+  .sub.on .sub-check { background: var(--terr); border-color: var(--terr); color: var(--on-terr); }
+  .sub.part .sub-check { border-color: var(--terr); }
+  .leaf-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .leaf { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+  .leaf-n { color: var(--muted); font-size: 9.5px; }
+  .leaf.inc { border-color: var(--terr); color: var(--terr); border-style: dashed; }
+  .leaf.on { background: var(--terr); border-color: var(--terr); color: var(--on-terr); }
+  .leaf.on .leaf-n { color: var(--on-terr); opacity: .8; }
+  .spine-foot { color: var(--muted); font-size: 9.5px; line-height: 15px; margin: 4px 0 0 26px; }
+
+  /* home */
+  .home-head { height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+  .wordmark { font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; }
+  .card { margin: 4px 16px 0; height: 600px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); border: 1px solid var(--card-border); padding: 20px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  .block { aspect-ratio: 16/10; border-radius: 14px; background: var(--mind); color: var(--on-terr); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+  .block .bt { font-family: 'Fraunces', serif; font-weight: 600; font-size: 32px; line-height: 36px; }
+  .block .bi { position: absolute; right: 14px; bottom: 12px; font-size: 40px; opacity: .85; }
+  .block .eyebrow { opacity: .9; }
+  .meta { display: flex; justify-content: space-between; margin: 14px 0 8px; color: var(--mind); }
+  .body { font-size: 16px; line-height: 25px; margin: 0 0 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 0 12px; height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
+  .chip .d { width: 7px; height: 7px; border-radius: 50%; background: var(--mind); }
+  .chip.on { background: var(--ink); border-color: var(--ink); color: var(--card); }
+  .chip.on .d { background: var(--card); }
+  .why { margin-top: auto; display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+  .why .link { color: var(--ink); cursor: pointer; }
+  .toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--card); border-radius: 999px; padding: 10px 16px; white-space: nowrap; opacity: 0; transition: all .2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .stamp { position: absolute; top: 14px; right: 14px; width: 74px; height: 74px; border-radius: 50%; border: 2px solid var(--on-terr); display: flex; align-items: center; justify-content: center; transform: rotate(-8deg); text-align: center; line-height: 1.1; }
+  .stamp::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; border: 1px solid var(--on-terr); }
+  .stamp span { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .06em; }
+  .stamp b { display: block; font-family: 'Fraunces', serif; font-size: 18px; }
+
+  /* logbook */
+  .lb-sec { padding: 0 16px; }
+  .lb-label { color: var(--muted); display: flex; justify-content: space-between; padding: 18px 0 8px; }
+  .comp { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+  .comp .sw { flex: 0 0 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--on-terr); }
+  .comp .t { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; line-height: 22px; }
+  .comp .c { color: var(--muted); font-size: 10px; margin-top: 3px; }
+  .comp .done { margin-left: auto; color: var(--muted); font-size: 18px; }
+  .fake-strip { display: flex; gap: 10px; overflow: hidden; }
+  .fake-strip div { flex: 0 0 96px; height: 70px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
+  .stamps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .stamps div { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed var(--line); }
+  .stamps div.got { border: 2px solid var(--mind); }
+
+  /* topic label press */
+  .tl { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; margin: -4px -8px; border-radius: 999px; cursor: pointer; transition: background .12s; color: var(--mind); user-select: none; }
+  .tl .d { width: 8px; height: 8px; border-radius: 50%; background: var(--mind); }
+  .tl:active, .tl.pressed { background: var(--line); }
+  .tl.cue::after { content: '›'; font-size: 13px; margin-left: 1px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--card); border-radius: 14px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  td code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .table-wrap { overflow-x: auto; }
+
+  .send { position: sticky; bottom: 12px; margin-top: 32px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--ink); color: var(--card); border-radius: 18px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .send button { background: var(--card); color: var(--ink); border: 0; border-radius: 999px; padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+  .send .summary { font-size: 13px; min-width: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Niche interests: five pieces to design</h1>
+  <p class="sub">SPEC §3.9 (M8). Everything is built from what Tangent already has: the tile picker, the typographic card, mono chips, Logbook rows. There's no new colour, font or icon family. Phones 1, 2 and 4 are clickable. Each piece has a decision with my recommendation picked; change any of them, then press <b>Send</b> at the bottom.</p>
+  <div class="controls">
+    <button class="pillbtn on" data-lavish-action onclick="setTheme('light', this)">Paper</button>
+    <button class="pillbtn" data-lavish-action onclick="setTheme('dark', this)">Night atlas</button>
+  </div>
+
+  <!-- 1. Settings tree -->
+  <section class="piece">
+    <div class="piece-head"><span class="num">01</span><h2>Settings → Interests: the tree</h2></div>
+    <div class="row">
+      <div class="phone" id="phone-settings"></div>
+      <div class="notes">
+        <p class="mono" style="color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px">Try it: tap Philosophy, History, Science or Maths (the ⑂ tiles) to open their tree. Tap a card header for a whole subfield, a chip for one topic; ‹ goes back.</p>
+        <p><b>Grid.</b> Tiles with a tree carry a small branch mark (⑂) top-right while unpicked. Picked broadly: filled with a ✓ as today. Narrowed: filled, the ✓ becomes a <b>count of picks</b> below it, and a <code>NARROWED</code> line sits under the label. The counter keeps counting <i>tiles touched</i>, so the rule you see is the rule that's checked.</p>
+        <p><b>Tree screen</b>, one page per tree tile, with no third level:</p>
+        <ul>
+          <li><b>Header</b>: the tile's territory block (same as a typographic card), with its icon, a live status (<code>ALL OF PHILOSOPHY</code> / <code>NARROWED TO 2 CORNERS</code> / <code>NOT PICKED</code>) and the <b>All of Philosophy</b> pill as the broad pick.</li>
+          <li><b>Route spine</b>: the breadcrumb's dotted route line runs down from the header. Each subfield hangs off it on a pin that is hollow when unpicked, half-filled when some of its topics are picked, and solid when the whole subfield is picked. It's the same <i>map</i> idea as the Logbook route strip.</li>
+          <li><b>Subfield cards</b>: card surface and lift, Fraunces title, and three <b>sample articles</b> in italics so you know what's inside (<i>every card teaches</i>). Tap the header to pick the whole subfield: the card tilts slightly and gets a territory outline, like a picked tile.</li>
+          <li><b>Topics as chips</b> inside each card, with the approximate pool size (e.g. <code>STOICISM 37</code>). That sets expectations for running dry and lets you see the whole tree on one scroll. When the whole subfield is picked, its chips show dashed in territory colour (included); tapping one narrows the subfield to that topic.</li>
+        </ul>
+        <p><b>Most specific wins</b>, live on screen: ticking <i>Logic</i> unticks <i>All of Philosophy</i>; ticking <i>Paradoxes</i> turns <i>Logic</i> partial; clearing everything leaves the tile unpicked (not broad). Tick <i>All</i> again to make it broad. Nothing saves until <b>Save</b> on the grid, as today.</p>
+        <p class="mono" style="color:var(--muted)">Tree contents are placeholders. The real nodes get curated and checked live in the build.</p>
+        <div class="decide" data-q="tile-tap">
+          <div class="q">What does tapping a tree tile do in Settings?</div>
+          <div class="opts">
+            <div class="opt sel" data-lavish-action data-v="Tap opens the tree; 'All of {Tile}' row is the broad pick (as SPEC says)"><span class="dot"></span><div><b>Opens its tree</b> <span class="rec">RECOMMENDED · AS SPEC</span><br>Broad pick = the <i>All of Philosophy</i> row. One extra tap for broad, but there's a single way in and no small target.</div></div>
+            <div class="opt" data-lavish-action data-v="Tap toggles as in onboarding; a corner ⑂ button (44pt) opens the tree"><span class="dot"></span><div><b>Toggles, like onboarding</b>; the ⑂ corner opens the tree<br>Matches onboarding muscle memory, but the corner target sits on top of the ✓ badge.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Prompt card -->
+  <section class="piece">
+    <div class="piece-head"><span class="num">02</span><h2>Home prompt card: <span class="mono" style="font-size:15px">Narrow Philosophy?</span></h2></div>
+    <div class="row">
+      <div class="phone" id="phone-prompt"></div>
+      <div class="notes">
+        <p><b>One non-article card type</b> (shared with 03): the <i>typographic card</i> layout with the territory block, so it sits naturally in the column, and the block uses colour exactly as §2.4 allows. The title lives in the block, the body is one Literata sentence, and the chips are the tile's subfields.</p>
+        <ul>
+          <li><b>Chip tap</b> adds that pick straight away: the chip goes ink-filled with ✓, a toast says <code>Added Logic · Home is rebuilding</code>, light haptic, then Home rebuilds as after Save. How many chips one rebuild covers is the decision below.</li>
+          <li><b>Card body tap</b> or <code>SEE THE WHOLE TREE →</code> opens Settings → Interests → Philosophy.</li>
+          <li><b>Swipe right</b> dismisses (the card slides off right instead of rubber-banding). Left swipe does nothing: there's no article to take a tangent from. No first-hop chip on this card.</li>
+          <li>Why-line: <code>→ SWIPE RIGHT TO SKIP</code>. No ✦, no ◌ ✓ badges.</li>
+        </ul>
+        <div class="decide" data-q="chip-commit">
+          <div class="q">When does a chip tap take effect?</div>
+          <div class="opts">
+            <div class="opt sel" data-lavish-action data-v="Chips are multi-select; Home rebuilds 1.2s after the last chip tap (one toast naming all picks)"><span class="dot"></span><div><b>Multi-select, rebuild after a 1.2 s pause</b> <span class="rec">RECOMMENDED</span><br>Someone into Ethics <i>and</i> Logic can tap both, and Home rebuilds once. The toast names every pick.</div></div>
+            <div class="opt" data-lavish-action data-v="First chip tap rebuilds Home immediately (as SPEC says); more picks via the tree"><span class="dot"></span><div><b>First tap rebuilds now</b> (as SPEC)<br>Simplest. A second subfield means going through the tree.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Exhaustion card -->
+  <section class="piece">
+    <div class="piece-head"><span class="num">03</span><h2>Exhaustion card: <span class="mono" style="font-size:15px">You've read all of Stoicism</span></h2></div>
+    <div class="row">
+      <div class="phone" id="phone-exhaust"></div>
+      <div class="notes">
+        <p>Same card type. The block gets a <b>completion seal</b>, drawn with the stamp template's double ring (§5.7) in <code>bg.card</code> ink and showing <code>37/37</code>, so it reads as an achievement without a new art style. It uses the stamp toast's motion (scale 1.4→1.0, ink-spread, medium haptic) the first time the card comes into focus.</p>
+        <ul>
+          <li>The body says what happens next: <i>Home widens to Ethics from here.</i> That's the leaf → subfield fallback, so it never feels like Home silently changed.</li>
+          <li>Chips = sibling nodes not already picked. They behave like the prompt card's chips. Swipe right dismisses.</li>
+          <li>Why-line: <code>✓ COMPLETED · PHILOSOPHY › ETHICS</code>.</li>
+          <li>Shown once per node (when it's first written to <code>completed_leaves</code>).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Logbook Completed -->
+  <section class="piece">
+    <div class="piece-head"><span class="num">04</span><h2>Logbook: <span class="mono" style="font-size:15px">Completed · 2</span></h2></div>
+    <div class="row">
+      <div class="phone" id="phone-logbook"></div>
+      <div class="notes">
+        <p>Below Finds and above the expeditions list. Hidden while empty. Each row: a 40 pt territory swatch with the tile's icon (same as a Find without a thumbnail), node label in Fraunces 18, then a mono caption: path, article count, date. A ✓ at the right end.</p>
+        <p>Newest first. No cap and no <i>See all</i>, because it grows by at most a few per month.</p>
+        <div class="decide" data-q="completed-tap">
+          <div class="q">Tapping a Completed row…</div>
+          <div class="opts">
+            <div class="opt sel" data-lavish-action data-v="Completed row opens that node's parent in the Settings tree (pick a neighbour)"><span class="dot"></span><div><b>Opens the tree at its parent</b> <span class="rec">RECOMMENDED</span><br>Ethics' screen, with Stoicism ticked. The natural next step is a neighbour.</div></div>
+            <div class="opt" data-lavish-action data-v="Completed rows are not tappable (record only)"><span class="dot"></span><div><b>Not tappable</b>, a record only.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Topic label pressed -->
+  <section class="piece">
+    <div class="piece-head"><span class="num">05</span><h2>Tappable topic label</h2></div>
+    <div class="row">
+      <div class="phone short" id="phone-label"></div>
+      <div class="notes">
+        <p>Only on cards whose tile has a tree. <b>Pressed:</b> a <code>line.hairline</code> pill fills behind <code>● PHILOSOPHY</code> (120 ms in, 200 ms out), with hitSlop up to 44 pt tall. Release opens the tile's tree. The label colour doesn't change. Press and hold the labels on the left to see it.</p>
+        <p>The card's own tap (open reader) still covers the rest of the card. The label wins only inside its pill.</p>
+        <div class="decide" data-q="label-cue">
+          <div class="q">At rest, does the label hint that it's tappable?</div>
+          <div class="opts">
+            <div class="opt sel" data-lavish-action data-v="Topic label: no resting cue, pressed state only (prompt card teaches the tree)"><span class="dot"></span><div><b>No resting cue</b> <span class="rec">RECOMMENDED</span><br>Keeps the meta row calm. The prompt card is the main way people find the tree; the label is a shortcut.</div></div>
+            <div class="opt" data-lavish-action data-v="Topic label: add a small › after the label at rest on tree tiles"><span class="dot"></span><div><b>Small › after the label</b> (second card on the left)<br>More discoverable, but it adds noise to every Philosophy/Science/Maths/History card.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Analytics -->
+  <section class="piece">
+    <div class="piece-head"><span class="num">06</span><h2>Analytics events (SPEC open item)</h2></div>
+    <p class="sub">To answer the question in §11: <i>do people drill down?</i> No titles, ids only, same consent as everything else.</p>
+    <div class="table-wrap">
+    <table>
+      <tr><th>Event</th><th>Properties</th><th>Answers</th></tr>
+      <tr><td><code>interests_saved</code></td><td><code>from: 'settings'|'prompt'|'exhaustion'</code>, <code>tiles</code>, <code>subfields</code>, <code>leaves</code> (counts after save), <code>added: string[]</code> (path ids)</td><td>Do people narrow, and from where?</td></tr>
+      <tr><td><code>interest_tree_opened</code></td><td><code>tile</code>, <code>from: 'settings'|'prompt'|'topic_label'|'completed'</code></td><td>Which entry point works</td></tr>
+      <tr><td><code>niche_prompt_shown</code></td><td><code>tile</code></td><td>Denominator</td></tr>
+      <tr><td><code>niche_prompt_dismissed</code></td><td><code>tile</code>, <code>how: 'swipe'|'scrolled_past'</code></td><td>Is the nudge welcome?</td></tr>
+      <tr><td><code>niche_node_exhausted</code></td><td><code>node</code> (path id), <code>articles</code></td><td>Are pools big enough?</td></tr>
+    </table>
+    </div>
+    <p class="sub" style="margin-top:10px">Node card quality comes free from <code>card_seen</code>: it gets one new property, <code>interest_node</code> (path id or null), so we can watch the skip rate of node cards (SPEC risk table).</p>
+    <div class="decide" data-q="analytics">
+      <div class="q">Event set</div>
+      <div class="opts">
+        <div class="opt sel" data-lavish-action data-v="Analytics: approve the 5 events + card_seen.interest_node as listed"><span class="dot"></span><div><b>Approve as listed</b> <span class="rec">RECOMMENDED</span></div></div>
+        <div class="opt" data-lavish-action data-v="Analytics: trim to interests_saved + niche_prompt_shown/dismissed only"><span class="dot"></span><div><b>Trim</b> to <code>interests_saved</code> + prompt shown/dismissed</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="send">
+    <div class="summary" id="summary"></div>
+    <button data-lavish-action onclick="sendChoices()">Send choices →</button>
+  </div>
+</div>
+
+<script>
+const ICON = { philosophy: '🧠', science: '⚛', maths: '∑', history: '🏛', space: '🪐', music: '♫', art: '🖌', books: '📖' };
+const TILES = [
+  { id: 'space', label: 'Space', terr: 'cosmos' }, { id: 'animals', label: 'Animals', terr: 'life', ic: '🐾' },
+  { id: 'history', label: 'History', terr: 'past', tree: true }, { id: 'music', label: 'Music', terr: 'culture' },
+  { id: 'film', label: 'Film & TV', terr: 'culture', ic: '🎬' }, { id: 'food', label: 'Food', terr: 'life', ic: '🍴' },
+  { id: 'sport', label: 'Sport', terr: 'craft', ic: '⚽' }, { id: 'tech', label: 'Tech', terr: 'craft', ic: '▣' },
+  { id: 'art', label: 'Art', terr: 'culture' }, { id: 'books', label: 'Books', terr: 'mind' },
+  { id: 'places', label: 'Places', terr: 'earth', ic: '📍' }, { id: 'philosophy', label: 'Philosophy', terr: 'mind', tree: true },
+  { id: 'science', label: 'Science', terr: 'cosmos', tree: true }, { id: 'maths', label: 'Maths', terr: 'cosmos', tree: true },
+  { id: 'medicine', label: 'Medicine', terr: 'life', ic: '✚' }, { id: 'games', label: 'Games', terr: 'culture', ic: '🎮' },
+];
+const TREES = {
+  philosophy: [
+  { id: 'ethics', label: 'Ethics', leaves: ['Stoicism', 'Epicureanism', 'Cynicism', 'Utilitarianism', 'Virtue ethics', 'Existentialism'] },
+  { id: 'logic', label: 'Logic', leaves: ['Paradoxes', 'Fallacies', 'Modal logic', 'Syllogism'] },
+  { id: 'metaphysics', label: 'Metaphysics', leaves: ['Free will', 'Personal identity', 'Time', 'Causality'] },
+  { id: 'mind', label: 'Philosophy of mind', leaves: ['Consciousness', 'Thought experiments', 'Qualia'] },
+  { id: 'ancient', label: 'Ancient philosophy', leaves: ['Presocratics', 'Platonism', 'Aristotelianism'] },
+  { id: 'eastern', label: 'Eastern philosophy', leaves: ['Confucianism', 'Taoism', 'Buddhist philosophy', 'Hindu philosophy'] },
+  { id: 'political', label: 'Political philosophy', leaves: ['Social contract', 'Anarchism', 'Liberalism'] },
+],
+  history: [
+    { id: 'ancient', label: 'Ancient world', leaves: ['Ancient Egypt', 'Ancient Rome', 'Ancient Greece', 'Mesopotamia'] },
+    { id: 'medieval', label: 'Middle Ages', leaves: ['Vikings', 'Crusades', 'Byzantine Empire'] },
+    { id: 'empires', label: 'Empires', leaves: ['Mughal Empire', 'Ottoman Empire', 'Mongol Empire'] },
+    { id: 'modern', label: 'Modern history', leaves: ['Industrial Revolution', 'Cold War', 'Decolonisation'] },
+    { id: 'exploration', label: 'Exploration', leaves: ['Age of Discovery', 'Polar exploration'] },
+  ],
+  science: [
+    { id: 'physics', label: 'Physics', leaves: ['Quantum mechanics', 'Relativity', 'Particle physics'] },
+    { id: 'chemistry', label: 'Chemistry', leaves: ['Chemical elements', 'Organic chemistry'] },
+    { id: 'history-of-science', label: 'History of science', leaves: ['Scientific Revolution', 'Nobel laureates'] },
+    { id: 'experiments', label: 'Famous experiments', leaves: ['Thought experiments', 'Physics experiments'] },
+  ],
+  maths: [
+    { id: 'number-theory', label: 'Number theory', leaves: ['Prime numbers', 'Unsolved problems'] },
+    { id: 'geometry', label: 'Geometry', leaves: ['Polyhedra', 'Fractals', 'Topology'] },
+    { id: 'logic', label: 'Logic', leaves: ['Paradoxes', 'Set theory'] },
+    { id: 'probability', label: 'Probability', leaves: ['Game theory', 'Statistics'] },
+    { id: 'mathematicians', label: 'Mathematicians', leaves: ['Ancient mathematicians', 'Women in mathematics'] },
+  ],
+};
+// Sample articles per corner; the real ones come from each node's live query during curation.
+const EXAMPLES = {
+  'philosophy/ethics': ['Trolley problem', 'Meditations', 'Golden mean'],
+  'philosophy/logic': ['Liar paradox', 'Ockham\'s razor', 'Sorites paradox'],
+  'philosophy/metaphysics': ['Ship of Theseus', 'Brain in a vat', 'Determinism'],
+  'philosophy/mind': ['Chinese room', 'Mary\'s room', 'Philosophical zombie'],
+  'philosophy/ancient': ['Allegory of the cave', 'Heraclitus', 'Socratic method'],
+  'philosophy/eastern': ['Tao Te Ching', 'Wu wei', 'Analects'],
+  'philosophy/political': ['Leviathan', 'Veil of ignorance', 'The Prince'],
+  'history/ancient': ['Library of Alexandria', 'Hammurabi', 'Pompeii'],
+  'history/medieval': ['Domesday Book', 'Black Death', 'Lindisfarne'],
+  'history/empires': ['Silk Road', 'Fall of Constantinople', 'Akbar'],
+  'history/modern': ['Spinning jenny', 'Berlin Wall', 'Suez Crisis'],
+  'history/exploration': ['Magellan', 'Terra Nova Expedition', 'Zheng He'],
+  'science/physics': ['Double-slit experiment', 'Schrödinger\'s cat', 'Higgs boson'],
+  'science/chemistry': ['Periodic table', 'Benzene', 'Noble gas'],
+  'science/history-of-science': ['Principia', 'Marie Curie', 'Galileo affair'],
+  'science/experiments': ['Michelson–Morley', 'Oil drop experiment', 'Maxwell\'s demon'],
+  'maths/number-theory': ['Fermat\'s Last Theorem', 'Riemann hypothesis', 'Collatz'],
+  'maths/geometry': ['Möbius strip', 'Platonic solid', 'Mandelbrot set'],
+  'maths/logic': ['Russell\'s paradox', 'Gödel\'s theorems', 'Hilbert\'s hotel'],
+  'maths/probability': ['Monty Hall problem', 'Prisoner\'s dilemma', 'Birthday problem'],
+  'maths/mathematicians': ['Ramanujan', 'Hypatia', 'Emmy Noether'],
+};
+const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '-');
+
+// ---------- state: picks are path ids, most specific wins ----------
+const SAVED = ['space', 'history', 'philosophy', 'music'];
+let picks = [...SAVED];
+let screen = { name: 'grid' };
+
+const isAncestor = (a, b) => b.startsWith(a + '/');
+function addPick(path) {
+  // A pick and its own ancestor or descendant are never both kept.
+  picks = [...picks.filter((p) => !isAncestor(p, path) && !isAncestor(path, p)), path];
+}
+function removePick(path) { picks = picks.filter((p) => p !== path); }
+const tilesTouched = () => new Set(picks.map((p) => p.split('/')[0])).size;
+const picksUnder = (path) => picks.filter((p) => isAncestor(path, p));
+const samePicks = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+
+function renderSettings() {
+  const el = document.getElementById('phone-settings');
+  if (screen.name === 'grid') {
+    const touched = tilesTouched();
+    const canSave = touched >= 3 && !samePicks(picks, SAVED);
+    el.innerHTML = `
+      <div class="status"></div>
+      <div class="scr-head"><button class="back">‹</button><span class="scr-title">INTERESTS</span><span style="width:44px"></span></div>
+      <div class="scr-body">
+        <div class="heading">Your corners of Wikipedia</div>
+        <p class="intro">Home is built from these. Tiles marked ⑂ can be narrowed.</p>
+        <div class="mono count">PICK AT LEAST 3 · <b>${touched} PICKED</b></div>
+        <div class="grid">${TILES.map((t, i) => tileHtml(t, i)).join('')}</div>
+      </div>
+      <div class="actions"><button class="primary" ${canSave ? '' : 'disabled'}>Save</button></div>`;
+    el.querySelectorAll('.tile').forEach((node) => node.onclick = () => onTile(node.dataset.id));
+  } else {
+    const tile = TILES.find((t) => t.id === screen.tile);
+    const tree = TREES[tile.id];
+    const tilePicked = picks.includes(tile.id);
+    const under = picksUnder(tile.id).length;
+    const status = tilePicked ? `ALL OF ${tile.label.toUpperCase()}` : under ? `NARROWED TO ${under} ${under === 1 ? 'CORNER' : 'CORNERS'}` : 'NOT PICKED';
+    const scroller = el.querySelector('.scr-body');
+    const scrollTop = scroller && scroller.dataset.tile === tile.id ? scroller.scrollTop : 0;
+    el.innerHTML = `
+      <div class="status"></div>
+      <div class="scr-head"><button class="back" data-lavish-action id="bk">‹</button><span class="scr-title">INTERESTS › ${tile.label.toUpperCase()}</span><span style="width:44px"></span></div>
+      <div class="scr-body" data-tile="${tile.id}" style="height:calc(100% - 78px);padding-bottom:28px">
+        <div class="hero" style="background:var(--${tile.terr})">
+          <span class="mono hero-eye">${status}</span>
+          <div class="hero-title">${tile.label}</div>
+          <span class="hero-icon">${tile.ic || ICON[tile.id] || '●'}</span>
+          <button class="hero-all ${tilePicked ? 'on' : ''}" data-lavish-action id="all" style="--terr:var(--${tile.terr})">
+            <span class="hero-box">${tilePicked ? '✓' : ''}</span>All of ${tile.label}</button>
+        </div>
+        <div class="mono spine-label">OR CHART YOUR OWN CORNERS</div>
+        <div class="spine" style="--terr:var(--${tile.terr})">
+          ${tree.map((sub, i) => subCard(tile, sub, i)).join('')}
+        </div>
+        <p class="mono spine-foot">THE MOST SPECIFIC PICK WINS. A TOPIC NARROWS ITS CORNER TO JUST THAT TOPIC.</p>
+      </div>`;
+    el.querySelector('.scr-body').scrollTop = scrollTop;
+    el.querySelector('#bk').onclick = () => { screen = { name: 'grid' }; renderSettings(); };
+    el.querySelector('#all').onclick = () => { tilePicked ? removePick(tile.id) : addPick(tile.id); renderSettings(); };
+    el.querySelectorAll('[data-path]').forEach((n) => n.onclick = (e) => { e.stopPropagation(); const p = n.dataset.path; picks.includes(p) ? removePick(p) : addPick(p); renderSettings(); });
+  }
+}
+const KNOWN_COUNTS = { Stoicism: 37, Paradoxes: 52 };
+const leafCount = (name) => KNOWN_COUNTS[name] || 18 + ((name.length * 37 + name.charCodeAt(0) * 11) % 160);
+function subCard(tile, sub, i) {
+  const path = `${tile.id}/${sub.id}`;
+  const on = picks.includes(path);
+  const leavesPicked = picksUnder(path).length;
+  const state = on ? 'on' : leavesPicked ? 'part' : '';
+  const tilt = on ? (i % 2 ? 0.8 : -0.8) : 0;
+  const eg = (EXAMPLES[path] || sub.leaves).slice(0, 3).join(' · ');
+  return `<div class="node">
+    <span class="pin ${state}"></span>
+    <div class="sub ${state}" style="transform:rotate(${tilt}deg)">
+      <div class="sub-head" data-lavish-action role="checkbox" data-path="${path}">
+        <div style="min-width:0"><div class="sub-title">${sub.label}</div><div class="sub-eg">${eg}…</div></div>
+        <span class="sub-check">${on ? '✓' : leavesPicked ? leavesPicked : ''}</span>
+      </div>
+      <div class="leaf-row">${sub.leaves.map((leaf) => {
+        const lp = `${path}/${slug(leaf)}`;
+        const lon = picks.includes(lp);
+        return `<button class="leaf ${lon ? 'on' : on ? 'inc' : ''}" data-lavish-action data-path="${lp}">${lon ? '✓ ' : ''}${leaf}<span class="leaf-n">${leafCount(leaf)}</span></button>`;
+      }).join('')}</div>
+    </div>
+  </div>`;
+}
+function tileHtml(t, i) {
+  const own = picks.includes(t.id);
+  const under = picksUnder(t.id).length;
+  const sel = own || under > 0;
+  const tilt = i % 2 ? 2 : -2;
+  const style = sel ? `background:var(--${t.terr});border-color:var(--${t.terr});transform:rotate(${tilt}deg)` : '';
+  const color = sel ? 'var(--on-terr)' : `var(--${t.terr})`;
+  let corner = '';
+  if (under > 0) corner = `<span class="badge" style="color:var(--${t.terr})">${under}</span>`;
+  else if (own) corner = `<span class="badge" style="color:var(--${t.terr})">✓</span>`;
+  else if (t.tree) corner = `<span class="branch" style="color:var(--${t.terr});font-size:13px">⑂</span>`;
+  return `<div class="tile ${sel ? 'sel' : ''}" data-lavish-action role="button" data-id="${t.id}" style="${style}">
+    <span class="ic" style="color:${color}">${t.ic || ICON[t.id] || '●'}</span>${corner}
+    <div><div class="lb">${t.label}</div>${under > 0 ? '<div class="narrowed">NARROWED</div>' : ''}</div></div>`;
+}
+function onTile(id) {
+  const t = TILES.find((x) => x.id === id);
+  if (t.tree) { screen = { name: 'tile', tile: id }; renderSettings(); return; }
+  picks.includes(id) ? removePick(id) : addPick(id);
+  renderSettings();
+}
+// ---------- prompt card ----------
+let promptPicked = [];
+let toastTimer;
+function renderPrompt() {
+  const el = document.getElementById('phone-prompt');
+  el.innerHTML = `
+    <div class="status"></div>
+    <div class="home-head"><span class="wordmark">tangent</span><span style="font-size:20px">📖</span></div>
+    <div class="card">
+      <div class="block"><span class="mono eyebrow">You keep reading Philosophy</span><div class="bt">Narrow<br>Philosophy?</div><span class="bi">🧠</span></div>
+      <div class="meta mono"><span>● PHILOSOPHY</span><span style="color:var(--muted)">3 READ</span></div>
+      <p class="body">Pick a corner and Home will lean into it. You can change this any time in Settings.</p>
+      <div class="chips">${TREES.philosophy.map((s) => `<button class="chip ${promptPicked.includes(s.id) ? 'on' : ''}" data-lavish-action data-id="${s.id}"><span class="d"></span>${promptPicked.includes(s.id) ? '✓ ' : '+ '}${s.label}</button>`).join('')}</div>
+      <div class="why mono"><span>→ SWIPE RIGHT TO SKIP</span><span class="link" data-lavish-action>SEE THE WHOLE TREE →</span></div>
+    </div>
+    <div class="toast mono" id="ptoast"></div>`;
+  el.querySelectorAll('.chip').forEach((c) => c.onclick = () => {
+    const id = c.dataset.id;
+    promptPicked = promptPicked.includes(id) ? promptPicked.filter((x) => x !== id) : [...promptPicked, id];
+    renderPrompt();
+    clearTimeout(toastTimer);
+    if (promptPicked.length) toastTimer = setTimeout(() => {
+      const t = document.getElementById('ptoast');
+      t.textContent = `Added ${promptPicked.map((id) => TREES.philosophy.find((s) => s.id === id).label).join(', ')} · Home is rebuilding`;
+      t.classList.add('show');
+      setTimeout(() => { t.classList.remove('show'); }, 1800);
+    }, 1200);
+  });
+}
+
+function renderExhaust() {
+  document.getElementById('phone-exhaust').innerHTML = `
+    <div class="status"></div>
+    <div class="home-head"><span class="wordmark">tangent</span><span style="font-size:20px">📖</span></div>
+    <div class="card">
+      <div class="block"><span class="mono eyebrow">Philosophy › Ethics</span><div class="bt">You've read all of Stoicism</div><span class="bi">🧠</span>
+        <div class="stamp"><span><b>37/37</b>READ</span></div></div>
+      <div class="meta mono"><span>● PHILOSOPHY</span><span style="color:var(--muted)">37 ARTICLES</span></div>
+      <p class="body">Every one of them. Home widens to <i>Ethics</i> from here. Or try a neighbour:</p>
+      <div class="chips"><button class="chip" data-lavish-action><span class="d"></span>+ Epicureanism</button><button class="chip" data-lavish-action><span class="d"></span>+ Cynicism</button><button class="chip" data-lavish-action><span class="d"></span>+ Virtue ethics</button></div>
+      <div class="why mono"><span>✓ COMPLETED · PHILOSOPHY › ETHICS</span><span>→ SKIP</span></div>
+    </div>`;
+}
+
+function renderLogbook() {
+  document.getElementById('phone-logbook').innerHTML = `
+    <div class="status"></div>
+    <div class="scr-head"><button class="back">‹</button><span class="scr-title">LOGBOOK</span><span class="back">⚙</span></div>
+    <div style="overflow:hidden;height:calc(100% - 78px)">
+      <div class="lb-sec"><div class="mono lb-label"><span>STAMPS</span><span>6 / 24</span></div>
+        <div class="stamps"><div class="got"></div><div class="got" style="border-color:var(--cosmos)"></div><div class="got" style="border-color:var(--past)"></div><div></div><div></div></div></div>
+      <div class="lb-sec"><div class="mono lb-label"><span>FINDS · 4</span><span style="color:var(--ink)">SEE ALL →</span></div>
+        <div class="fake-strip"><div></div><div></div><div></div></div></div>
+      <div class="lb-sec"><div class="mono lb-label"><span>COMPLETED · 2</span><span></span></div>
+        <div class="comp"><div class="sw" style="background:var(--mind)">🧠</div><div style="min-width:0"><div class="t">Stoicism</div><div class="mono c">PHILOSOPHY › ETHICS · 37 ARTICLES · 4 OCT</div></div><span class="done">✓</span></div>
+        <div class="comp"><div class="sw" style="background:var(--cosmos)">∑</div><div style="min-width:0"><div class="t">Paradoxes</div><div class="mono c">MATHS › LOGIC · 52 ARTICLES · 28 SEP</div></div><span class="done">✓</span></div>
+      </div>
+      <div class="lb-sec"><div class="mono lb-label"><span>EXPEDITIONS</span><span></span></div>
+        <div class="comp"><div style="min-width:0"><div class="t" style="font-family:Literata;font-weight:400;font-size:16px">From Octopus to Roman aqueducts</div><div class="mono c">1 OCT · 7 HOPS</div></div></div></div>
+    </div>`;
+}
+
+function renderLabel() {
+  const card = (cue) => `
+    <div class="card" style="height:auto;margin-top:12px">
+      <div class="block" style="aspect-ratio:auto;height:110px"><div class="bt" style="font-size:24px;line-height:28px">Ship of Theseus</div><span class="bi" style="font-size:30px">🧠</span></div>
+      <div class="meta mono" style="margin-bottom:0"><span class="tl ${cue ? 'cue' : ''}" data-lavish-action><span class="d"></span>PHILOSOPHY</span><span style="color:var(--muted)">◌ ✓ ✦</span></div>
+    </div>`;
+  document.getElementById('phone-label').innerHTML = `<div class="status"></div>${card(false)}${card(true)}`;
+}
+
+// ---------- decisions ----------
+function choices() {
+  return [...document.querySelectorAll('.decide')].map((d) => ({ q: d.dataset.q, v: d.querySelector('.opt.sel').dataset.v }));
+}
+function renderSummary() {
+  const defaults = choices().filter((c, i) => [...document.querySelectorAll('.decide')][i].querySelector('.opt.sel .rec'));
+  document.getElementById('summary').textContent = `${choices().length} decisions · ${defaults.length} on my recommendation. Add annotations anywhere for other changes.`;
+}
+document.querySelectorAll('.decide').forEach((d) => d.querySelectorAll('.opt').forEach((o) => o.onclick = () => {
+  d.querySelectorAll('.opt').forEach((x) => x.classList.remove('sel'));
+  o.classList.add('sel');
+  renderSummary();
+}));
+function sendChoices() {
+  const text = 'Niche interests design choices:\n' + choices().map((c) => `- ${c.q}: ${c.v}`).join('\n');
+  if (window.lavish) { window.lavish.queuePrompt(text, { tag: 'design-choices' }); window.lavish.sendQueuedPrompts(); }
+  else console.log(text);
+}
+function setTheme(t, btn) {
+  document.documentElement.dataset.theme = t;
+  document.querySelectorAll('.controls .pillbtn').forEach((b) => b.classList.toggle('on', b === btn));
+}
+
+renderSettings(); renderPrompt(); renderExhaust(); renderLogbook(); renderLabel(); renderSummary();
+</script>
+</body>
+</html>
