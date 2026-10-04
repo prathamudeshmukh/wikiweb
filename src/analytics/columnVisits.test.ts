@@ -25,6 +25,16 @@ describe('column visits: card_seen', () => {
     expect(analytics.named('card_seen')).toEqual([expect.objectContaining({ card_title: 'Squid', seed_title: 'Octopus', depth: 1, position: 2 })]);
   });
 
+  it('names the subfield or leaf a Home card came from, and null otherwise (SPEC.md §11)', () => {
+    const { analytics, visits } = setup();
+    visits.enter(OCTOPUS, 'idle');
+
+    visits.cardSeen(OCTOPUS.id, makeCard('Memento mori', { interestNode: 'philosophy/ethics/stoicism' }), 0);
+    visits.cardSeen(OCTOPUS.id, makeCard('Squid'), 1);
+
+    expect(analytics.named('card_seen').map((p) => p.interest_node)).toEqual(['philosophy/ethics/stoicism', null]);
+  });
+
   it('ignores cards from a column that is not being visited', () => {
     const { analytics, visits } = setup();
     visits.enter(OCTOPUS, 'idle');

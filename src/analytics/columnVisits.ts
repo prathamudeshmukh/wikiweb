@@ -94,7 +94,9 @@ export function createColumnVisits({ analytics, now }: ColumnVisitsDeps): Column
     cardSeen(columnId, card, position) {
       if (visit?.entry.id !== columnId || visit.seen.has(card.pageId)) return;
       visit = { ...visit, seen: new Map([...visit.seen, [card.pageId, position]]) };
-      analytics.track({ name: 'card_seen', properties: { ...cardProperties(card, position), ...columnProperties(visit.entry) } });
+      // A node pick's path id lets node cards' skip rate be compared with broad interest cards (SPEC.md §11).
+      const interestNode = card.interestNode ?? null;
+      analytics.track({ name: 'card_seen', properties: { ...cardProperties(card, position), ...columnProperties(visit.entry), interest_node: interestNode } });
     },
 
     cardOpened(card) {

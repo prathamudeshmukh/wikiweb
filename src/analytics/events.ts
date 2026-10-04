@@ -66,7 +66,7 @@ export interface InterestsSaved {
 }
 
 export type AnalyticsEvent =
-  | { name: 'card_seen'; properties: CardProperties & ColumnProperties }
+  | { name: 'card_seen'; properties: CardProperties & ColumnProperties & { interest_node: string | null } }
   | { name: 'column_left'; properties: ColumnSummary }
   | { name: 'hop'; properties: CardProperties & ColumnProperties & { route: HopRoute } }
   | { name: 'return'; properties: ColumnProperties & { route: ReturnRoute; columns_popped: number } }
