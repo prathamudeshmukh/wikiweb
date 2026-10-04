@@ -95,7 +95,7 @@ Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`
 
 ### 3.5 Journeys
 - **Logbook** screen (from Home header): stamps grid (collected / 24) and expeditions list (title, date, hop count, territory route strip).
-- **Completed** (M8, §3.9): interest-tree nodes the user has read in full, newest first — `STOICISM · 37 ARTICLES · {date}`. Hidden while empty. Tapping a row opens the tree screen of its tile, scrolled to the node's parent.
+- **Completed** (M8, §3.9): interest-tree nodes the user has read in full (leaves and subfields), newest first, between the stamps and the expeditions — `STOICISM · 37 ARTICLES · {date}`. Hidden while empty. Tapping a row opens the tree screen of its tile, scrolled to the node's parent.
 - Opening an expedition shows its **recap card** (start → end, route strip, tangents/read counts, furthest leap). **Continue expedition** restores its path to the most recent node; a node list reopens any column.
 
 ### 3.6 Learning layer
@@ -480,7 +480,7 @@ CREATE TABLE completed_leaves (
 
 **Journey rules (M4):** a swipe or *Take a tangent* from Home starts an expedition; every hop adds a node under the node of the column it left. *Read* on a peek card adds a `peek_read` node under the column (or previous in-place read) the reader was opened from; a tangent from the reader then leaves from that node. Reading a card from a column marks it read but adds no node. *Continue expedition* reopens the column ancestors of the most recent node (in-place reads reopen the column they were read from). Visited = the article is a node of the active expedition; read = in read history.
 
-Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]` (path ids, §3.9; plain tile ids are valid), `nichePromptsSeen: string[]` (tile ids whose prompt card was shown), `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`), `analyticsOptOut: boolean` (Settings switch, §11).
+Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]` (path ids, §3.9; plain tile ids are valid), `nichePromptsSeen: string[]` (tile ids whose prompt card was shown), `nicheReads: Record<string, number>` (reads per tree tile towards its prompt, counted from every read once its topic is known), `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`), `analyticsOptOut: boolean` (Settings switch, §11).
 
 All repository functions return new objects; no in-place mutation of domain state.
 
@@ -572,7 +572,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | M5 | Prefetch, caches, states, analytics | Perf targets met; all §8 states; events firing — analytics done 2026-10-03: feed-quality events with titles (§11), opt-out switch in Settings, `app_error` from `reportError`. |
 | M6 | Finds (§3.7) | ✦ on cards, reader and peek card; `finds` migration; Logbook Finds strip + list; undo toast; recap count; `find_*` events; card accessibility action *Keep as a find* / *Remove find*; wildcard why-line re-glyphed `✦` → `↯` |
 | M7 | World atlas (§3.8) | Atlas at the top of the Logbook; place, territory and blind-spot sheets; *Set off from here* / *Set off into*; route tracing; territory zoom; `atlas_set_off` |
-| M8 | Niche interests (§3.9) | Live-verified trees for Philosophy, Science, Maths, History; tree in Settings → Interests; path-id picks with ancestor fallback; Home rotates over effective picks; node why-line; prompt card + tappable topic label; exhaustion card, widening, `completed_leaves` + Logbook *Completed* |
+| M8 (built, device check pending) | Niche interests (§3.9) | Live-verified trees for Philosophy, Science, Maths, History; tree in Settings → Interests; path-id picks with ancestor fallback; Home rotates over effective picks; node why-line; prompt card + tappable topic label; exhaustion card, widening, `completed_leaves` + Logbook *Completed* |
 
 ---
 

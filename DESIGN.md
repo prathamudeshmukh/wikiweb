@@ -453,7 +453,7 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 - Font scaling respected; minimum touch target 44 pt.
 - Reduce Motion honoured (§7).
 - Haptics off when system haptics are off.
-- **Niche interests (M8):** subfield headers are checkboxes (`{Label}, {n} topics picked` / checked); leaf chips and the broad pill are checkboxes; pins are decorative. Nudge cards are one element with custom actions per chip (*Add {label}*), *See the whole tree* and *Skip*. The topic label is a button labelled *{Topic} interests*.
+- **Niche interests (M8):** subfield headers are checkboxes (`{Label}, {n} topics picked` / checked); leaf chips and the broad pill are checkboxes; pins are decorative. Nudge cards are one element with custom actions per chip (*Add {label}*), *See the whole tree* and *Skip*. The card is one accessible element, so the topic label is reached through a card custom action *{Topic} interests* (tree tiles only); the toast is a polite live region.
 - Images get `alt` from Wikipedia description, else title.
 - **Atlas (M7):** the map is one accessible element labelled with the stats line (*8 expeditions, 73 places, 6 of 7 territories charted*), with custom actions *List places by territory* and *Set off into {blind spot}*. The list opens the same places as an accessible list grouped by territory, each row opening its place sheet. Chips, the blind-spot bar and both sheets are ordinary buttons. Zoom and route tracing are visual only; the list covers what they show.
 
@@ -469,4 +469,4 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Atlas density | Continent radius caps at 46. Check a heavy profile (~200 places in one territory) for overlap before M7 ships; fall back to count badges at world zoom. |
 | Atlas in Night atlas | Tint percentages are from the mock; verify place glyph contrast on tinted continents on device. |
 | Long-press menu vs. gesture discoverability | Validate in M0 prototype |
-| Niche interests (SPEC §3.9, M8) | Designed 2026-10-04 (§5.13–5.15, §6.5). Check the tree screen at the largest font scale: sample-article lines and chips must wrap, never clip. |
+| Niche interests (SPEC §3.9, M8) | Designed 2026-10-04 (§5.13–5.15, §6.5), built 2026-10-05. On device: check the tree screen at the largest font scale (sample lines and chips wrap, never clip); the nudge card's chips on a small phone (7 subfields); and that a right swipe on a nudge card beats Home's rubber band. Literata italic isn't loaded as its own face, so sample lines use synthetic italic until SDK 58. |
