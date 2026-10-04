@@ -6,6 +6,6 @@ import { OnboardingScreen } from '../onboarding/OnboardingScreen';
 export default function Onboarding() {
   const router = useRouter();
   const goHome = useCallback(() => router.replace('/'), [router]);
-  const save = useSaveInterests(goHome);
+  const save = useSaveInterests(goHome, 'onboarding');
   return <OnboardingScreen onDone={(ids) => void save(ids)} />;
 }

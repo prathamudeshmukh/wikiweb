@@ -4,6 +4,7 @@ import type { ColumnVisits } from '../analytics/columnVisits';
 import { PREFETCH } from '../config/constants';
 import type { Card } from '../content/card';
 import { useAppServices } from '../services/AppServices';
+import { cardTokens, type ColumnItem, nudgeVisibility } from './columnItems';
 import type { ColumnPrefetcher } from './columnPrefetch';
 import { childEntry, type ColumnEntry } from './columnStack';
 
@@ -37,25 +38,32 @@ export interface DwellTracking {
   dwelling(): readonly ViewToken<Card>[];
 }
 
-/** Viewability callbacks for a column's FlatList. Only the column on top prefetches and reports cards seen. */
-export function useDwellPrefetch(parent: ColumnEntry, isTop: boolean): DwellTracking {
+/**
+ * Viewability callbacks for a column's FlatList. Only the column on top prefetches and reports cards seen.
+ * `onNudgeVisible` hears when Home's nudge card dwells into view or leaves it.
+ */
+export function useDwellPrefetch(parent: ColumnEntry, isTop: boolean, onNudgeVisible?: (visible: boolean) => void): DwellTracking {
   const { prefetcher, columnVisits } = useAppServices();
   // FlatList rejects changing callbacks after mount, so the stable callback reads the latest values from a ref.
   const target = useRef<DwellTarget | null>(null);
   // FlatList reports only changes, so a column that comes on top must be told what is already in view.
   const inView = useRef<readonly ViewToken<Card>[]>([]);
+  const nudgeListener = useRef(onNudgeVisible);
   useEffect(() => {
     target.current = isTop ? { prefetcher, parent, visits: columnVisits } : null;
-  }, [prefetcher, parent, isTop, columnVisits]);
+    nudgeListener.current = isTop ? onNudgeVisible : undefined;
+  }, [prefetcher, parent, isTop, columnVisits, onNudgeVisible]);
 
   const viewabilityPairs = useMemo(
     () => [
       {
         viewabilityConfig: DWELL_CONFIG,
-        // The list's data is cards; React Native types its tokens loosely.
+        // The list's data is column items; React Native types its tokens loosely.
         onViewableItemsChanged: ({ viewableItems, changed }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
-          inView.current = viewableItems as ViewToken<Card>[];
-          if (target.current) applyDwell(target.current, changed as ViewToken<Card>[]);
+          inView.current = cardTokens(viewableItems as ViewToken<ColumnItem>[]);
+          if (target.current) applyDwell(target.current, cardTokens(changed as ViewToken<ColumnItem>[]));
+          const nudge = nudgeVisibility(changed as ViewToken<ColumnItem>[]);
+          if (nudge !== null) nudgeListener.current?.(nudge);
         },
       },
     ],

@@ -24,6 +24,7 @@ function exploreProps(overrides: Partial<Props> = {}): Props {
     onTangentStarted: jest.fn(),
     incomingResume: null,
     onResumed: jest.fn(),
+    niche: { addPicks: jest.fn(async () => undefined), openTree: jest.fn() },
     ...overrides,
   };
 }

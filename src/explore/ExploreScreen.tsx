@@ -7,6 +7,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import type { Card } from '../content/card';
 import { useAppActive } from '../hints/useAppActive';
 import { useAppServices } from '../services/AppServices';
+import type { NicheActions } from '../nudges/useHomeNudge';
 import type { ResumePoint, Tangent } from '../tangent/tangentQueue';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
@@ -84,10 +85,12 @@ interface ExploreScreenProps {
   /** An expedition to reopen, from the Logbook. */
   incomingResume: ResumePoint | null;
   onResumed: () => void;
+  /** Interest-tree actions: nudge chips and the tree screen (SPEC.md §3.9). */
+  niche: NicheActions;
 }
 
 export function ExploreScreen(props: ExploreScreenProps) {
-  const { interests, onOpenArticle, onOpenLogbook, isFocused, incomingTangent, onTangentStarted, incomingResume, onResumed } = props;
+  const { interests, onOpenArticle, onOpenLogbook, isFocused, incomingTangent, onTangentStarted, incomingResume, onResumed, niche } = props;
   const palette = useTheme();
   const { journeys, columnVisits } = useAppServices();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -152,6 +155,7 @@ export function ExploreScreen(props: ExploreScreenProps) {
               onJump={jump}
               onOpenLogbook={onOpenLogbook}
               isScreenFocused={isFocused}
+              niche={niche}
             />
           </View>
         );

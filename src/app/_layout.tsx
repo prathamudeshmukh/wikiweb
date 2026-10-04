@@ -2,13 +2,14 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AnalyticsRoot } from '../analytics/AnalyticsRoot';
 import { HintsProvider } from '../hints/HintsContext';
-import { InterestsProvider } from '../interests/InterestsContext';
+import { interestsSavedProperties } from '../analytics/interestsSaved';
+import { type InterestsSaved, InterestsProvider } from '../interests/InterestsContext';
 import { AppServicesProvider, createAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
 import { TangentProvider } from '../tangent/TangentContext';
@@ -44,9 +45,16 @@ export default function RootLayout() {
     [],
   );
   const ready = fontsLoaded || fontError !== null;
+  const trackInterestsSaved = useCallback(
+    (saved: InterestsSaved) => {
+      if (result.ok) result.services.analytics.track({ name: 'interests_saved', properties: interestsSavedProperties(saved) });
+    },
+    [result],
+  );
 
   useEffect(() => {
     if (result.ok) result.services.journeys.load().catch((error: unknown) => reportError('journeys.load', error));
+    if (result.ok) result.services.nudges.load().catch((error: unknown) => reportError('nudges.load', error));
   }, [result]);
 
   useEffect(() => {
@@ -63,7 +71,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AppServicesProvider services={result.services}>
           <AnalyticsRoot>
-            <InterestsProvider store={result.services.interests}>
+            <InterestsProvider store={result.services.interests} onSaved={trackInterestsSaved}>
               <HintsProvider store={result.services.hints} journeys={result.services.journeys}>
                 <TangentProvider>
                   {/* Paper behind every screen, so dismissing the reader never flashes white. */}

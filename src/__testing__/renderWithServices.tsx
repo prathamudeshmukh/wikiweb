@@ -13,6 +13,8 @@ import { memoryHintStore } from '../hints/__testing__/memoryHintStore';
 import { HintsProvider } from '../hints/HintsContext';
 import { createColumnPrefetcher } from '../explore/columnPrefetch';
 import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
+import { createNudges } from '../nudges/nudges';
+import { createNudgeStore } from '../nudges/nudgeStore';
 import type { JourneySession } from '../journeys/journeySession';
 import { type AppServices, AppServicesProvider } from '../services/AppServices';
 import type { WikiApi } from '../wiki-api/types';
@@ -57,10 +59,12 @@ export type TestServices = AppServices & { analytics: MemoryAnalytics };
 export function testServices(api: WikiApi, journeys: JourneySession = memoryJourneySession()): TestServices {
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry) => columnFeedFor(api, entry) });
   const analytics = memoryAnalytics();
+  const completedNodes = memoryCompletedNodes();
   return {
     api,
     interests: memoryInterestsStore(),
-    completedNodes: memoryCompletedNodes(),
+    completedNodes,
+    nudges: createNudges({ store: createNudgeStore(memoryKv()), completedNodes, analytics, now: Date.now }),
     hints: memoryHintStore(),
     journeys,
     prefetcher,

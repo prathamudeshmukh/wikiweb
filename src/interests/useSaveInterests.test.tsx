@@ -3,20 +3,26 @@ import type { ReactNode } from 'react';
 import { Alert } from 'react-native';
 import { memoryInterestsStore } from '../__testing__/renderWithServices';
 import * as errors from '../services/reportError';
-import { InterestsProvider, useInterests } from './InterestsContext';
+import { type InterestsSavedListener, InterestsProvider, useInterests } from './InterestsContext';
 import type { InterestsStore } from './interestsStore';
 import { useSaveInterests } from './useSaveInterests';
 
 const PICKS = ['space', 'history', 'art'];
 
-const wrapperFor = (store: InterestsStore) =>
+const wrapperFor = (store: InterestsStore, onPicksSaved?: InterestsSavedListener) =>
   function Wrapper({ children }: { children: ReactNode }) {
-    return <InterestsProvider store={store}>{children}</InterestsProvider>;
+    return (
+      <InterestsProvider store={store} onSaved={onPicksSaved}>
+        {children}
+      </InterestsProvider>
+    );
   };
 
-async function renderSave(store: InterestsStore) {
+async function renderSave(store: InterestsStore, onPicksSaved?: InterestsSavedListener) {
   const onSaved = jest.fn();
-  const { result } = await renderHook(() => ({ save: useSaveInterests(onSaved), interests: useInterests().interests }), { wrapper: wrapperFor(store) });
+  const { result } = await renderHook(() => ({ save: useSaveInterests(onSaved, 'settings'), interests: useInterests().interests }), {
+    wrapper: wrapperFor(store, onPicksSaved),
+  });
   await waitFor(() => expect(result.current.interests).not.toBeUndefined());
   return { result, onSaved };
 }
@@ -53,5 +59,14 @@ describe('useSaveInterests', () => {
 
     expect(save).toHaveBeenCalledTimes(1);
     expect(onSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it('tells the provider what changed and where it was saved from (SPEC.md §11 interests_saved)', async () => {
+    const listener = jest.fn();
+    const { result } = await renderSave(memoryInterestsStore(['music', 'food', 'sport']), listener);
+
+    await act(() => result.current.save(PICKS));
+
+    expect(listener).toHaveBeenCalledWith({ before: ['music', 'food', 'sport'], after: PICKS, from: 'settings' });
   });
 });

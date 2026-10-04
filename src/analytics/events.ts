@@ -51,6 +51,20 @@ export interface ExpeditionSummary {
   stamps_earned: number;
 }
 
+/** Where interest picks were saved from (SPEC.md §11). */
+export type InterestsSavedFrom = 'onboarding' | 'settings' | 'prompt' | 'exhaustion';
+/** Where an interest tree was opened from. */
+export type TreeOpenedFrom = 'settings' | 'prompt' | 'topic_label' | 'completed';
+
+export interface InterestsSaved {
+  from: InterestsSavedFrom;
+  tiles: number;
+  subfields: number;
+  leaves: number;
+  /** Path ids added by this save. */
+  added: string[];
+}
+
 export type AnalyticsEvent =
   | { name: 'card_seen'; properties: CardProperties & ColumnProperties }
   | { name: 'column_left'; properties: ColumnSummary }
@@ -61,6 +75,11 @@ export type AnalyticsEvent =
   | { name: 'stamp_earned'; properties: { topic: string; territory: Territory | null } }
   | { name: 'first_hop'; properties: { route: HopRoute; peels_seen: number; seconds_on_home: number } }
   | { name: 'first_return'; properties: { route: ReturnRoute } }
+  | { name: 'interests_saved'; properties: InterestsSaved }
+  | { name: 'interest_tree_opened'; properties: { tile: string; from: TreeOpenedFrom } }
+  | { name: 'niche_prompt_shown'; properties: { tile: string } }
+  | { name: 'niche_prompt_dismissed'; properties: { tile: string; how: 'swipe' | 'scrolled_past' } }
+  | { name: 'niche_node_exhausted'; properties: { node: string; articles: number } }
   | { name: 'app_error'; properties: { scope: string; reason: string } };
 
 export type AnalyticsEventName = AnalyticsEvent['name'];

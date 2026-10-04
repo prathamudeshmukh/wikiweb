@@ -56,9 +56,11 @@ export interface JourneySession {
 export interface JourneyEvents {
   stampEarned(topic: CardTopic, expeditionId: string | null): void;
   expeditionEnded(expedition: Expedition): void;
+  /** Every read, once its topic is known (niche prompts count reads per tile, SPEC.md §3.9). */
+  articleRead(topic: CardTopic): void;
 }
 
-const NO_EVENTS: JourneyEvents = { stampEarned: () => undefined, expeditionEnded: () => undefined };
+const NO_EVENTS: JourneyEvents = { stampEarned: () => undefined, expeditionEnded: () => undefined, articleRead: () => undefined };
 
 export interface JourneySessionDeps {
   repo: JourneyRepository;
@@ -171,12 +173,16 @@ export function createJourneySession({ repo, now, newId, resolveTopic, onError, 
       });
       persist('journeys.read', () => repo.recordRead({ pageId: page.pageId, at, journeyId: active?.journey.id ?? null }));
 
+      const topicKnown = (topic: CardTopic) => {
+        awardStamp(page.pageId, topic);
+        events.articleRead(topic);
+      };
       if (knownTopic) {
-        awardStamp(page.pageId, knownTopic);
+        topicKnown(knownTopic);
         return;
       }
       resolveTopic(page.pageId).then(
-        (topic) => awardStamp(page.pageId, topic),
+        topicKnown,
         (error: unknown) => onError('journeys.stampTopic', error),
       );
     },

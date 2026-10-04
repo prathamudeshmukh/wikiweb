@@ -217,7 +217,7 @@ describe('journey session — storage', () => {
 });
 
 describe('journey session — events', () => {
-  const eventsSpy = () => ({ stampEarned: jest.fn(), expeditionEnded: jest.fn() });
+  const eventsSpy = () => ({ stampEarned: jest.fn(), expeditionEnded: jest.fn(), articleRead: jest.fn() });
 
   it('tells its listener an expedition ended when the user returns Home', async () => {
     const events = eventsSpy();
@@ -242,6 +242,27 @@ describe('journey session — events', () => {
 
     expect(events.stampEarned).toHaveBeenCalledTimes(1);
     expect(events.stampEarned).toHaveBeenCalledWith(MATHS, octopus.journeyId);
+  });
+
+  it('tells its listener the topic of every article read (SPEC.md §3.9 prompt reads)', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+
+    session.markRead(page('Euler'), MATHS);
+    session.markRead(page('Gauss'), MATHS);
+
+    expect(events.articleRead).toHaveBeenCalledTimes(2);
+    expect(events.articleRead).toHaveBeenCalledWith(MATHS);
+  });
+
+  it('tells its listener the topic of a read once it has been looked up', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events, resolveTopic: async () => MATHS });
+
+    session.markRead(page('Euler'), null);
+    await session.whenSaved();
+
+    expect(events.articleRead).toHaveBeenCalledWith(MATHS);
   });
 
   it('reports a stamp earned on Home without an expedition', async () => {

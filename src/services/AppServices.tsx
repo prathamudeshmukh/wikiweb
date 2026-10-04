@@ -17,6 +17,8 @@ import { createInterestsStore, type InterestsStore } from '../interests/interest
 import { openOnce } from '../journeys/journeyDatabase';
 import { createJourneyRepository } from '../journeys/journeyRepository';
 import { createJourneySession, type JourneySession } from '../journeys/journeySession';
+import { createNudges, type Nudges } from '../nudges/nudges';
+import { createNudgeStore } from '../nudges/nudgeStore';
 import { newId } from '../journeys/newId';
 import { openJourneyDatabase } from '../journeys/openJourneyDatabase';
 import { createWikiApi } from '../wiki-api/client';
@@ -30,6 +32,8 @@ export interface AppServices {
   interests: InterestsStore;
   /** Interest-tree nodes read in full (SPEC.md §3.9). */
   completedNodes: CompletedNodes;
+  /** Which prompt or exhaustion card Home shows (SPEC.md §3.9). */
+  nudges: Nudges;
   hints: HintStore;
   journeys: JourneySession;
   prefetcher: ColumnPrefetcher;
@@ -68,20 +72,27 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
   const expeditions = createExpeditionReporter({ analytics, now: Date.now });
   // One connection for every table in the on-device database.
   const openDatabase = openOnce(openJourneyDatabase);
+  const completedNodes = createCompletedNodes(openDatabase);
+  const nudges = createNudges({ store: createNudgeStore(Storage), completedNodes, analytics, now: Date.now });
   const journeys = createJourneySession({
     repo: createJourneyRepository(openDatabase),
     now: Date.now,
     newId,
     resolveTopic: (pageId) => topicOfPage(api, pageId),
     onError: reportError,
-    events: { stampEarned: expeditions.stampEarned, expeditionEnded: (expedition) => expeditions.ended(expedition, 'home') },
+    events: {
+      stampEarned: expeditions.stampEarned,
+      expeditionEnded: (expedition) => expeditions.ended(expedition, 'home'),
+      articleRead: (topic) => void nudges.articleRead(topic),
+    },
   });
   return {
     ok: true,
     services: {
       api,
       interests: createInterestsStore(Storage),
-      completedNodes: createCompletedNodes(openDatabase),
+      completedNodes,
+      nudges,
       hints: createHintStore(Storage),
       journeys,
       prefetcher,

@@ -12,6 +12,6 @@ export default function EditInterests() {
   const back = useCallback(() => router.back(), [router]);
   // Straight back to Home, so the rebuilt feed is the first thing the user sees.
   const goHome = useCallback(() => router.dismissTo('/'), [router]);
-  const save = useSaveInterests(goHome);
+  const save = useSaveInterests(goHome, 'settings');
   return <RequireInterests>{(interests) => <EditInterestsScreen saved={interests} onSave={(picks) => void save(picks)} onBack={back} initialTree={initialTree} />}</RequireInterests>;
 }

@@ -27,7 +27,7 @@ describe('InterestsProvider', () => {
     const { result } = await renderHook(() => useInterests(), { wrapper: wrapperFor(memoryInterestsStore()) });
     await waitFor(() => expect(result.current.interests).toBeNull());
 
-    await act(() => result.current.saveInterests(['space', 'history', 'art']));
+    await act(() => result.current.saveInterests(['space', 'history', 'art'], 'onboarding'));
 
     expect(result.current.interests).toEqual(['space', 'history', 'art']);
   });

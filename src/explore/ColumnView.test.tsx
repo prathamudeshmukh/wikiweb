@@ -49,6 +49,7 @@ function columnView(column: ColumnEntry, entryProgress: ReturnType<typeof makeMu
       onJump={jest.fn()}
       onOpenLogbook={jest.fn()}
       isScreenFocused={isScreenFocused}
+      niche={{ addPicks: jest.fn(async () => undefined), openTree: jest.fn() }}
     />
   );
 }

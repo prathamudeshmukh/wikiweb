@@ -30,7 +30,7 @@ interface ShownHome {
 }
 
 function useRefresher(interests: readonly string[]): HomeRefresher {
-  const { api, journeys } = useAppServices();
+  const { api, journeys, nudges } = useAppServices();
   const interestsKey = interests.join('|');
   // Read history loads asynchronously and grows while browsing, so ask the session each time instead of rebuilding Home.
   return useMemo(() => {
@@ -45,11 +45,13 @@ function useRefresher(interests: readonly string[]): HomeRefresher {
           wasShown,
           blocklist: HOME_TITLE_BLOCKLIST,
           onSourceError,
+          // SPEC.md §3.9 — a node read in full gets its exhaustion card and a Logbook record.
+          onNodeExhausted: (node) => void nudges.nodeExhausted(node).catch((error: unknown) => reportError('nudges.exhausted', error)),
         }),
       isRead,
       onError: onRefreshError,
     });
-  }, [api, journeys, interestsKey]);
+  }, [api, journeys, nudges, interestsKey]);
 }
 
 /** Home's feed, refreshed when the user comes back from an expedition (SPEC.md §3.2) or pulls it down. */

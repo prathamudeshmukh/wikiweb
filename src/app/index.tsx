@@ -1,9 +1,12 @@
 import { Redirect, useIsFocused, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import type { Card } from '../content/card';
 import { ExploreScreen } from '../explore/ExploreScreen';
 import { useInterests } from '../interests/InterestsContext';
+import { treeHref } from '../interests/treeTarget';
+import type { NicheActions } from '../nudges/useHomeNudge';
+import { useAppServices } from '../services/AppServices';
 import { readerParamsFor } from '../reader/readerParams';
 import { useResumeQueue, useTangentQueue } from '../tangent/TangentContext';
 import type { Handoff, ResumePoint, Tangent } from '../tangent/tangentQueue';
@@ -25,7 +28,8 @@ function useHandoff<T>(handoff: Handoff<T>): [T | null, () => void] {
 }
 
 export default function Explore() {
-  const { interests } = useInterests();
+  const { interests, saveInterests } = useInterests();
+  const { analytics } = useAppServices();
   const palette = useTheme();
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -35,6 +39,16 @@ export default function Explore() {
 
   const openArticle = useCallback((card: Card) => router.push({ pathname: '/reader', params: readerParamsFor(card) }), [router]);
   const openLogbook = useCallback(() => router.push('/logbook'), [router]);
+  const niche: NicheActions = useMemo(
+    () => ({
+      addPicks: (picks, from) => saveInterests(picks, from),
+      openTree: (target, from) => {
+        analytics.track({ name: 'interest_tree_opened', properties: { tile: target.tileId, from } });
+        router.push(treeHref(target));
+      },
+    }),
+    [saveInterests, analytics, router],
+  );
 
   if (interests === undefined) return <View style={{ flex: 1, backgroundColor: palette.paper }} />;
   if (interests === null) return <Redirect href="/onboarding" />;
@@ -48,6 +62,7 @@ export default function Explore() {
       onTangentStarted={tangentStarted}
       incomingResume={incomingResume}
       onResumed={resumed}
+      niche={niche}
     />
   );
 }
