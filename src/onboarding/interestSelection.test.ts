@@ -31,6 +31,15 @@ describe('interest selection', () => {
     expect(canSave(['space', 'history', 'art'], ['space', 'history', 'music'])).toBe(true);
   });
 
+  it('counts tiles touched, not picks, towards the minimum', () => {
+    expect(canContinue(['philosophy/logic', 'philosophy/ethics', 'space'])).toBe(false);
+    expect(canContinue(['philosophy/logic', 'history/medieval', 'space'])).toBe(true);
+  });
+
+  it('clears a narrowed tile and everything below it when the tile is toggled off', () => {
+    expect(toggleInterest(['space', 'philosophy/logic', 'philosophy/ethics'], 'philosophy')).toEqual(['space']);
+  });
+
   it('never lets the user save fewer than three picks', () => {
     expect(canSave(['space', 'history', 'art'], ['space', 'history'])).toBe(false);
   });
@@ -39,6 +48,10 @@ describe('interest selection', () => {
 describe('interestsSummary', () => {
   it('lists every pick by label when there are only a few', () => {
     expect(interestsSummary(['space', 'film', 'art'])).toBe('Space, Film & TV, Art');
+  });
+
+  it('names a narrowed tile once', () => {
+    expect(interestsSummary(['philosophy/logic', 'philosophy/ethics', 'art'])).toBe('Philosophy, Art');
   });
 
   it('names the first three picks and counts the rest', () => {

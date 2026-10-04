@@ -1,4 +1,7 @@
+import { reportError } from '../services/reportError';
 import { createInterestsStore, type KeyValueStore } from './interestsStore';
+
+jest.mock('../services/reportError', () => ({ reportError: jest.fn() }));
 
 function memoryKv(initial: Record<string, string> = {}): KeyValueStore & { data: Record<string, string> } {
   const data = { ...initial };
@@ -38,5 +41,24 @@ describe('interestsStore', () => {
 
   it('refuses to save an unknown tile', async () => {
     await expect(createInterestsStore(memoryKv()).save(['astrology'])).rejects.toThrow(/Unknown interest/);
+  });
+
+  it('saves and loads subfield and leaf picks as path ids', async () => {
+    const store = createInterestsStore(memoryKv());
+
+    await store.save(['space', 'philosophy/logic', 'history/medieval/vikings']);
+
+    await expect(store.load()).resolves.toEqual(['space', 'philosophy/logic', 'history/medieval/vikings']);
+  });
+
+  it('refuses to save a node that is not in the tree', async () => {
+    await expect(createInterestsStore(memoryKv()).save(['philosophy/astrology'])).rejects.toThrow(/Unknown interest/);
+  });
+
+  it('resolves a gone node to its nearest ancestor and reports it without the path', async () => {
+    const kv = memoryKv({ interests: JSON.stringify(['space', 'philosophy/ethics/hedonism']) });
+
+    await expect(createInterestsStore(kv).load()).resolves.toEqual(['space', 'philosophy/ethics']);
+    expect(reportError).toHaveBeenCalledWith('interests.load', expect.objectContaining({ name: 'InterestNodeMissing' }));
   });
 });

@@ -2,12 +2,12 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { reportError } from '../services/reportError';
 import type { InterestsStore } from './interestsStore';
 
-/** `undefined` while loading, `null` before onboarding, otherwise the picked tile ids. */
+/** `undefined` while loading, `null` before onboarding, otherwise the picks as path ids (SPEC.md §3.9). */
 export type InterestsState = readonly string[] | null | undefined;
 
 interface InterestsValue {
   interests: InterestsState;
-  saveInterests(tileIds: readonly string[]): Promise<void>;
+  saveInterests(picks: readonly string[]): Promise<void>;
 }
 
 const InterestsContext = createContext<InterestsValue | null>(null);
@@ -27,9 +27,9 @@ export function InterestsProvider({ store, children }: { store: InterestsStore; 
   }, [store]);
 
   const saveInterests = useCallback(
-    async (tileIds: readonly string[]) => {
-      await store.save(tileIds);
-      setInterests([...tileIds]);
+    async (picks: readonly string[]) => {
+      await store.save(picks);
+      setInterests([...picks]);
     },
     [store],
   );
