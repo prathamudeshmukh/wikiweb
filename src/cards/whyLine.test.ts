@@ -38,6 +38,18 @@ describe('whyLine', () => {
     expect(whyLine(card('home_interest', 'animals'), null)).toBe('★ YOU LIKE ANIMALS');
   });
 
+  it('names the subfield or leaf pick a Home card came from (SPEC.md §3.9)', () => {
+    const fromStoicism = { ...card('home_interest', 'philosophy'), interestNode: 'philosophy/ethics/stoicism' };
+
+    expect(whyLine(fromStoicism, null)).toBe('★ YOU LIKE STOICISM');
+  });
+
+  it('keeps the card topic label from the article, not the node', () => {
+    const fromStoicism = { ...card('home_interest', 'books'), interestNode: 'philosophy/ethics/stoicism' };
+
+    expect(topicLabel(fromStoicism)).toBe('Books');
+  });
+
   it('falls back to a generic line when an interest card has no topic', () => {
     expect(whyLine(card('home_interest'), null)).toBe('★ PICKED FOR YOU');
   });

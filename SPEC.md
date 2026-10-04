@@ -321,7 +321,9 @@ Mapping lives in a config file, not code.
 **Interest tree (§3.9).** Also config, next to the tiles: each subfield and leaf has an id (unique among its siblings), a label, an approximate pool size (shown on leaf chips), three sample article titles for subfields (shown on their cards), and a query:
 - `incategory:<Category>` — **shallow only**. `deepcat:` is never used: it wanders (`deepcat:Logic` + Good/Featured returns *September 11 attacks, Shakespeare, Tolkien, South Park*, live 2026-10-04) and is capped at depth 5 / 256 categories.
 - optionally `morelike:<Anchor article>` alternated with it, for small categories.
-- **No Featured/Good restriction.** Niche categories have no reviewed articles (`incategory:Stoicism` 37 articles, 0 Featured/Good). The hand-picked category is the quality gate instead of review status; the Home blocklist and §5.3 filter still apply. Order `gsrsort=random`, as for tiles.
+- **No Featured/Good restriction.** Niche categories have no reviewed articles (`incategory:Stoicism` 37 articles, 0 Featured/Good). The hand-picked category is the quality gate instead of review status; the Home blocklist and §5.3 filter still apply.
+- **Order: shuffled tiers** (decided 2026-10-04). Relevance order (`gsrsort=relevance`), each page of `FEED.listPageSize` shuffled. Random order surfaced the obscure tail first (*Supersymmetric WKB approximation* in Quantum mechanics) where relevance gives *Uncertainty principle, Multiverse*; shuffling within pages keeps sessions varied, and read articles drop out, so a reader works outward from the core.
+- A subfield searches its own extra categories plus all its leaves' (`incategory:A|B|C`).
 
 Every node is verified live when added: pool size, and the top results scanned for off-topic or explicit pages. Two levels below the tile at most, ~4–8 children per node.
 

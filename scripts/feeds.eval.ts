@@ -69,8 +69,8 @@ async function columnRows(title: string): Promise<Row[]> {
   return cards.slice(0, CARDS_SHOWN);
 }
 
-async function homeRows(interestTileIds: readonly string[]): Promise<Row[]> {
-  const feed = createHomeFeed(api, { interestTileIds, today: new Date(), visitedIds: new Set(), isRead: () => false, wasShown: () => false, blocklist: HOME_TITLE_BLOCKLIST });
+async function homeRows(interestPicks: readonly string[]): Promise<Row[]> {
+  const feed = createHomeFeed(api, { interestPicks, today: new Date(), visitedIds: new Set(), isRead: () => false, wasShown: () => false, blocklist: HOME_TITLE_BLOCKLIST });
   const { cards } = await feed.nextPage();
   return cards.slice(0, CARDS_SHOWN);
 }

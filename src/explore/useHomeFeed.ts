@@ -38,7 +38,7 @@ function useRefresher(interests: readonly string[]): HomeRefresher {
     return createHomeRefresher({
       buildFeed: (wasShown) =>
         createHomeFeed(api, {
-          interestTileIds: interestsKey.split('|'),
+          interestPicks: interestsKey.split('|'),
           today: new Date(),
           visitedIds: NO_IDS,
           isRead,
