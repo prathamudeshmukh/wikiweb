@@ -1,5 +1,5 @@
 import { TOPIC_TILES, type Territory } from '../config/topicTiles';
-import type { SqlDatabase } from './journeyDatabase';
+import { openOnce, type SqlDatabase } from './journeyDatabase';
 import type { Expedition, Journey, JourneyNode, NodeVia, Stamp } from './journeyTypes';
 
 export interface JourneyRepository {
@@ -78,13 +78,7 @@ const NODE_ORDER = 'ORDER BY created_at, rowid';
  * touches no storage); `open` resolves once it is migrated and every call waits for it.
  */
 export function createJourneyRepository(openDatabase: () => Promise<SqlDatabase>): JourneyRepository {
-  let opening: Promise<SqlDatabase> | null = null;
-  // A failed open is forgotten so the next call can try again.
-  const open = () =>
-    (opening ??= openDatabase().catch((error: unknown) => {
-      opening = null;
-      throw error;
-    }));
+  const open = openOnce(openDatabase);
 
   async function loadExpeditions(journeyRows: JourneyRow[], where: string, params: string[]): Promise<Expedition[]> {
     const db = await open();

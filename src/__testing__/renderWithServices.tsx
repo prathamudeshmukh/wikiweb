@@ -5,6 +5,7 @@ import { type MemoryAnalytics, memoryAnalytics } from '../analytics/__testing__/
 import { createAnalyticsConsent } from '../analytics/analyticsConsent';
 import { createColumnVisits } from '../analytics/columnVisits';
 import { createExpeditionReporter } from '../analytics/expeditionReport';
+import type { CompletedNode, CompletedNodes } from '../interests/completedNodes';
 import type { InterestsStore } from '../interests/interestsStore';
 import { PREFETCH } from '../config/constants';
 import { columnFeedFor } from '../explore/columnFeedFor';
@@ -28,6 +29,18 @@ export function memoryInterestsStore(initial: string[] | null = null): Interests
   };
 }
 
+export function memoryCompletedNodes(initial: readonly CompletedNode[] = []): CompletedNodes {
+  let nodes = [...initial];
+  return {
+    record: async (node) => {
+      if (nodes.some((n) => n.nodePath === node.nodePath)) return false;
+      nodes = [...nodes, node];
+      return true;
+    },
+    list: async () => [...nodes].sort((a, b) => b.completedAt - a.completedAt),
+  };
+}
+
 function memoryKv() {
   let values: Record<string, string> = {};
   return {
@@ -47,6 +60,7 @@ export function testServices(api: WikiApi, journeys: JourneySession = memoryJour
   return {
     api,
     interests: memoryInterestsStore(),
+    completedNodes: memoryCompletedNodes(),
     hints: memoryHintStore(),
     journeys,
     prefetcher,

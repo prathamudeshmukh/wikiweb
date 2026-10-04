@@ -48,6 +48,14 @@ const MIGRATIONS: readonly string[] = [
     earned_at   INTEGER NOT NULL
   );
   `,
+  // M8 (SPEC.md §3.9) — the Logbook's record of interest-tree nodes read in full. Any node, leaf or subfield.
+  `
+  CREATE TABLE completed_leaves (
+    node_path      TEXT PRIMARY KEY,
+    completed_at   INTEGER NOT NULL,
+    article_count  INTEGER NOT NULL
+  );
+  `,
 ];
 
 /** Brings the schema up to date, one migration per `user_version`. */
@@ -57,4 +65,17 @@ export async function migrate(db: SqlDatabase): Promise<void> {
   for (let next = version; next < MIGRATIONS.length; next += 1) {
     await db.execAsync(`BEGIN; ${MIGRATIONS[next]} PRAGMA user_version = ${next + 1}; COMMIT;`);
   }
+}
+
+/**
+ * Opens the database on first use and shares it between callers; a failed open is forgotten so the next call can
+ * try again.
+ */
+export function openOnce(openDatabase: () => Promise<SqlDatabase>): () => Promise<SqlDatabase> {
+  let opening: Promise<SqlDatabase> | null = null;
+  return () =>
+    (opening ??= openDatabase().catch((error: unknown) => {
+      opening = null;
+      throw error;
+    }));
 }

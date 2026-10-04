@@ -12,7 +12,9 @@ import { topicOfPage } from '../content/topicResolution';
 import { columnFeedFor } from '../explore/columnFeedFor';
 import { type ColumnPrefetcher, createColumnPrefetcher } from '../explore/columnPrefetch';
 import { createHintStore, type HintStore } from '../hints/hintStore';
+import { type CompletedNodes, createCompletedNodes } from '../interests/completedNodes';
 import { createInterestsStore, type InterestsStore } from '../interests/interestsStore';
+import { openOnce } from '../journeys/journeyDatabase';
 import { createJourneyRepository } from '../journeys/journeyRepository';
 import { createJourneySession, type JourneySession } from '../journeys/journeySession';
 import { newId } from '../journeys/newId';
@@ -26,6 +28,8 @@ import { reportError, setErrorSink } from './reportError';
 export interface AppServices {
   api: WikiApi;
   interests: InterestsStore;
+  /** Interest-tree nodes read in full (SPEC.md §3.9). */
+  completedNodes: CompletedNodes;
   hints: HintStore;
   journeys: JourneySession;
   prefetcher: ColumnPrefetcher;
@@ -62,8 +66,10 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
   const { analytics, client } = createAnalytics({ key: config.posthogKey, host: config.posthogHost, isDev: config.isDev }, clientFor);
   setErrorSink((scope, error) => analytics.track({ name: 'app_error', properties: { scope, reason: errorReason(error) } }));
   const expeditions = createExpeditionReporter({ analytics, now: Date.now });
+  // One connection for every table in the on-device database.
+  const openDatabase = openOnce(openJourneyDatabase);
   const journeys = createJourneySession({
-    repo: createJourneyRepository(openJourneyDatabase),
+    repo: createJourneyRepository(openDatabase),
     now: Date.now,
     newId,
     resolveTopic: (pageId) => topicOfPage(api, pageId),
@@ -75,6 +81,7 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
     services: {
       api,
       interests: createInterestsStore(Storage),
+      completedNodes: createCompletedNodes(openDatabase),
       hints: createHintStore(Storage),
       journeys,
       prefetcher,
