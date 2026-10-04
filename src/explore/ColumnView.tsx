@@ -131,7 +131,8 @@ function ColumnViewImpl(props: ColumnViewProps) {
 }
 
 function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
-  const { entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, isScreenFocused, feed } = props;
+  const { entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, isScreenFocused, feed, niche } = props;
+  const openTopic = useCallback((tileId: string) => niche.openTree({ tileId }, 'topic_label'), [niche]);
   const palette = useTheme();
   const marks = useJourneyMarks();
   const { width: screenWidth } = useWindowDimensions();
@@ -187,9 +188,10 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
         pulseToken={pulse?.cardId === item.card.pageId ? pulse.token : undefined}
         hint={index === hint.cardIndex ? hint.kind : null}
         peelToken={index === hint.cardIndex ? hint.peelToken : null}
+        onOpenTopic={openTopic}
       />
       ),
-    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken, nudge, backPan],
+    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken, nudge, backPan, openTopic],
   );
 
   return (

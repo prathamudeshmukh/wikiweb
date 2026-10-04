@@ -77,8 +77,8 @@ export function testServices(api: WikiApi, journeys: JourneySession = memoryJour
 }
 
 /** Renders UI inside the same providers the app uses, with a fake Wikipedia API and in-memory journeys. */
-export async function renderWithServices(ui: ReactElement, api: WikiApi, journeys: JourneySession = memoryJourneySession()) {
-  const services = testServices(api, journeys);
+export async function renderWithServices(ui: ReactElement, api: WikiApi, journeys: JourneySession = memoryJourneySession(), overrides: Partial<Omit<AppServices, 'analytics'>> = {}) {
+  const services: TestServices = { ...testServices(api, journeys), ...overrides };
   // A wrapper, so `rerender` keeps the same providers and services.
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={SAFE_AREA}>

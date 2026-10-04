@@ -68,6 +68,13 @@ export function parentPath(path: string): string | null {
 /** Where an exhausted pick's stream widens to: leaf → subfield → tile (SPEC.md §3.9). */
 export const widenedPath = parentPath;
 
+/** The labels above a node: `Philosophy › Ethics` for a leaf, `Philosophy` for a subfield or tile. */
+export function trailAbove(path: string): string {
+  const parent = resolvePick(parentPath(path) ?? path)?.pick;
+  if (!parent) return '';
+  return parent.subfield ? `${parent.tile.label} › ${nodeLabel(parent)}` : parent.tile.label;
+}
+
 const isAncestor = (ancestor: string, path: string) => path.startsWith(ancestor + SEPARATOR);
 
 export function picksBelow(picks: readonly string[], path: string): string[] {

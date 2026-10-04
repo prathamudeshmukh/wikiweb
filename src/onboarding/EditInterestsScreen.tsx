@@ -16,6 +16,8 @@ interface EditInterestsScreenProps {
   onBack: () => void;
   /** Opens straight into this tile's tree; its back still leads to the grid, where Save is. */
   initialTree?: TreeTarget;
+  /** A tree was opened from the grid (analytics' `interest_tree_opened`). */
+  onTreeOpened?: (tileId: string) => void;
 }
 
 /** Closes an open tree on Android back, before the screen itself would go. */
@@ -31,7 +33,7 @@ function useTreeBack(tree: TreeTarget | null, close: () => void) {
 }
 
 /** Re-opens the tile picker from Settings, starting from the saved picks (DESIGN.md §6.6, §5.13). */
-export function EditInterestsScreen({ saved, onSave, onBack, initialTree }: EditInterestsScreenProps) {
+export function EditInterestsScreen({ saved, onSave, onBack, initialTree, onTreeOpened }: EditInterestsScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<readonly string[]>(saved);
@@ -55,7 +57,14 @@ export function EditInterestsScreen({ saved, onSave, onBack, initialTree }: Edit
       <ScrollView contentContainerStyle={layout.content}>
         <Text style={[layout.heading, { color: palette.ink }]} accessibilityRole="header">Your corners of Wikipedia</Text>
         <Text style={[layout.intro, { color: palette.muted }]}>Home is built from these. Tiles marked with a branch can be narrowed.</Text>
-        <TopicPicker selected={selected} onChange={setSelected} onOpenTree={(tileId) => setTree({ tileId })} />
+        <TopicPicker
+          selected={selected}
+          onChange={setSelected}
+          onOpenTree={(tileId) => {
+            onTreeOpened?.(tileId);
+            setTree({ tileId });
+          }}
+        />
       </ScrollView>
       <View style={layout.actions}>
         <PrimaryButton label="Save" enabled={canSave(saved, selected)} onPress={() => onSave(selected)} disabledHint={saveHint} />

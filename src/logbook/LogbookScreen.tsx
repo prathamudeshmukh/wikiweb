@@ -5,11 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TOPIC_TILES } from '../config/topicTiles';
 import { recapOf } from '../journeys/expedition';
 import type { Expedition } from '../journeys/journeyTypes';
+import type { CompletedNode } from '../interests/completedNodes';
+import type { TreeTarget } from '../interests/treeTarget';
 import type { Logbook } from '../journeys/journeySession';
 import { useAppServices } from '../services/AppServices';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
+import { CompletedSection } from './CompletedSection';
 import { LoadStatus } from './LoadStatus';
 import { logDate, tangentCount } from './logbookFormat';
 import { RouteStrip } from './RouteStrip';
@@ -21,6 +24,13 @@ interface LogbookScreenProps {
   onBack: () => void;
   onOpenExpedition: (journeyId: string) => void;
   onOpenSettings: () => void;
+  /** A Completed row opens its tile's tree (SPEC.md §3.5). */
+  onOpenTree: (target: TreeTarget) => void;
+}
+
+interface LogbookData {
+  logbook: Logbook;
+  completed: readonly CompletedNode[];
 }
 
 const STAMPS_PER_ROW = 5;
@@ -67,7 +77,13 @@ function ExpeditionRow({ expedition, onOpen }: { expedition: Expedition; onOpen:
   );
 }
 
-function LogbookContent({ logbook, onOpenExpedition }: { logbook: Logbook; onOpenExpedition: (journeyId: string) => void }) {
+interface LogbookContentProps {
+  data: LogbookData;
+  onOpenExpedition: (journeyId: string) => void;
+  onOpenTree: (target: TreeTarget) => void;
+}
+
+function LogbookContent({ data: { logbook, completed }, onOpenExpedition, onOpenTree }: LogbookContentProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const collected = new Set(logbook.stamps.map((stamp) => stamp.tileId));
@@ -76,6 +92,7 @@ function LogbookContent({ logbook, onOpenExpedition }: { logbook: Logbook; onOpe
   return (
     <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + LAYOUT.gutter }]}>
       <StampGrid collected={collected} />
+      <CompletedSection completed={completed} onOpenTree={onOpenTree} />
       <View style={styles.section}>
         <Text style={[styles.eyebrow, { color: palette.muted }]}>EXPEDITIONS</Text>
         {expeditions.length === 0 ? (
@@ -88,12 +105,15 @@ function LogbookContent({ logbook, onOpenExpedition }: { logbook: Logbook; onOpe
   );
 }
 
-/** Stamps collected and every expedition so far (DESIGN.md §6.5). */
-export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings }: LogbookScreenProps) {
+/** Stamps collected, interest-tree nodes completed and every expedition so far (DESIGN.md §6.5). */
+export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings, onOpenTree }: LogbookScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
-  const { journeys } = useAppServices();
-  const load = useCallback(() => journeys.logbook(), [journeys]);
+  const { journeys, completedNodes } = useAppServices();
+  const load = useCallback(async (): Promise<LogbookData> => {
+    const [logbook, completed] = await Promise.all([journeys.logbook(), completedNodes.list()]);
+    return { logbook, completed };
+  }, [journeys, completedNodes]);
   const { state, retry } = useLoaded('logbook.load', load);
 
   return (
@@ -107,7 +127,7 @@ export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings }: Logb
           </Pressable>
         }
       />
-      {state.status === 'ready' ? <LogbookContent logbook={state.value} onOpenExpedition={onOpenExpedition} /> : <LoadStatus status={state.status} onRetry={retry} />}
+      {state.status === 'ready' ? <LogbookContent data={state.value} onOpenExpedition={onOpenExpedition} onOpenTree={onOpenTree} /> : <LoadStatus status={state.status} onRetry={retry} />}
     </View>
   );
 }

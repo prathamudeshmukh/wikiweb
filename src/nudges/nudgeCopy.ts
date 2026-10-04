@@ -1,4 +1,4 @@
-import { nodeLabel, parentPath, resolvePick } from '../interests/interestPicks';
+import { nodeLabel, parentPath, resolvePick, trailAbove } from '../interests/interestPicks';
 import type { Nudge } from './nudgeRules';
 
 /** The words on a nudge card (DESIGN.md §5.14, §8). Upper-casing is the card's job. */
@@ -17,13 +17,10 @@ const labelOf = (path: string) => {
 };
 
 function exhaustedCopy(path: string, articleCount: number): NudgeCopy {
-  const parent = parentPath(path) ?? path;
-  const parentPick = resolvePick(parent)?.pick;
-  const tileLabel = parentPick?.tile.label ?? parent;
+  const parent = resolvePick(parentPath(path) ?? path)?.pick;
+  const trail = trailAbove(path);
   // A leaf widens to its subfield; a subfield widens to all of its tile.
-  const isSubfieldParent = Boolean(parentPick?.subfield);
-  const trail = isSubfieldParent ? `${tileLabel} › ${labelOf(parent)}` : tileLabel;
-  const widensTo = isSubfieldParent ? labelOf(parent) : `all of ${tileLabel}`;
+  const widensTo = parent?.subfield ? nodeLabel(parent) : `all of ${parent?.tile.label ?? trail}`;
   return {
     eyebrow: trail,
     title: `You've read all of ${labelOf(path)}`,

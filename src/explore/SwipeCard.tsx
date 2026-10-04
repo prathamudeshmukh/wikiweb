@@ -18,10 +18,12 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { CardView } from '../cards/CardView';
+import { CardView, type TopicButton } from '../cards/CardView';
+import { topicLabel } from '../cards/whyLine';
 import { HINT } from '../config/constants';
 import type { Card } from '../content/card';
 import { HintChip } from '../hints/HintChip';
+import { hasTree } from '../interests/interestPicks';
 import type { HintKind } from '../hints/hintRules';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
@@ -46,13 +48,15 @@ interface SwipeCardProps {
   hint: HintKind | null;
   /** The column's peel count while this card carries the hint; each new value peels it. */
   peelToken: number | null;
+  /** Opens a tile's interest tree from the card's topic label (SPEC.md §3.9). */
+  onOpenTopic?: (tileId: string) => void;
 }
 
 const RELEASE_HINT_FADE_MS = 120;
 const PULSE_SCALE = 1.03;
 const PULSE_UP_MS = 120;
 
-function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, onOpen, pulseToken, hint, peelToken }: SwipeCardProps) {
+function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, onOpen, pulseToken, hint, peelToken, onOpenTopic }: SwipeCardProps) {
   const palette = useTheme();
   const tx = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -117,15 +121,18 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
   );
 
   // A tap reads the article; any movement past the lock slop hands the touch to the swipe or the scroll instead.
-  const gesture = useMemo(() => {
-    const tap = Gesture.Tap()
-      .enabled(enabled)
-      .maxDistance(GESTURE.lockSlop)
-      .onEnd((_event, success) => {
-        if (success) scheduleOnRN(onOpen, card);
-      });
-    return Gesture.Race(pan, tap);
-  }, [enabled, pan, onOpen, card]);
+  const tap = useMemo(
+    () =>
+      Gesture.Tap()
+        .enabled(enabled)
+        .maxDistance(GESTURE.lockSlop)
+        .onEnd((_event, success) => {
+          if (success) scheduleOnRN(onOpen, card);
+        }),
+    [enabled, onOpen, card],
+  );
+  const gesture = useMemo(() => Gesture.Race(pan, tap), [pan, tap]);
+  const topic = useTopicButton(card, enabled, tap, onOpenTopic);
 
   const cardStyle = useAnimatedStyle(() => ({
     opacity: candidate && hop.progress.value > 0 ? 0 : 1,
@@ -143,8 +150,15 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
         <Animated.Text style={[styles.release, { color: palette.ink }, releaseStyle]}>RELEASE TO GO DEEPER</Animated.Text>
       </Animated.View>
       <GestureDetector gesture={gesture}>
-        <Animated.View style={[styles.card, cardStyle]} accessibilityRole="button" accessibilityHint="Opens the article" accessible>
-          <CardView card={card} seedTitle={seedTitle} />
+        <Animated.View
+          style={[styles.card, cardStyle]}
+          accessibilityRole="button"
+          accessibilityHint="Opens the article"
+          accessible
+          accessibilityActions={topic.actions}
+          onAccessibilityAction={topic.onAction}
+        >
+          <CardView card={card} seedTitle={seedTitle} topicButton={topic.button} />
           {hint && <HintChip kind={hint} />}
         </Animated.View>
       </GestureDetector>
@@ -153,6 +167,25 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
 }
 
 export const SwipeCard = memo(SwipeCardImpl);
+
+const TOPIC_ACTION = 'topicTree';
+
+/** The topic label as a button, plus the same as a screen-reader action, on cards whose tile has a tree. */
+function useTopicButton(card: Card, enabled: boolean, cardTap: TopicButton['blocks'], onOpenTopic?: (tileId: string) => void) {
+  const { tileId } = card.topic;
+  const label = topicLabel(card);
+  return useMemo(() => {
+    if (!onOpenTopic || !tileId || !label || !hasTree(tileId)) return { button: undefined, actions: undefined, onAction: undefined };
+    const open = () => onOpenTopic(tileId);
+    return {
+      button: { onPress: open, blocks: cardTap, enabled },
+      actions: [{ name: TOPIC_ACTION, label: `${label} interests` }],
+      onAction: ({ nativeEvent }: { nativeEvent: { actionName: string } }) => {
+        if (nativeEvent.actionName === TOPIC_ACTION) open();
+      },
+    };
+  }, [onOpenTopic, tileId, label, cardTap, enabled]);
+}
 
 /**
  * The hint peel (DESIGN.md §7): out far enough to show the label behind, a hold, then the swipe's spring back,

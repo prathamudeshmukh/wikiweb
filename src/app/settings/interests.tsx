@@ -4,6 +4,7 @@ import { RequireInterests } from '../../interests/RequireInterests';
 import { parseTreeTarget } from '../../interests/treeTarget';
 import { useSaveInterests } from '../../interests/useSaveInterests';
 import { EditInterestsScreen } from '../../onboarding/EditInterestsScreen';
+import { useAppServices } from '../../services/AppServices';
 
 export default function EditInterests() {
   const router = useRouter();
@@ -13,5 +14,10 @@ export default function EditInterests() {
   // Straight back to Home, so the rebuilt feed is the first thing the user sees.
   const goHome = useCallback(() => router.dismissTo('/'), [router]);
   const save = useSaveInterests(goHome, 'settings');
-  return <RequireInterests>{(interests) => <EditInterestsScreen saved={interests} onSave={(picks) => void save(picks)} onBack={back} initialTree={initialTree} />}</RequireInterests>;
+  const { analytics } = useAppServices();
+  const treeOpened = useCallback(
+    (tile: string) => analytics.track({ name: 'interest_tree_opened', properties: { tile, from: 'settings' } }),
+    [analytics],
+  );
+  return <RequireInterests>{(interests) => <EditInterestsScreen saved={interests} onSave={(picks) => void save(picks)} onBack={back} initialTree={initialTree} onTreeOpened={treeOpened} />}</RequireInterests>;
 }

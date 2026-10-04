@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
+import type { GestureType } from 'react-native-gesture-handler';
 import type { Card } from '../content/card';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
@@ -7,18 +8,28 @@ import { type Palette, territoryColor } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { useFittedLineCount } from './fittedLineCount';
 import { TopicIcon } from './TopicIcon';
+import { TopicLabelButton } from './TopicLabelButton';
 import { topicLabel, whyLine } from './whyLine';
+
+/** Makes the topic label a button (SPEC.md §3.9): only on interactive cards whose tile has a tree. */
+export interface TopicButton {
+  onPress: () => void;
+  /** The card's tap, blocked while the label takes the touch. */
+  blocks: GestureType;
+  enabled: boolean;
+}
 
 interface CardViewProps {
   card: Card;
   /** Title of the column's seed; null on Home. */
   seedTitle: string | null;
+  topicButton?: TopicButton;
 }
 
 const TYPOGRAPHIC_ICON_SIZE = 48;
 
 /** A card's face (DESIGN.md §5.1 / §5.2). Layout only — gestures live in SwipeCard. */
-export function CardView({ card, seedTitle }: CardViewProps) {
+export function CardView({ card, seedTitle, topicButton }: CardViewProps) {
   const palette = useTheme();
   const accent = territoryColor(palette, card.topic.territory);
   const label = topicLabel(card);
@@ -53,10 +64,19 @@ export function CardView({ card, seedTitle }: CardViewProps) {
         </View>
       )}
       <View style={styles.metaRow}>
-        <Text style={[styles.meta, styles.metaText]} numberOfLines={1}>
-          <Text style={{ color: accent }}>●{label ? ` ${label.toUpperCase()}` : ''}</Text>
-          {card.description ? <Text style={{ color: palette.muted }}> · {card.description.toUpperCase()}</Text> : null}
-        </Text>
+        {topicButton && label ? (
+          <>
+            <TopicLabelButton label={label} color={accent} {...topicButton} />
+            <Text style={[styles.meta, styles.metaText, { color: palette.muted }]} numberOfLines={1}>
+              {card.description ? `· ${card.description.toUpperCase()}` : ''}
+            </Text>
+          </>
+        ) : (
+          <Text style={[styles.meta, styles.metaText]} numberOfLines={1}>
+            <Text style={{ color: accent }}>●{label ? ` ${label.toUpperCase()}` : ''}</Text>
+            {card.description ? <Text style={{ color: palette.muted }}> · {card.description.toUpperCase()}</Text> : null}
+          </Text>
+        )}
         <Badges visited={card.visited} read={card.read} color={palette.muted} />
       </View>
       {card.extract ? <Extract text={card.extract} color={palette.ink} /> : null}
