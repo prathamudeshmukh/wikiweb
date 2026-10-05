@@ -12,6 +12,7 @@ import { buildUserAgent, PREFETCH, REQUEST_BUDGET } from '../config/constants';
 import { topicOfPage } from '../content/topicResolution';
 import { columnFeedFor } from '../explore/columnFeedFor';
 import { type ColumnPrefetcher, createColumnPrefetcher } from '../explore/columnPrefetch';
+import { createHomeSnapshotStore, type HomeSnapshotStore } from '../explore/homeSnapshotStore';
 import { createFindRepository } from '../finds/findRepository';
 import { createFindsStore, type FindsStore } from '../finds/findsStore';
 import { createHintStore, type HintStore } from '../hints/hintStore';
@@ -33,6 +34,8 @@ import { reportError, setErrorSink } from './reportError';
 export interface AppServices {
   api: WikiApi;
   interests: InterestsStore;
+  /** Home saved for the next cold start (SPEC.md §3.2). */
+  homeSnapshots: HomeSnapshotStore;
   /** Interest-tree nodes read in full (SPEC.md §3.9). */
   completedNodes: CompletedNodes;
   /** Which prompt or exhaustion card Home shows (SPEC.md §3.9). */
@@ -111,6 +114,7 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
     services: {
       api,
       interests: createInterestsStore(Storage),
+      homeSnapshots: createHomeSnapshotStore(openDatabase),
       completedNodes,
       nudges,
       hints: createHintStore(Storage),

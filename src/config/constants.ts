@@ -50,6 +50,14 @@ export const FEED = {
   listPageSize: 20,
 } as const;
 
+/** Home saved for the next cold start (SPEC.md §3.2). */
+export const HOME_SNAPSHOT = {
+  /** Five pages: enough to reopen on, small enough to save on every page. */
+  maxCards: 100,
+  /** Saves wait this long after Home's cards last changed, so paging doesn't write in bursts. */
+  saveDelayMs: 1000,
+} as const;
+
 /** Card ranking within a hydrated batch (SPEC.md §5.6). Tuned with `npm run eval:feeds`. */
 export const RANKING = {
   /** At or above this many incoming links an article is a hub and sinks below every specific card (eval p90 ≈ 35k). */
