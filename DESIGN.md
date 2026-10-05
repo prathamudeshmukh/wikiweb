@@ -193,7 +193,8 @@ The four-point star from the app-icon rim (§9) — the same vector, no new art.
 - **Off:** outline ✦ in `ink.muted`. **On:** solid ✦ in the card's territory colour (ink when the card has no territory).
 - **Card:** end of the meta row after ◌ ✓, ~16 pt (a touch larger than the badges), padded to a 44 pt touch target. Visible on every card, found or not.
 - **Reader:** ✦ button at the right end of the header bar, opposite close.
-- **Peek card** for a Find: ✦ in the title row, solid.
+- **Peek card** for a Find: ✦ in the title row, solid; under the title, `FOUND ON · FROM {FIRST}… · {DATE}` (or `FOUND ON HOME · {DATE}`) in Plex Mono, `ink.muted`.
+- **Finds list:** each row ends with its ✦, so a find can be removed from the list (undo toast as everywhere).
 - Never on compass, dead-end, error or offline cards.
 
 ### 5.12 World atlas (M7)
@@ -357,7 +358,7 @@ Interests (re-open tile picker; tree tiles open their tree screen, §5.13) · Th
 | **Snap scroll** | Platform paging spring |
 | **Hint peel** | Focused Home card eases out to `−96` pt (380 ms, ease-out cubic) with the drag's tilt and label fade, holds 600 ms, springs back (damping 18, stiffness 180, overshoot clamped — an overshoot past rest read as a shake on device). No haptic. Reduce Motion: none |
 | **Stamp toast** | Scale 1.4 → 1.0 with −8°→ seeded rotation, 220 ms; ink-spread mask 0 → 100 % 180 ms; medium haptic |
-| **Find** | Outline → solid: the stamp's ink-spread mask 0 → 100 % in 180 ms; light haptic. Remove: instant to outline, no haptic. Reduce Motion: cross-fade |
+| **Find** | Outline → solid: the stamp's ink-spread mask 0 → 100 % in 180 ms; light haptic; `✦ KEPT IN FINDS` toast slides up from the bottom, auto-dismisses after 1.8 s. Remove: instant to outline, no haptic. Reduce Motion: cross-fade |
 | **Reader** | Platform bottom sheet |
 | **Atlas zoom** | viewBox eases to the continent (or back to the world) in 340 ms, ease-out cubic. No haptic. |
 | **Atlas route trace** | Selecting a chip cross-fades routes and place opacity in 200 ms. Routes never animate drawing in, so the hop stays the one signature moment. |
@@ -386,10 +387,11 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Onboarding CTA | Set off → |
 | Seed header | Exploring from {title} |
 | Recap title | From {first} to {last} |
-| Recap count | {n} tangents · {r} read · {f} finds (finds part hidden when 0) |
+| Recap count | {n} tangents · {r} read · ✦ {f} finds (finds part hidden when 0; ✦ drawn as the vector, in ink) |
 | Toast | New territory · {topic} |
 | Logbook empty | No expeditions yet. Swipe left on anything that catches your eye. |
 | Find ✦ label (off / on) | Keep as a find / Remove find |
+| Find kept toast | ✦ Kept in Finds |
 | Find removed toast | Find removed · Undo |
 | Logbook Finds section | Finds · {n} — See all → |
 | Find caption | Found on · From {first}… / Found on Home |
@@ -469,4 +471,5 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Atlas density | Continent radius caps at 46. Check a heavy profile (~200 places in one territory) for overlap before M7 ships; fall back to count badges at world zoom. |
 | Atlas in Night atlas | Tint percentages are from the mock; verify place glyph contrast on tinted continents on device. |
 | Long-press menu vs. gesture discoverability | Validate in M0 prototype |
+| Finds (SPEC §3.7, M6) | Built 2026-10-05. On device: the ✦ fill and light haptic; that a tap on a card's ✦ never also opens the reader; the undo toast's tap target; a tangent from a find flying in once the Logbook has closed. Plex Mono may lack `↯`, so check the wildcard why-line's fallback glyph. *See all →* uses synthetic Literata italic until SDK 58. |
 | Niche interests (SPEC §3.9, M8) | Designed 2026-10-04 (§5.13–5.15, §6.5), built 2026-10-05. On device: check the tree screen at the largest font scale (sample lines and chips wrap, never clip); the nudge card's chips on a small phone (7 subfields); and that a right swipe on a nudge card beats Home's rubber band. Literata italic isn't loaded as its own face, so sample lines use synthetic italic until SDK 58. |

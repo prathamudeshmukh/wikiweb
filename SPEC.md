@@ -105,11 +105,11 @@ Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`
 
 ### 3.7 Finds (M6)
 Journeys record what the user did; a **Find** records what they valued. (Bookmarks were a v1 non-goal because reads were already recorded — Finds add the missing signal: *which* articles mattered.)
-- **Keep:** tap ✦ on a card (end of the meta row), in the reader header, or on a Find's peek card. Outline ✦ → solid ✦ in the card's territory colour. No toast on add.
+- **Keep:** tap ✦ on a card (end of the meta row), in the reader header, or on a Find's peek card. Outline ✦ → solid ✦ in the card's territory colour, plus a brief `✦ KEPT IN FINDS` toast (no action) so the save is confirmed.
 - **Remove:** tap the solid ✦ — instant, no confirmation. Toast `FIND REMOVED · UNDO`; undo restores the original row (same `found_at` and expedition). Re-finding after the toast is gone creates a fresh find.
-- **Provenance:** a find remembers the expedition it was made on (none when made on Home outside one). The first find of an article wins.
-- **Logbook:** `FINDS · {n}` section between stamps and expeditions — a strip of the latest finds, newest first, plus *See all →* to the full list. Each item: `FOUND ON · FROM {first title}…` or `FOUND ON HOME`.
-- **Opening a Find** shows the peek card (*Take a tangent →* / *Read*). A tangent from it starts a **new** expedition, like a hop from Home.
+- **Provenance:** a find remembers the expedition it was made on (none when made on Home outside one). The first find of an article wins. A find made in the reader knows only the article's title, so its topic and thumbnail are looked up afterwards and filled in.
+- **Logbook:** `FINDS · {n}` section between stamps and expeditions — a strip of the latest finds, newest first, plus *See all →* to the full list (shown with the invitation from DESIGN.md §8 while empty). Each list row: `FOUND ON · FROM {first title}…` or `FOUND ON HOME`, with its own ✦ to remove it there.
+- **Opening a Find** shows the peek card (*Take a tangent →* / *Read*), captioned with where and when it was found. A tangent from it starts a **new** expedition, like a hop from Home.
 - **Recap:** `{n} tangents · {r} read · {f} finds` — the finds part is hidden when 0.
 - **Not coupled:** finding earns no stamp (stamps stay earned by reading), Home never resurfaces Finds, and the hop choreography is unchanged. A found card shows solid ✦ wherever it appears.
 
@@ -537,6 +537,9 @@ Analytics exists mainly to judge **feed quality**: which columns and Home picks 
 | `niche_prompt_shown` | A prompt card dwells | `tile` |
 | `niche_prompt_dismissed` | A prompt card is swiped away or scrolled past without a chip | `tile`, `how` (`swipe`/`scrolled_past`) |
 | `niche_node_exhausted` | A node is first found exhausted | `node` (path id), `articles` |
+| `find_kept` | ✦ keeps an article (§3.7) | `from` (`card`/`reader`/`peek`/`list`), `topic`, `territory`, `on_expedition`. Title-free. |
+| `find_removed` | ✦ removes a find | `from` |
+| `find_restored` | Undo on the removed toast | — |
 | `atlas_set_off` | Set off from the atlas (§3.8), before the column lands | `from` (`place`/`territory_sheet`/`blind_spot`/`zoom`), `territory`, `charted`, `place_count` (in that territory). Title-free. |
 | `app_error` | Anything passed to `reportError` | `scope`, `reason` (`http_429`, `api_<code>`, `network`, `parse`, `cancelled`, or the error class — never the message) |
 
@@ -570,7 +573,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | M3 ✅ | Reader + peek card | Inline links intercepted; Explore/Read work — done 2026-10-01: reader modal (mobile-html themed via Wikipedia's CSS variables, fonts embedded, CC BY-SA footer), peek card with Take a tangent / Read, hop from the peek card after the sheet closes. Verified on an Android emulator in Paper and Night atlas. Marking articles *read* lands with Journeys in M4. |
 | M4 ✅ | Journeys + breadcrumb | Persisted, reopenable Journeys; visited/read badges — done 2026-10-02: journeys in expo-sqlite (hops, in-place reads, read history, stamps), live ◌/✓ badges, Logbook (stamp grid, expeditions) and recap card with *Continue expedition* and a reopenable node list. Verified on an Android emulator; 307 tests, 92 % coverage. New-territory toast and Settings (Logbook gear) move to M5. |
 | M5 | Prefetch, caches, states, analytics | Perf targets met; all §8 states; events firing — analytics done 2026-10-03: feed-quality events with titles (§11), opt-out switch in Settings, `app_error` from `reportError`. |
-| M6 | Finds (§3.7) | ✦ on cards, reader and peek card; `finds` migration; Logbook Finds strip + list; undo toast; recap count; `find_*` events; card accessibility action *Keep as a find* / *Remove find*; wildcard why-line re-glyphed `✦` → `↯` |
+| M6 (built, device check pending) | Finds (§3.7) | ✦ on cards, reader and peek card; `finds` migration; Logbook Finds strip + list; undo toast; recap count; `find_*` events; card accessibility action *Keep as a find* / *Remove find*; wildcard why-line re-glyphed `✦` → `↯` |
 | M7 | World atlas (§3.8) | Atlas at the top of the Logbook; place, territory and blind-spot sheets; *Set off from here* / *Set off into*; route tracing; territory zoom; `atlas_set_off` |
 | M8 (built, device check pending) | Niche interests (§3.9) | Live-verified trees for Philosophy, Science, Maths, History; tree in Settings → Interests; path-id picks with ancestor fallback; Home rotates over effective picks; node why-line; prompt card + tappable topic label; exhaustion card, widening, `completed_leaves` + Logbook *Completed* |
 
