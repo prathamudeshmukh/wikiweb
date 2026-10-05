@@ -1,6 +1,6 @@
-import { TOPIC_TILES, type Territory } from '../config/topicTiles';
 import { openOnce, type SqlDatabase } from './journeyDatabase';
 import type { Expedition, Journey, JourneyNode, NodeVia, Stamp } from './journeyTypes';
+import { isKnownTileId, storedTerritory, storedTileId } from './storedTopic';
 
 export interface JourneyRepository {
   createJourney(journey: Journey): Promise<void>;
@@ -40,9 +40,6 @@ interface NodeRow {
   created_at: number;
 }
 
-const KNOWN_TILE_IDS: ReadonlySet<string> = new Set(TOPIC_TILES.map((tile) => tile.id));
-const KNOWN_TERRITORIES: ReadonlySet<string> = new Set(TOPIC_TILES.map((tile) => tile.territory));
-
 const toJourney = (row: JourneyRow): Journey => ({
   id: row.id,
   title: row.title,
@@ -51,7 +48,6 @@ const toJourney = (row: JourneyRow): Journey => ({
   lastNodeId: row.last_node_id,
 });
 
-// Topics stored by an older build may no longer exist; they fall back to "untagged" rather than breaking the route.
 const toNode = (row: NodeRow): JourneyNode => ({
   id: row.id,
   journeyId: row.journey_id,
@@ -59,8 +55,8 @@ const toNode = (row: NodeRow): JourneyNode => ({
   pageId: row.page_id,
   title: row.title,
   via: row.via,
-  tileId: row.tile_id !== null && KNOWN_TILE_IDS.has(row.tile_id) ? row.tile_id : null,
-  territory: row.territory !== null && KNOWN_TERRITORIES.has(row.territory) ? (row.territory as Territory) : null,
+  tileId: storedTileId(row.tile_id),
+  territory: storedTerritory(row.territory),
   thumbnailUrl: row.thumbnail_url,
   createdAt: row.created_at,
 });
@@ -142,7 +138,7 @@ export function createJourneyRepository(openDatabase: () => Promise<SqlDatabase>
     async stamps() {
       const db = await open();
       const rows = await db.getAllAsync<{ topic: string; page_id: number; earned_at: number }>('SELECT * FROM stamps ORDER BY earned_at', []);
-      return rows.filter((row) => KNOWN_TILE_IDS.has(row.topic)).map((row) => ({ tileId: row.topic, pageId: row.page_id, earnedAt: row.earned_at }));
+      return rows.filter((row) => isKnownTileId(row.topic)).map((row) => ({ tileId: row.topic, pageId: row.page_id, earnedAt: row.earned_at }));
     },
 
     async expeditions() {

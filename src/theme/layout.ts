@@ -21,6 +21,8 @@ export const LAYOUT = {
   routeSegmentWidth: 14,
   maxVisibleCrumbs: 4,
   minTouchTarget: 44,
+  /** Brings a toast's action (Undo) up to the touch target despite the slim pill. */
+  toastActionSlop: 14,
 } as const;
 
 export const TYPE = {

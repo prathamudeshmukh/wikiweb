@@ -21,7 +21,7 @@ describe('whyLine', () => {
     ['backlink', '↰ LINKS TO OCTOPUS'],
     ['morelike', '≈ SIMILAR TO OCTOPUS'],
     ['home_today', '☀ TODAY ON WIKIPEDIA'],
-    ['home_wildcard', '✦ WILDCARD'],
+    ['home_wildcard', '↯ WILDCARD'],
   ] as const)('explains a %s card', (source, expected) => {
     expect(whyLine(card(source), 'Octopus')).toBe(expected);
   });

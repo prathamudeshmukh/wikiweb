@@ -102,6 +102,18 @@ export const NICHE = {
   toastMs: 1800,
 } as const;
 
+/** Finds (SPEC.md §3.7, DESIGN.md §5.11). */
+export const FIND = {
+  /** "✦ Kept in Finds" — a confirmation, nothing to act on. */
+  keptToastMs: 1800,
+  /** "Find removed · Undo" stays long enough to reach the undo. */
+  removedToastMs: 4000,
+  /** Outline → solid ink-spread. */
+  fillMs: 180,
+  /** Latest finds in the Logbook strip; the rest are behind See all. */
+  stripSize: 8,
+} as const;
+
 /**
  * Wikimedia asks every client to identify itself with contact details; requests without them risk being blocked.
  * The contact (URL or email) is configuration, not code — it comes from EXPO_PUBLIC_WIKI_API_CONTACT.

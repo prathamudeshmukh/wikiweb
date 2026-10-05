@@ -8,8 +8,10 @@ import { FeedStatusCard } from '../cards/FeedStatusCard';
 import { SeedHeader } from '../cards/SeedHeader';
 import type { Card } from '../content/card';
 import type { FeedView } from '../feeds/useFeed';
+import { useFoundIds, useFindToggle } from '../finds/useFinds';
 import { useColumnHint } from '../hints/useColumnHint';
 import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
+import { nodePageOf } from '../journeys/nodePages';
 import { NudgeCard } from '../nudges/NudgeCard';
 import { Toast } from '../nudges/Toast';
 import { type HomeNudgeView, type NicheActions, useHomeNudge } from '../nudges/useHomeNudge';
@@ -135,6 +137,9 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const openTopic = useCallback((tileId: string) => niche.openTree({ tileId }, 'topic_label'), [niche]);
   const palette = useTheme();
   const marks = useJourneyMarks();
+  const foundIds = useFoundIds();
+  const toggleFind = useFindToggle();
+  const onToggleFind = useCallback((card: Card) => toggleFind(nodePageOf(card), 'card'), [toggleFind]);
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [listHeight, setListHeight] = useState(0);
@@ -189,9 +194,11 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
         hint={index === hint.cardIndex ? hint.kind : null}
         peelToken={index === hint.cardIndex ? hint.peelToken : null}
         onOpenTopic={openTopic}
+        found={foundIds.has(item.card.pageId)}
+        onToggleFind={onToggleFind}
       />
       ),
-    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken, nudge, backPan, openTopic],
+    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken, nudge, backPan, openTopic, foundIds, onToggleFind],
   );
 
   return (

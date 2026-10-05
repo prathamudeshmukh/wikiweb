@@ -1,9 +1,10 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { memoryCompletedNodes, renderWithServices } from '../__testing__/renderWithServices';
 import type { CompletedNode } from '../interests/completedNodes';
 import { fakeWikiApi, idOf } from '../content/__testing__/fakeWikiApi';
 import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
 import type { JourneySession } from '../journeys/journeySession';
+import { logDate } from './logbookFormat';
 import { LogbookScreen } from './LogbookScreen';
 
 const nodePage = (title: string) => ({ pageId: idOf(title), title, tileId: null, territory: 'life' as const, thumbnailUrl: null });
@@ -13,13 +14,22 @@ async function renderLogbook(journeys: JourneySession = memoryJourneySession(), 
   const onBack = jest.fn();
   const onOpenSettings = jest.fn();
   const onOpenTree = jest.fn();
-  await renderWithServices(
-    <LogbookScreen onBack={onBack} onOpenExpedition={onOpenExpedition} onOpenSettings={onOpenSettings} onOpenTree={onOpenTree} />,
+  const onOpenFinds = jest.fn();
+  const findActions = { tangent: jest.fn(), read: jest.fn() };
+  const { services } = await renderWithServices(
+    <LogbookScreen
+      onBack={onBack}
+      onOpenExpedition={onOpenExpedition}
+      onOpenSettings={onOpenSettings}
+      onOpenTree={onOpenTree}
+      onOpenFinds={onOpenFinds}
+      findActions={findActions}
+    />,
     fakeWikiApi({}).api,
     journeys,
     { completedNodes: memoryCompletedNodes(completed) },
   );
-  return { onOpenExpedition, onBack, onOpenSettings, onOpenTree };
+  return { onOpenExpedition, onBack, onOpenSettings, onOpenTree, onOpenFinds, findActions, finds: services.finds };
 }
 
 describe('LogbookScreen', () => {
@@ -105,5 +115,39 @@ describe('LogbookScreen — Completed (SPEC.md §3.9)', () => {
     await fireEvent.press(await screen.findByText('Stoicism'));
 
     expect(onOpenTree).toHaveBeenCalledWith({ tileId: 'philosophy', subfieldId: 'ethics' });
+  });
+
+  describe('finds (SPEC.md §3.7)', () => {
+    it('invites a first find when there are none', async () => {
+      await renderLogbook();
+
+      expect(await screen.findByText('FINDS · 0')).toBeOnTheScreen();
+      expect(screen.getByText(/Nothing found yet/)).toBeOnTheScreen();
+    });
+
+    it('shows the latest finds, newest first, with See all', async () => {
+      const { finds, onOpenFinds } = await renderLogbook();
+      await screen.findByText('FINDS · 0');
+      await act(() => finds.toggle(nodePage('Octopus'), 'card'));
+      await act(() => finds.toggle(nodePage('Squid'), 'card'));
+
+      await fireEvent.press(screen.getByRole('button', { name: 'See all finds' }));
+
+      expect(screen.getByText('FINDS · 2')).toBeOnTheScreen();
+      expect(screen.getAllByRole('button', { name: /Octopus|Squid/ }).map((item) => item.props.accessibilityLabel)).toEqual(['Squid', 'Octopus']);
+      expect(onOpenFinds).toHaveBeenCalled();
+    });
+
+    it('opens a find’s sheet and sets off from it', async () => {
+      const { finds, findActions } = await renderLogbook();
+      await screen.findByText('FINDS · 0');
+      await act(() => finds.toggle(nodePage('Octopus'), 'card'));
+      await fireEvent.press(screen.getByRole('button', { name: 'Octopus' }));
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Take a tangent' }));
+
+      expect(screen.getByText('FOUND ON HOME · ' + logDate(finds.getState().finds[0].foundAt))).toBeOnTheScreen();
+      expect(findActions.tangent).toHaveBeenCalledWith(expect.objectContaining({ title: 'Octopus' }));
+    });
   });
 });

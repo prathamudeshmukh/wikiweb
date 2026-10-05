@@ -13,6 +13,7 @@ import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { ColumnView } from './ColumnView';
 import { GESTURE, type HopController, type Rect } from './hopController';
+import { FindToast } from '../finds/FindToast';
 import { HopOverlay } from './HopOverlay';
 import { useHomeStopwatch, useNavigationAnalytics, useRunWhile } from './useExploreAnalytics';
 import { useStackNavigation } from './useStackNavigation';
@@ -163,6 +164,7 @@ export function ExploreScreen(props: ExploreScreenProps) {
       {preparedCard && stack.prepared && (
         <HopOverlay key={stack.prepared.id} card={preparedCard} seedTitle={stack.columns[depth].seed?.title ?? null} hop={hop} to={seedHeaderRect(insets.top, screenWidth)} />
       )}
+      <FindToast active={isFocused} />
     </View>
   );
 }

@@ -4,6 +4,9 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent, type WebViewNavigation } from 'react-native-webview';
+import { FindButton } from '../finds/FindButton';
+import { FindToast } from '../finds/FindToast';
+import type { FindPage } from '../finds/findTypes';
 import { reportError } from '../services/reportError';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
@@ -15,7 +18,8 @@ import { classifyReaderLink } from './readerLinks';
 import { useArticleDocument } from './useArticleDocument';
 
 interface ReaderScreenProps {
-  initialTitle: string;
+  /** The article opened; what the header's ✦ keeps until a linked article is read in place. */
+  initialPage: FindPage;
   onTangent: (article: Article) => void;
   /** A peeked article is now being read in place. */
   onReadLink: (article: Article) => void;
@@ -23,6 +27,8 @@ interface ReaderScreenProps {
 }
 
 // mobile-html uses relative links (./Ink) and protocol-relative scripts; this base resolves both.
+const READER_STAR_SIZE = 20;
+
 const ARTICLE_BASE_URL = 'https://en.wikipedia.org/api/rest_v1/page/mobile-html/';
 
 function ReaderStatus({ status, onRetry }: { status: 'loading' | 'error'; onRetry: () => void }) {
@@ -37,10 +43,11 @@ function ReaderStatus({ status, onRetry }: { status: 'loading' | 'error'; onRetr
 }
 
 /** The article sheet (SPEC.md §3.4): reads in place; links open a peek card instead of navigating. */
-export function ReaderScreen({ initialTitle, onTangent, onReadLink, onClose }: ReaderScreenProps) {
+export function ReaderScreen({ initialPage, onTangent, onReadLink, onClose }: ReaderScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
-  const [title, setTitle] = useState(initialTitle);
+  const [page, setPage] = useState(initialPage);
+  const { title } = page;
   const [peekTitle, setPeekTitle] = useState<string | null>(null);
   const { document, retry } = useArticleDocument(title);
   const webView = useRef<WebView>(null);
@@ -71,7 +78,8 @@ export function ReaderScreen({ initialTitle, onTangent, onReadLink, onClose }: R
   const read = useCallback(
     (article: Article) => {
       setPeekTitle(null);
-      setTitle(article.title);
+      // Its topic isn't known here; a find made now looks it up.
+      setPage({ pageId: article.pageId, title: article.title, thumbnailUrl: article.thumbnail?.url ?? null });
       onReadLink(article);
     },
     [onReadLink],
@@ -84,6 +92,7 @@ export function ReaderScreen({ initialTitle, onTangent, onReadLink, onClose }: R
           <CaretDown size={22} color={palette.ink} />
         </Pressable>
         <Text style={[styles.barTitle, { color: palette.muted }]} numberOfLines={1}>{title.toUpperCase()}</Text>
+        <FindButton page={page} from="reader" size={READER_STAR_SIZE} />
       </View>
       {document.status === 'ready' ? (
         <WebView
@@ -102,6 +111,7 @@ export function ReaderScreen({ initialTitle, onTangent, onReadLink, onClose }: R
         <ReaderStatus status={document.status} onRetry={retry} />
       )}
       {peekTitle && <PeekCard title={peekTitle} onTangent={onTangent} onRead={read} onClose={() => setPeekTitle(null)} />}
+      <FindToast />
     </View>
   );
 }

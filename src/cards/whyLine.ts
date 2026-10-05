@@ -25,7 +25,7 @@ const COPY: Readonly<Record<CardSource, (seedTitle: string, card: Card) => strin
     return label ? `★ YOU LIKE ${label}` : '★ PICKED FOR YOU';
   },
   home_today: () => '☀ TODAY ON WIKIPEDIA',
-  home_wildcard: () => '✦ WILDCARD',
+  home_wildcard: () => '↯ WILDCARD',
 };
 
 /** Why a card is in its column. `seedTitle` is null on Home. */

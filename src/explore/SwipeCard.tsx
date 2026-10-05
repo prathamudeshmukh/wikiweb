@@ -1,5 +1,5 @@
-import { memo, useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type AccessibilityActionEvent, StyleSheet, Text } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -22,6 +22,8 @@ import { CardView, type TopicButton } from '../cards/CardView';
 import { topicLabel } from '../cards/whyLine';
 import { HINT } from '../config/constants';
 import type { Card } from '../content/card';
+import type { CardFind } from '../finds/CardFindButton';
+import { findActionLabel } from '../finds/useFinds';
 import { HintChip } from '../hints/HintChip';
 import { hasTree } from '../interests/interestPicks';
 import type { HintKind } from '../hints/hintRules';
@@ -50,13 +52,16 @@ interface SwipeCardProps {
   peelToken: number | null;
   /** Opens a tile's interest tree from the card's topic label (SPEC.md §3.9). */
   onOpenTopic?: (tileId: string) => void;
+  /** Kept with ✦ (SPEC.md §3.7). */
+  found: boolean;
+  onToggleFind: (card: Card) => void;
 }
 
 const RELEASE_HINT_FADE_MS = 120;
 const PULSE_SCALE = 1.03;
 const PULSE_UP_MS = 120;
 
-function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, onOpen, pulseToken, hint, peelToken, onOpenTopic }: SwipeCardProps) {
+function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop, onOpen, pulseToken, hint, peelToken, onOpenTopic, found, onToggleFind }: SwipeCardProps) {
   const palette = useTheme();
   const tx = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -133,6 +138,15 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
   );
   const gesture = useMemo(() => Gesture.Race(pan, tap), [pan, tap]);
   const topic = useTopicButton(card, enabled, tap, onOpenTopic);
+  const find = useFindButton(card, found, enabled, tap, onToggleFind);
+  const actions = useMemo(() => [...(topic.actions ?? []), find.action], [topic.actions, find.action]);
+  const onAction = useCallback(
+    (event: AccessibilityActionEvent) => {
+      if (event.nativeEvent.actionName === FIND_ACTION) onToggleFind(card);
+      else topic.onAction?.(event);
+    },
+    [topic, onToggleFind, card],
+  );
 
   const cardStyle = useAnimatedStyle(() => ({
     opacity: candidate && hop.progress.value > 0 ? 0 : 1,
@@ -155,10 +169,10 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
           accessibilityRole="button"
           accessibilityHint="Opens the article"
           accessible
-          accessibilityActions={topic.actions}
-          onAccessibilityAction={topic.onAction}
+          accessibilityActions={actions}
+          onAccessibilityAction={onAction}
         >
-          <CardView card={card} seedTitle={seedTitle} topicButton={topic.button} />
+          <CardView card={card} seedTitle={seedTitle} topicButton={topic.button} find={find.view} />
           {hint && <HintChip kind={hint} />}
         </Animated.View>
       </GestureDetector>
@@ -169,6 +183,16 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
 export const SwipeCard = memo(SwipeCardImpl);
 
 const TOPIC_ACTION = 'topicTree';
+const FIND_ACTION = 'find';
+
+/** ✦ on the card, plus the same as a screen-reader action — the card is one accessible element (DESIGN.md §10). */
+function useFindButton(card: Card, found: boolean, enabled: boolean, cardTap: TopicButton['blocks'], onToggle: (card: Card) => void) {
+  return useMemo(() => {
+    const onPress = () => onToggle(card);
+    const view: CardFind = { found, button: { onPress, blocks: cardTap, enabled } };
+    return { view, action: { name: FIND_ACTION, label: findActionLabel(found) } };
+  }, [card, found, enabled, cardTap, onToggle]);
+}
 
 /** The topic label as a button, plus the same as a screen-reader action, on cards whose tile has a tree. */
 function useTopicButton(card: Card, enabled: boolean, cardTap: TopicButton['blocks'], onOpenTopic?: (tileId: string) => void) {

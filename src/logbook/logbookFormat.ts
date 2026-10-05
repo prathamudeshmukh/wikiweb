@@ -18,6 +18,11 @@ export function recapCounts(recap: Pick<Recap, 'tangents' | 'reads'>): string {
   return `${plural(recap.tangents, 'tangent', 'tangents')} · ${recap.reads} read`;
 }
 
+/** The recap's finds part: `{f} finds` (DESIGN.md §8), hidden by the caller when there are none. */
+export function findCount(count: number): string {
+  return plural(count, 'find', 'finds');
+}
+
 export function tangentCount(count: number): string {
   return plural(count, 'TANGENT', 'TANGENTS');
 }

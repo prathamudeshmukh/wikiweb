@@ -3,6 +3,7 @@ import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-na
 import { CardView } from '../cards/CardView';
 import { SeedHeader } from '../cards/SeedHeader';
 import type { Card } from '../content/card';
+import { useIsFound } from '../finds/useFinds';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import type { HopController, Rect } from './hopController';
@@ -24,6 +25,8 @@ const SEED_FADE = [0.4, 0.9];
  */
 export function HopOverlay({ card, seedTitle, hop, to }: HopOverlayProps) {
   const palette = useTheme();
+  // The flying face matches the card it left, ✦ included.
+  const found = useIsFound(card.pageId);
   const frameStyle = useAnimatedStyle(() => {
     const p = hop.progress.value;
     const from = hop.from.value;
@@ -44,7 +47,7 @@ export function HopOverlay({ card, seedTitle, hop, to }: HopOverlayProps) {
   return (
     <Animated.View ph-no-capture pointerEvents="none" style={[styles.frame, { backgroundColor: palette.card, borderColor: palette.line }, frameStyle]}>
       <Animated.View style={[StyleSheet.absoluteFill, cardFaceStyle]}>
-        <CardView card={card} seedTitle={seedTitle} />
+        <CardView card={card} seedTitle={seedTitle} find={{ found }} />
       </Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, seedFaceStyle]}>
         <SeedHeader title={card.title} topic={card.topic} thumbnailUrl={card.thumbnail?.url ?? null} />
