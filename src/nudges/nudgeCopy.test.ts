@@ -19,6 +19,6 @@ describe('nudgeCopy (DESIGN.md §8)', () => {
 
     expect(copy.eyebrow).toBe('Philosophy');
     expect(copy.body).toBe('Every one of them. Home widens to all of Philosophy from here. Or try a neighbour:');
-    expect(copy.whyLine).toBe('✓ Completed · Philosophy');
+    expect(copy.whyLine).toBe('Completed · Philosophy');
   });
 });

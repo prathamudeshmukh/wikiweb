@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { Check } from 'phosphor-react-native';
 import { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
@@ -36,6 +37,8 @@ const ICON_SIZE = 40;
 const BLOCK_ASPECT = 10 / 16;
 const MAX_BLOCK_SHARE = 0.34;
 const DISMISS_MS = 220;
+// IBM Plex Mono draws ✓ like a √, so checks are the Phosphor icon instead.
+const CHECK_SIZE = 11;
 
 function NudgeCardImpl({ nudge, chips, pickedChips, width, height, enabled, onChip, onOpenTree, onDismiss, columnPan }: NudgeCardProps) {
   const palette = useTheme();
@@ -131,8 +134,9 @@ function NudgeCardImpl({ nudge, chips, pickedChips, width, height, enabled, onCh
                     style={[styles.chip, picked ? { backgroundColor: palette.ink, borderColor: palette.ink } : { backgroundColor: palette.paper, borderColor: palette.line }]}
                   >
                     <View style={[styles.dot, { backgroundColor: picked ? palette.card : accent }]} />
+                    {picked && <Check testID="chip-check" size={CHECK_SIZE} weight="bold" color={palette.card} />}
                     <Text style={[styles.chipLabel, { color: picked ? palette.card : palette.ink }]}>
-                      {picked ? '✓ ' : '+ '}
+                      {picked ? '' : '+ '}
                       {chip.label.toUpperCase()}
                     </Text>
                   </Pressable>
@@ -140,9 +144,12 @@ function NudgeCardImpl({ nudge, chips, pickedChips, width, height, enabled, onCh
               })}
             </View>
             <View style={styles.why}>
-              <Text style={[styles.whyText, { color: palette.muted }]} numberOfLines={1}>
-                {copy.whyLine.toUpperCase()}
-              </Text>
+              <View style={styles.whyLead}>
+                {nudge.kind === 'exhausted' && <Check testID="why-check" size={CHECK_SIZE} weight="bold" color={palette.muted} />}
+                <Text style={[styles.whyText, { color: palette.muted }]} numberOfLines={1}>
+                  {copy.whyLine.toUpperCase()}
+                </Text>
+              </View>
               <Text style={[styles.whyText, { color: nudge.kind === 'prompt' ? palette.ink : palette.muted }]}>{copy.whyAction.toUpperCase()}</Text>
             </View>
           </Pressable>
@@ -170,5 +177,6 @@ const styles = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 3.5 },
   chipLabel: { fontFamily: FONT.mono, fontSize: 11, letterSpacing: 0.6 },
   why: { marginTop: 'auto', paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  whyLead: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
   whyText: { fontFamily: FONT.monoLight, ...TYPE.meta, flexShrink: 1 },
 });

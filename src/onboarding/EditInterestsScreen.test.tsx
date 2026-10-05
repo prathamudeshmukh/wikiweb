@@ -117,6 +117,13 @@ describe('EditInterestsScreen interest trees (SPEC.md §3.9)', () => {
     expect(onSave).toHaveBeenCalledWith(['space', 'art', 'philosophy/logic/paradoxes']);
   });
 
+  it('marks a picked topic with a check icon rather than a text glyph', async () => {
+    await renderScreen({ saved: ['space', 'art', 'philosophy/logic/paradoxes'] });
+    await openTree('Philosophy');
+
+    expect(screen.getAllByTestId('chip-check', { includeHiddenElements: true })).toHaveLength(1);
+  });
+
   it('makes the tile broad again from the All row', async () => {
     const { onSave, save } = await renderScreen({ saved: ['space', 'art', 'philosophy/logic'] });
     await openTree('Philosophy');

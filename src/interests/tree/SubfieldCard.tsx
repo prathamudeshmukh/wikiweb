@@ -24,6 +24,8 @@ const CHECK_SIZE = 28;
 const PIN_SIZE = 14;
 const CHIP_HEIGHT = 32;
 const CHIP_HIT_SLOP = (LAYOUT.minTouchTarget - CHIP_HEIGHT) / 2;
+// IBM Plex Mono draws ✓ like a √, so picked marks are the Phosphor check instead.
+const CHIP_CHECK = 11;
 
 function pinFill(state: NodeState, accent: string, palette: Palette): object {
   if (state.kind === 'picked') return { backgroundColor: accent };
@@ -92,10 +94,8 @@ export function SubfieldCard({ tileId, subfield, index, picks, accent, palette, 
                       : { backgroundColor: palette.paper, borderColor: palette.line },
                 ]}
               >
-                <Text style={[styles.chipLabel, { color }]}>
-                  {on ? '✓ ' : ''}
-                  {leaf.label.toUpperCase()}
-                </Text>
+                {on && <Check testID="chip-check" size={CHIP_CHECK} weight="bold" color={color} />}
+                <Text style={[styles.chipLabel, { color }]}>{leaf.label.toUpperCase()}</Text>
                 <Text style={[styles.chipCount, { color: on ? palette.onTerritory : palette.muted }]}>{leaf.poolSize}</Text>
               </Pressable>
             );

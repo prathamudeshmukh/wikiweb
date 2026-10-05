@@ -26,7 +26,7 @@ function exhaustedCopy(path: string, articleCount: number): NudgeCopy {
     title: `You've read all of ${labelOf(path)}`,
     metaRight: `${articleCount} articles`,
     body: `Every one of them. Home widens to ${widensTo} from here. Or try a neighbour:`,
-    whyLine: `✓ Completed · ${trail}`,
+    whyLine: `Completed · ${trail}`,
     whyAction: '→ Skip',
   };
 }

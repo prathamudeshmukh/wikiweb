@@ -31,10 +31,11 @@ describe('NudgeCard', () => {
     expect(onChip).toHaveBeenCalledWith(chips[0]);
   });
 
-  it('shows tapped chips as picked', async () => {
+  it('shows tapped chips as picked, with a check icon rather than a text glyph', async () => {
     await renderNudge(PROMPT, ['philosophy/ethics']);
 
-    expect(screen.getByText('✓ ETHICS')).toBeTruthy();
+    expect(screen.getByText('ETHICS')).toBeTruthy();
+    expect(screen.getAllByTestId('chip-check', { includeHiddenElements: true })).toHaveLength(1);
   });
 
   it('opens the tree from the card body', async () => {
