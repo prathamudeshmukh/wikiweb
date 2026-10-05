@@ -10,7 +10,8 @@ const HOME = topOf(initialStack());
 const card = (title: string): Card =>
   toCard(makeArticle(title), { ref: { title }, source: 'link', fallbackTopic: { tileId: 'animals', territory: 'life' } }, { visitedIds: new Set(), readIds: new Set() });
 
-const token = (item: Card, isViewable: boolean): ViewToken<Card> => ({ item, key: String(item.pageId), index: 0, isViewable });
+const token = (item: Card, isViewable: boolean, index = 0): ViewToken<Card> => ({ item, key: String(item.pageId), index, isViewable });
+const visits = () => ({ cardSeen: jest.fn() });
 
 function fakePrefetcher() {
   const prefetched: string[] = [];
@@ -35,7 +36,7 @@ describe('applyDwell', () => {
     const { prefetcher, prefetched } = fakePrefetcher();
     const squid = card('Squid');
 
-    applyDwell({ prefetcher, parent: HOME }, [token(squid, true)]);
+    applyDwell({ prefetcher, parent: HOME, visits: visits() }, [token(squid, true)]);
 
     expect(prefetched).toEqual([columnOf(squid)]);
   });
@@ -44,9 +45,20 @@ describe('applyDwell', () => {
     const { prefetcher, cancelled, prefetched } = fakePrefetcher();
     const squid = card('Squid');
 
-    applyDwell({ prefetcher, parent: HOME }, [token(squid, false)]);
+    applyDwell({ prefetcher, parent: HOME, visits: visits() }, [token(squid, false)]);
 
     expect(cancelled).toEqual([columnOf(squid)]);
     expect(prefetched).toEqual([]);
+  });
+
+  it('reports a dwelt-on card as seen, at its place in the column', () => {
+    const { prefetcher } = fakePrefetcher();
+    const seen = visits();
+    const squid = card('Squid');
+
+    applyDwell({ prefetcher, parent: HOME, visits: seen }, [token(squid, true, 4), token(card('Ink'), false, 5)]);
+
+    expect(seen.cardSeen).toHaveBeenCalledTimes(1);
+    expect(seen.cardSeen).toHaveBeenCalledWith(HOME.id, squid, 4);
   });
 });

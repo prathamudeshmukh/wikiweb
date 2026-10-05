@@ -58,6 +58,7 @@ Dark mode typographic blocks use `bg.paper` (dark) text on the dark territory co
 
 ### 2.4 Rules
 - Territory colour appears **only** in: topic dot + label, typographic card block, stamps (+ the explore label behind a dragged card, the route strip in the Logbook and the loading compass needle, which are the same accent).
+- **Atlas exception (M7):** the world atlas (§5.12) may tint continents: fill at 12 % (Paper) / 14 % (Night atlas) and a 1 pt outline at 45 %, inside the atlas frame only. Places and labels on it follow the rules above. Nothing else in the app uses tints.
 - Never as body text, never tinting photos, never as a full-screen background.
 - Theme follows system; override in Settings (System / Paper / Night atlas).
 
@@ -135,7 +136,7 @@ Same layout; image slot replaced by a territory-colour block (16:10) containing 
 | Sideways (detour out of the seed's territory) | `⤳ DETOUR INTO {TOPIC} · LINKS TO {SEED}` — `⤳ DETOUR · LINKS TO {SEED}` when the card has no topic label |
 | Backlink (seed has no territory) | `↰ LINKS TO {SEED}` |
 | morelike | `≈ SIMILAR TO {SEED}` |
-| Home – interest | `★ YOU LIKE {TOPIC}` |
+| Home – interest | `★ YOU LIKE {TOPIC}` — from a subfield/leaf pick (SPEC §3.9), `{TOPIC}` is that node's label: `★ YOU LIKE STOICISM` |
 | Home – today | `☀ TODAY ON WIKIPEDIA` |
 | Home – wildcard | `↯ WILDCARD` (was `✦` until M6 — ✦ now means Find) |
 
@@ -146,6 +147,7 @@ Both top-right of meta row; never colour-coded.
 
 ### 5.5 Seed header (top of every non-root column)
 Compact 56 pt strip: 40 pt thumbnail (or territory swatch), title in Fraunces 18, `EXPLORING FROM` mono label, topic dot. Tap → reader for the seed.
+A column set off from the atlas (§5.12) swaps the label for `SET OFF FROM YOUR ATLAS`, or `FIRST STEP INTO {TERRITORY}` when the territory was uncharted.
 
 ### 5.6 Breadcrumb / route
 Mono caps crumbs joined by a dotted route line (2 pt dots, 4 pt gap, `ink.muted`); current crumb in `ink.primary`. Tap a crumb → jump. Home crumb shows the wordmark glyph.
@@ -194,7 +196,108 @@ The four-point star from the app-icon rim (§9) — the same vector, no new art.
 - **Peek card** for a Find: ✦ in the title row, solid.
 - Never on compass, dead-end, error or offline cards.
 
+### 5.12 World atlas (M7)
+Behaviour: SPEC §3.8. Mock: https://claude.ai/artifact/5Nhx1k1iX7KuRBDtrrmNyr
+```
+┌──────────────────────────────┐
+│ WORLD ATLAS                  │  mono, ink.muted
+│ Everywhere you've wandered   │  Fraunces italic 24/28
+│ 8 expeditions · 73 places ·  │  Literata 13, ink.muted
+│ 6 of 7 territories charted   │
+│ ╭──────────────────────────╮ │
+│ │ MIND · 16      COSMOS · 4│ │  map frame: bg.card, radius 18,
+│ │  (∴∵)    ┆CRAFT┆   (∵)   │ │  card shadow; continents tinted,
+│ │ LIFE · 20      EARTH · 9 │ │  uncharted dashed
+│ │  (∴∵∴)  ⋯routes⋯  (∵∴)   │ │
+│ │ PAST · 4    CULTURE · 20 │ │
+│ │  (∵)          (∴∵∴)      │ │
+│ │     TAP A TERRITORY TO ZOOM│
+│ ╰──────────────────────────╯ │
+│ ┆○ Blind spot: Craft. Never  ┆│  blind-spot bar
+│ ┆  entered.        SET OFF → ┆│
+│ [ALL · 8] [29 SEP · 14 HOPS ]│  expedition chips, scroll sideways
+│           [From Ferment…   ] │
+│           [●●●●●●●●●       ] │
+└──────────────────────────────┘
+```
+
+**Map.** Drawn in a 340 × 380 unit space (`react-native-svg` viewBox), scaled to the frame width; 1 unit ≈ 1 pt on a 375 pt phone. Gutter 8 pt each side.
+
+**Continents.** One per territory, at fixed centres so the world keeps its shape:
+
+| Territory | Centre | Territory | Centre |
+|---|---|---|---|
+| Mind | 64, 66 | Earth | 272, 206 |
+| Cosmos | 262, 62 | Past | 96, 322 |
+| Craft | 166, 136 | Culture | 242, 318 |
+| Life | 70, 214 | | |
+
+- Shape: a closed blob through 16 points around the centre, each at radius × (0.88–1.10), jitter seeded by territory so it never changes. Radius = `min(46, 20 + 5.4 × √places)`.
+- Charted: territory tint and outline (§2.4 exception). Label above it: Plex Mono 500 caps 8.5, territory colour, `{TERRITORY} · {n}`.
+- Uncharted: radius 24, 1 pt dashed (3/3) outline in `ink.muted` at 60 %, no fill, label `{TERRITORY} · UNCHARTED` in `ink.muted`.
+
+**Places.** Slot `s` (SPEC §3.8) sits at radius `6.4 × √(s + 0.5)` and angle `s × 137.5°` from its continent's centre, giving an even sunflower packing that grows outward.
+- Radius `2.3 + 0.45 × min(visits, 8)`.
+- Read: solid territory colour. Passed through: `bg.card` fill, territory-colour stroke at 45 % of the radius. Find: the ✦ vector (§5.11) in territory colour at 1.5 × the radius.
+- Touch target: at least 44 pt, centred on the place, without overlapping a neighbour's glyph.
+- Labels: Literata 10, `ink.primary`, 3 pt `bg.card` halo, right of the glyph, truncated at 18 characters. In the world view, only places with ≥ `ATLAS_LABEL_MIN_VISITS` visits and Finds get labels (Finds only while there are ≤ 20 expeditions). Zoomed in, every place in that territory is labelled.
+
+**Routes.** Quadratic curves between places, bowed 16 % of their length to one side (alternating by expedition) so overlapping routes separate.
+- All: `ink.primary`, 0.9 pt, dotted 2/2.5, at 20 % opacity (7 % with more than 20 expeditions).
+- Selected expedition: solid 1.8 pt at 90 %, `SET OFF` (Plex Mono 7.5 caps) above its root, a 7 pt `ink.primary` ring around its most recent node. Other routes drop to 3.5 %, and places it didn't pass through drop to 22 %.
+
+**Zoom.** Tapping a charted continent fits it to the frame (viewBox width = radius × 3.1). Strokes, labels and glyphs keep their on-screen size. Controls on the frame: `‹ WORLD` (hairline pill, top-left) when zoomed; the hint `TAP A TERRITORY TO ZOOM` (Plex Mono 9.5, `ink.muted`, bottom-right) when not; and the zoom's `SET OFF INTO {TERRITORY} →` (`ink.primary` pill with `bg.card` text, bottom-right) in place of the hint.
+
+**Blind-spot bar.** Full width under the map, 1.5 pt dashed `line.hairline` border, radius 14. A 10 pt dashed ring in the territory's colour (`ink.muted` when uncharted), the copy in Literata 13 with the territory name bold, and `SET OFF →` in Plex Mono 11 at the right. The whole bar is one button.
+
+**Expedition chips.** Horizontal row, scrolls sideways, 8 pt gap. `ALL · {n}` first, then 168 pt chips: `{DATE} · {n} HOPS` (Plex Mono 9.5, `ink.muted`), title (Literata 13, one line), and a route strip of the first 12 nodes (3.2 pt dots on a `line.hairline` rule). Selected chip: 1 pt `ink.primary` border plus a 1 pt inner ring.
+
+**Place sheet.** A bottom sheet styled like the peek card (§5.8), sized to its content. Meta row `● {TERRITORY} · VISITED {n}× · ✓ READ` in territory colour, title in Fraunces 24/28, then **Set off from here →** (primary) and **Read** (secondary, hairline). Below, `PASSED THROUGH ON {n} EXPEDITIONS` with up to 3 rows (date in Plex Mono 10, title in Literata 14, `line.hairline` rule on the left) and `+{n} MORE` after that. A Home find adds `✦ FOUND ON HOME, OUTSIDE ANY EXPEDITION` in Plex Mono, `ink.muted`.
+
+**Territory sheet.** Same sheet: meta `● {TERRITORY} · {n} PLACES` (or `· UNCHARTED` in `ink.muted`), title, one line in Literata 15 naming the territory's tiles, and **Set off into {Territory} →**.
+
 ---
+
+### 5.13 Interest tree screen (M8)
+Behaviour: SPEC §3.9. Mock: `.lavish/tangent-niche-interests-mockup.html` (approved 2026-10-04).
+```
+┌──────────────────────────────┐
+│ ‹   INTERESTS › PHILOSOPHY   │  ScreenHeader
+│ ╭──────────────────────────╮ │
+│ │ NARROWED TO 2 CORNERS  🧠│ │  territory block, radius 20
+│ │ Philosophy               │ │  Fraunces 34/38, onTerritory
+│ │ (○ ALL OF PHILOSOPHY)    │ │  broad-pick pill
+│ ╰──────────────────────────╯ │
+│ OR CHART YOUR OWN CORNERS    │  mono, ink.muted
+│ ┆                            │
+│ ◐┄╭────────────────────────╮ │  pin on the route spine
+│ ┆ │ Ethics             (1) │ │  Fraunces 19/23
+│ ┆ │ Trolley problem · Medi…│ │  Literata italic 13, ink.muted
+│ ┆ │ [✓ STOICISM 37] [CYNIC…│ │  leaf chips
+│ ┆ ╰────────────────────────╯ │
+│ ●┄╭────────────────────────╮ │
+│ ┆ │ Logic               (✓)│ │  picked: tilt, territory outline
+└──────────────────────────────┘
+```
+- **Header block.** The tile's territory colour, radius 20, padding 16, its topic icon (Phosphor duotone, 46 pt) top-right in `onTerritory`. Status line (Plex Mono caps 10): `ALL OF {TILE}` / `NARROWED TO {n} CORNER(S)` / `NOT PICKED`. Below the title, the broad-pick pill: 38 pt tall, 1.5 pt `onTerritory` outline, a 24 pt ring and `ALL OF {TILE}` in Plex Mono caps 11; picked = `onTerritory` fill, territory text, ring filled with ✓.
+- **Route spine.** The breadcrumb's dotted line (§5.6), vertical, 8 pt in from the gutter, `ink.muted`. Each subfield card hangs off it on a 14 pt pin (2 pt territory stroke) joined by a short dotted stub: hollow (`bg.paper` fill) = unpicked, half-filled = leaves picked below it, solid = the whole subfield picked.
+- **Subfield card.** `bg.card`, radius 16, card shadow (border in Night atlas), padding 12. Header row (whole row is the subfield's checkbox): title, three sample articles joined by ` · ` and ending `…`, and a 28 pt round check on the right — empty, the number of leaves picked below (territory ring), or ✓ (territory fill). Picked: rotate ±0.8° (alternating, like picked tiles) and a 1.5 pt inset territory outline.
+- **Leaf chips.** 32 pt tall (padded to a 44 pt target), radius full, 1 pt `line.hairline`, `bg.paper` fill, Plex Mono caps 10.5, then the pool size in `ink.muted` 9.5. Picked: territory fill, `onTerritory` text, led by a Phosphor `Check` (bold, 11 pt) — never a text ✓, which IBM Plex Mono draws like a √. When the whole subfield is picked, its chips show dashed territory outline and text (included); tapping one narrows the subfield to that leaf.
+- **Foot.** `THE MOST SPECIFIC PICK WINS…` in Plex Mono 9.5, `ink.muted`.
+- **Tile grid (Settings only).** Tiles with a tree show a `TreeStructure` icon (12 pt, territory colour) top-right while unpicked. Picked broadly: today's filled tile with ✓. Narrowed: filled, the ✓ badge shows the number of picks below the tile, and a `NARROWED` line (Plex Mono 8.5 caps) under the label. Onboarding shows neither.
+
+### 5.14 Nudge cards (M8)
+One non-article card type for the prompt and exhaustion cards. It sits in the Home column like any card (same height, radius and shadow) and uses the typographic-card block (§5.2) for its title, so territory colour stays inside §2.4.
+- **Block.** Territory colour, eyebrow in Plex Mono caps (`YOU KEEP READING PHILOSOPHY` / `PHILOSOPHY › ETHICS`), title Fraunces 32/36 in `onTerritory`, tile icon bottom-right. The exhaustion card adds a **completion seal** top-right: the stamp template's double ring (§5.7) in `onTerritory`, 74 pt, rotated −8°, `{n}/{n}` in Fraunces 18 over `READ`.
+- **Meta row.** `● {TILE}` in territory colour, then `{n} READ` (prompt) or `{n} ARTICLES` (exhaustion) in `ink.muted`. No ◌ ✓ ✦ badges.
+- **Body.** One Literata 16/25 sentence (§8 copy).
+- **Chips.** Wrapping row, 34 pt tall, `bg.paper` fill, 1 pt `line.hairline`, a 7 pt territory dot, Plex Mono caps 11, `+ ` prefix. Picked: `ink.primary` fill, `bg.card` text, a Phosphor `Check` (bold, 11 pt) in place of `+ `.
+- **Why-line.** `→ SWIPE RIGHT TO SKIP` with `SEE THE WHOLE TREE →` (`ink.primary`, tappable) at the right on the prompt card; a Phosphor `Check` then `COMPLETED · {TILE} › {PARENT}`, with `→ SKIP`, on the exhaustion card.
+- **Gestures.** Swipe right dismisses: the card slides off to the right (instead of the Home rubber band) and the column closes the gap. Left swipe does nothing. No first-hop hint chip. Tapping the card outside the chips opens the tile's tree.
+- **Toast** after chips settle: `Added {labels} · Home is rebuilding`, `ink.primary` pill, Plex Mono, bottom, 1.8 s.
+
+### 5.15 Tappable topic label (M8)
+On cards whose tile has a tree, `● {TOPIC}` in the meta row is a button opening that tile's tree screen. No resting cue. Pressed: a `line.hairline` pill fills behind the label (120 ms in, 200 ms out), padding 4 × 8; hitSlop to a 44 pt target. The label's colour never changes. Elsewhere on the card, taps open the reader as before.
 
 ## 6. Screens
 
@@ -226,10 +329,10 @@ Header = breadcrumb route, then seed header, then snapping cards. No Logbook but
 Full-height sheet over the column, grabber on top, header bar with close (left) and Find ✦ (right, §5.11), `bg.card` surface, injected CSS (fonts, colours, hides edit links, max measure 68 ch, images framed like cards). Footer: `FROM WIKIPEDIA · CC BY-SA 4.0` + link to source.
 
 ### 6.5 Logbook
-Back, title `LOGBOOK`, gear. Stamps grid (5 per row, `6 / 24` count). Then `FINDS · {n}` (M6): a horizontal strip of the latest finds (thumbnail or territory swatch, title, solid ✦), newest first, with *See all →* to the `FINDS` list screen (title, `FOUND ON · FROM {first}…` / `FOUND ON HOME` caption). Tap a find → peek card (§5.8). Then the expeditions list: title, date, hop count, territory route strip. Tap → recap card.
+Back, title `LOGBOOK`, gear. Then the world atlas (M7, §5.12): eyebrow, title, stats, map, blind-spot bar, expedition chips. Then the stamps grid (5 per row, `6 / 24` count). Then `FINDS · {n}` (M6): a horizontal strip of the latest finds (thumbnail or territory swatch, title, solid ✦), newest first, with *See all →* to the `FINDS` list screen (title, `FOUND ON · FROM {first}…` / `FOUND ON HOME` caption). Tap a find → peek card (§5.8). Then `COMPLETED · {n}` (M8, hidden while empty): rows with a 40 pt territory swatch holding the tile icon, the node label in Fraunces 18, a caption `{TILE} › {PARENT} · {n} ARTICLES · {DATE}` in Plex Mono 10 `ink.muted`, and ✓ at the right; newest first, no cap. Tap → the tile's tree screen (§5.13) at the node's parent. Then the expeditions list: title, date, hop count, territory route strip. Tap → recap card.
 
 ### 6.6 Settings
-Interests (re-open tile picker) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · About & attributions.
+Interests (re-open tile picker; tree tiles open their tree screen, §5.13) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · About & attributions.
 
 ### 6.7 States
 | State | Visual |
@@ -256,6 +359,12 @@ Interests (re-open tile picker) · Theme (System / Paper / Night atlas) · Reduc
 | **Stamp toast** | Scale 1.4 → 1.0 with −8°→ seeded rotation, 220 ms; ink-spread mask 0 → 100 % 180 ms; medium haptic |
 | **Find** | Outline → solid: the stamp's ink-spread mask 0 → 100 % in 180 ms; light haptic. Remove: instant to outline, no haptic. Reduce Motion: cross-fade |
 | **Reader** | Platform bottom sheet |
+| **Atlas zoom** | viewBox eases to the continent (or back to the world) in 340 ms, ease-out cubic. No haptic. |
+| **Atlas route trace** | Selecting a chip cross-fades routes and place opacity in 200 ms. Routes never animate drawing in, so the hop stays the one signature moment. |
+| **Set off** | The Logbook closes and the new column pushes in from the right on the hop's column spring, with no card flight because there is no card. Light haptic. |
+| **Completion seal** | First time the exhaustion card is in focus: the stamp toast's motion (scale 1.4 → 1.0, ink-spread 180 ms), medium haptic |
+| **Nudge dismiss** | Swipe right: the card follows the finger and slides off right on release past the commit distance (column spring), the column closes the gap in 250 ms. Below threshold: spring back |
+| **Tree picks** | Picked subfield card rotates to ±0.8° in 150 ms; pins and chips fill instantly. Chip tap: light haptic |
 | **Reduce Motion** | All of the above → 200 ms cross-fades; no tilt, no scale, no route drawing |
 
 Hard limit: no animation > 400 ms.
@@ -285,6 +394,23 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Logbook Finds section | Finds · {n} — See all → |
 | Find caption | Found on · From {first}… / Found on Home |
 | Finds empty | Nothing found yet. Tap ✦ on anything worth keeping. |
+| Atlas eyebrow / title | World atlas / Everywhere you've wandered |
+| Atlas stats | {e} expeditions · {p} places · {c} of 7 territories charted |
+| Atlas empty (no places) | Uncharted so far. Set off and the map fills in. (in place of the stats line) |
+| Atlas hint / zoom out | Tap a territory to zoom / ‹ World |
+| Uncharted label | {Territory} · Uncharted |
+| Blind-spot bar | **Blind spot: {Territory}.** Never entered. / Only {n} places so far. — Set off → |
+| Place sheet | Set off from here → · Read · Passed through on {n} expeditions · Found on Home, outside any expedition |
+| Territory sheet title | You've never been to {Territory} / Only {n} places in {Territory} |
+| Set off into | Set off into {Territory} → |
+| Seed header label (from atlas) | Set off from your atlas / First step into {Territory} |
+| Tree screen | {Tile} · All of {Tile} · Or chart your own corners · The most specific pick wins. A topic narrows its corner to just that topic. |
+| Tree status | All of {Tile} / Narrowed to {n} corner(s) / Not picked |
+| Interests intro (Settings) | Home is built from these. Tiles marked with a branch can be narrowed. |
+| Prompt card | You keep reading {Tile} / Narrow {Tile}? / Pick a corner and Home will lean into it. You can change this any time in Settings. / Swipe right to skip · See the whole tree → |
+| Exhaustion card | {Tile} › {Parent} / You've read all of {Node} / Every one of them. Home widens to {Parent} from here. Or try a neighbour: / Completed · {Tile} › {Parent} |
+| Chips toast | Added {labels} · Home is rebuilding |
+| Logbook Completed | Completed · {n} — {Tile} › {Parent} · {n} articles · {date} |
 
 ---
 
@@ -327,7 +453,9 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 - Font scaling respected; minimum touch target 44 pt.
 - Reduce Motion honoured (§7).
 - Haptics off when system haptics are off.
+- **Niche interests (M8):** subfield headers are checkboxes (`{Label}, {n} topics picked` / checked); leaf chips and the broad pill are checkboxes; pins are decorative. Nudge cards are one element with custom actions per chip (*Add {label}*), *See the whole tree* and *Skip*. The card is one accessible element, so the topic label is reached through a card custom action *{Topic} interests* (tree tiles only); the toast is a polite live region.
 - Images get `alt` from Wikipedia description, else title.
+- **Atlas (M7):** the map is one accessible element labelled with the stats line (*8 expeditions, 73 places, 6 of 7 territories charted*), with custom actions *List places by territory* and *Set off into {blind spot}*. The list opens the same places as an accessible list grouped by territory, each row opening its place sheet. Chips, the blind-spot bar and both sheets are ordinary buttons. Zoom and route tracing are visual only; the list covers what they show.
 
 ---
 
@@ -338,4 +466,7 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Name availability | Check App Store, Play Store, domain for "Tangent" before branding work |
 | `cirrusdoc` topic coverage | Verified working; coarse-only articles get territory colour without a label (SPEC §6) |
 | Furthest-leap heuristic | Tune after dogfooding |
+| Atlas density | Continent radius caps at 46. Check a heavy profile (~200 places in one territory) for overlap before M7 ships; fall back to count badges at world zoom. |
+| Atlas in Night atlas | Tint percentages are from the mock; verify place glyph contrast on tinted continents on device. |
 | Long-press menu vs. gesture discoverability | Validate in M0 prototype |
+| Niche interests (SPEC §3.9, M8) | Designed 2026-10-04 (§5.13–5.15, §6.5), built 2026-10-05. On device: check the tree screen at the largest font scale (sample lines and chips wrap, never clip); the nudge card's chips on a small phone (7 subfields); and that a right swipe on a nudge card beats Home's rubber band. Literata italic isn't loaded as its own face, so sample lines use synthetic italic until SDK 58. |

@@ -32,6 +32,24 @@ export function pagedStream<T>(load: (cursor: string | null) => Promise<Paged<T>
   };
 }
 
+/** A copy of `items` in random order (Fisher–Yates), drawing from `random` in [0, 1). */
+export function shuffled<T>(items: readonly T[], random: () => number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+/** Like `pagedStream`, but each page arrives shuffled: pages keep their order, items within one don't. */
+export function shuffledPagedStream<T>(load: (cursor: string | null) => Promise<Paged<T>>, random: () => number): Stream<T> {
+  return pagedStream(async (cursor) => {
+    const page = await load(cursor);
+    return { ...page, items: shuffled(page.items, random) };
+  });
+}
+
 /** A source loaded in one call (e.g. today's featured pages). */
 export function onceStream<T>(load: () => Promise<readonly T[]>): Stream<T> {
   return pagedStream(async () => ({ items: await load(), next: null }));

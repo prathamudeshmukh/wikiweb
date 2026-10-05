@@ -24,6 +24,7 @@ function exploreProps(overrides: Partial<Props> = {}): Props {
     onTangentStarted: jest.fn(),
     incomingResume: null,
     onResumed: jest.fn(),
+    niche: { addPicks: jest.fn(async () => undefined), openTree: jest.fn() },
     ...overrides,
   };
 }
@@ -111,5 +112,20 @@ describe('ExploreScreen', () => {
     await renderExplore(api, { isFocused: false });
 
     expect(listen).not.toHaveBeenCalledWith('hardwareBackPress', expect.anything());
+  });
+
+  it('reports a breadcrumb return with the column it left, ending that column’s visit', async () => {
+    const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: titles('Space', 30) }, links: ['Cuttlefish'] });
+    const journeys = memoryJourneySession();
+    const octopus = journeys.hop({ fromNodeId: null, page: nodePage('Octopus'), via: 'swipe' });
+    const squid = journeys.hop({ fromNodeId: octopus.id, page: nodePage('Squid'), via: 'swipe' });
+    const { services, rerender } = await renderExplore(api, {}, journeys);
+    await rerender(<ExploreScreen {...exploreProps({ incomingResume: [octopus, squid] })} />);
+
+    // Each column draws its own breadcrumb; the top column's is the last.
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Back to HOME' }).at(-1)!);
+
+    expect(services.analytics.named('return')).toEqual([{ route: 'crumb', columns_popped: 2, seed_title: 'Squid', depth: 2 }]);
+    expect(services.analytics.named('column_left').map((left) => left.outcome)).toEqual(['resume', 'crumb']);
   });
 });

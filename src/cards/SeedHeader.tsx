@@ -19,7 +19,7 @@ export function SeedHeader({ title, topic, thumbnailUrl }: SeedHeaderProps) {
   const palette = useTheme();
   const accent = territoryColor(palette, topic.territory);
   return (
-    <View style={[styles.seed, { backgroundColor: palette.card, borderColor: palette.line }]} accessibilityRole="header" accessibilityLabel={`Exploring from ${title}`}>
+    <View ph-no-capture style={[styles.seed, { backgroundColor: palette.card, borderColor: palette.line }]} accessibilityRole="header" accessibilityLabel={`Exploring from ${title}`}>
       {thumbnailUrl ? (
         <Image source={{ uri: thumbnailUrl }} style={styles.thumb} contentFit="cover" />
       ) : (

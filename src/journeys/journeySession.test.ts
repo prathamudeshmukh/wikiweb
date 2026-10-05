@@ -215,3 +215,62 @@ describe('journey session — storage', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('journey session — events', () => {
+  const eventsSpy = () => ({ stampEarned: jest.fn(), expeditionEnded: jest.fn(), articleRead: jest.fn() });
+
+  it('tells its listener an expedition ended when the user returns Home', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+    session.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
+    const expedition = session.getState().active;
+
+    session.focus(null);
+    session.focus(null);
+
+    expect(events.expeditionEnded).toHaveBeenCalledTimes(1);
+    expect(events.expeditionEnded).toHaveBeenCalledWith(expedition);
+  });
+
+  it('tells its listener about each new stamp and the expedition it was earned on', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+    const octopus = session.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
+
+    session.markRead(page('Euler'), MATHS);
+    session.markRead(page('Gauss'), MATHS);
+
+    expect(events.stampEarned).toHaveBeenCalledTimes(1);
+    expect(events.stampEarned).toHaveBeenCalledWith(MATHS, octopus.journeyId);
+  });
+
+  it('tells its listener the topic of every article read (SPEC.md §3.9 prompt reads)', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+
+    session.markRead(page('Euler'), MATHS);
+    session.markRead(page('Gauss'), MATHS);
+
+    expect(events.articleRead).toHaveBeenCalledTimes(2);
+    expect(events.articleRead).toHaveBeenCalledWith(MATHS);
+  });
+
+  it('tells its listener the topic of a read once it has been looked up', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events, resolveTopic: async () => MATHS });
+
+    session.markRead(page('Euler'), null);
+    await session.whenSaved();
+
+    expect(events.articleRead).toHaveBeenCalledWith(MATHS);
+  });
+
+  it('reports a stamp earned on Home without an expedition', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+
+    session.markRead(page('Euler'), MATHS);
+
+    expect(events.stampEarned).toHaveBeenCalledWith(MATHS, null);
+  });
+});

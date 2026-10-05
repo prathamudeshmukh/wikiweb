@@ -1,5 +1,6 @@
 import { CaretRight } from 'phosphor-react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import type { UsageSharing } from '../analytics/useUsageSharing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { interestsSummary } from '../onboarding/interestSelection';
 import { FONT } from '../theme/fonts';
@@ -11,10 +12,36 @@ interface SettingsScreenProps {
   interests: readonly string[];
   onBack: () => void;
   onOpenInterests: () => void;
+  usage: UsageSharing;
 }
 
-/** Settings, reached from the Logbook gear (DESIGN.md §6.6). Only Interests so far. */
-export function SettingsScreen({ interests, onBack, onOpenInterests }: SettingsScreenProps) {
+// SPEC.md §11: titles are sent on feed-quality events, so the switch says so.
+const USAGE_NOTE = 'Helps tune which articles Tangent shows. Includes the titles of articles you explore, never who you are.';
+
+function UsageSharingRow({ usage }: { usage: UsageSharing }) {
+  const palette = useTheme();
+  const loading = usage.sharing === undefined;
+  return (
+    <View style={[styles.row, { backgroundColor: palette.card, borderColor: palette.line }]}>
+      <View style={styles.rowText}>
+        <Text style={[styles.rowTitle, { color: palette.ink }]}>Share usage data</Text>
+        <Text style={[styles.rowValue, { color: palette.muted }]}>{USAGE_NOTE}</Text>
+      </View>
+      <Switch
+        value={usage.sharing ?? false}
+        disabled={loading}
+        // Switch doesn't announce disabled on its own.
+        accessibilityState={{ disabled: loading }}
+        onValueChange={usage.setSharing}
+        accessibilityLabel="Share usage data"
+        trackColor={{ true: palette.ink, false: palette.line }}
+      />
+    </View>
+  );
+}
+
+/** Settings, reached from the Logbook gear (DESIGN.md §6.6). */
+export function SettingsScreen({ interests, onBack, onOpenInterests, usage }: SettingsScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const summary = interestsSummary(interests);
@@ -34,6 +61,7 @@ export function SettingsScreen({ interests, onBack, onOpenInterests }: SettingsS
           </View>
           <CaretRight size={18} color={palette.muted} />
         </Pressable>
+        <UsageSharingRow usage={usage} />
       </View>
     </View>
   );
@@ -41,7 +69,7 @@ export function SettingsScreen({ interests, onBack, onOpenInterests }: SettingsS
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { paddingHorizontal: LAYOUT.gutter, paddingTop: 8 },
+  content: { paddingHorizontal: LAYOUT.gutter, paddingTop: 8, gap: 12 },
   row: { borderRadius: LAYOUT.seedRadius, borderWidth: StyleSheet.hairlineWidth, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
   pressed: { opacity: 0.7 },
   rowText: { flex: 1, gap: 4 },

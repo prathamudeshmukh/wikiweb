@@ -1,5 +1,5 @@
 import { TOPIC_TILES } from '../config/topicTiles';
-import { logDate, recapCounts, stampTiltDeg, tangentCount, territoriesCrossed, tileLabel } from './logbookFormat';
+import { completedCaption, logDate, recapCounts, stampTiltDeg, tangentCount, territoriesCrossed, tileLabel } from './logbookFormat';
 
 describe('logbook format', () => {
   it('dates an expedition like a log entry', () => {
@@ -27,5 +27,17 @@ describe('logbook format', () => {
     expect(Math.max(...tilts.map(Math.abs))).toBeLessThanOrEqual(8);
     expect(stampTiltDeg('maths')).toBe(stampTiltDeg('maths'));
     expect(new Set(tilts).size).toBeGreaterThan(5);
+  });
+});
+
+describe('completedCaption', () => {
+  it('reads like DESIGN.md §6.5 for a leaf', () => {
+    expect(completedCaption({ nodePath: 'philosophy/ethics/stoicism', completedAt: new Date(2026, 9, 4).getTime(), articleCount: 37 })).toBe(
+      'PHILOSOPHY › ETHICS · 37 ARTICLES · 4 OCT',
+    );
+  });
+
+  it('names only the tile for a subfield', () => {
+    expect(completedCaption({ nodePath: 'maths/logic', completedAt: new Date(2026, 8, 28).getTime(), articleCount: 379 })).toBe('MATHS · 379 ARTICLES · 28 SEP');
   });
 });

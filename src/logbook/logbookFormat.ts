@@ -1,4 +1,6 @@
 import { TOPIC_TILES, type Territory } from '../config/topicTiles';
+import type { CompletedNode } from '../interests/completedNodes';
+import { trailAbove } from '../interests/interestPicks';
 import type { Recap } from '../journeys/expedition';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -36,4 +38,9 @@ export function stampTiltDeg(tileId: string): number {
   const MAX_TILT = 8;
   const hash = [...tileId].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 997, 7);
   return (hash % (MAX_TILT * 2 + 1)) - MAX_TILT;
+}
+
+/** DESIGN.md §6.5: `{TILE} › {PARENT} · {n} ARTICLES · {DATE}`. */
+export function completedCaption({ nodePath, articleCount, completedAt }: CompletedNode): string {
+  return `${trailAbove(nodePath)} · ${articleCount} articles · ${logDate(completedAt)}`.toUpperCase();
 }

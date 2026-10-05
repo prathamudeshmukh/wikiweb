@@ -1,5 +1,6 @@
 import { TOPIC_TILES } from '../config/topicTiles';
 import type { Card, CardSource } from '../content/card';
+import { nodeLabel, resolvePick } from '../interests/interestPicks';
 
 const TILE_LABELS: ReadonlyMap<string, string> = new Map(TOPIC_TILES.map((tile) => [tile.id, tile.label]));
 
@@ -18,7 +19,9 @@ const COPY: Readonly<Record<CardSource, (seedTitle: string, card: Card) => strin
   },
   morelike: (seed) => `≈ SIMILAR TO ${seed}`,
   home_interest: (_seed, card) => {
-    const label = topicLabel(card);
+    // A subfield/leaf pick names its node; colour and topic label still come from the article (SPEC.md §3.9).
+    const node = card.interestNode ? resolvePick(card.interestNode)?.pick : null;
+    const label = node ? nodeLabel(node) : topicLabel(card);
     return label ? `★ YOU LIKE ${label}` : '★ PICKED FOR YOU';
   },
   home_today: () => '☀ TODAY ON WIKIPEDIA',

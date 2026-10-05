@@ -7,8 +7,10 @@ import type { HintStore } from './hintStore';
 interface HintsValue {
   /** Undefined while loading; no hint shows until it is known. Its peel count may lag: peels don't re-render. */
   progress: HintProgress | undefined;
-  hopped(): void;
-  returned(): void;
+  /** Records a hop; returns the progress it replaced when it was the user's first, else null. */
+  hopped(): HintProgress | null;
+  /** Records a return; returns the progress it replaced when it was the user's first, else null. */
+  returned(): HintProgress | null;
   peeled(): void;
 }
 
@@ -54,20 +56,21 @@ export function HintsProvider({ store, journeys, children }: HintsProviderProps)
   const advance = useCallback(
     (step: (progress: HintProgress) => HintProgress) => {
       const before = current.current;
-      if (!before) return;
+      if (!before) return null;
       const next = step(before);
-      if (next === before) return;
+      if (next === before) return null;
       current.current = next;
       // A peel only bumps the saved count; re-rendering every column for it would be waste.
       if (!sameHints(before, next)) setProgress(next);
       store.save(next).catch((error: unknown) => reportError('hints.save', error));
+      return before;
     },
     [store],
   );
 
   const hopped = useCallback(() => advance(afterFirstHop), [advance]);
   const returned = useCallback(() => advance(afterFirstReturn), [advance]);
-  const peeled = useCallback(() => advance(afterPeel), [advance]);
+  const peeled = useCallback(() => void advance(afterPeel), [advance]);
   const value = useMemo(() => ({ progress, hopped, returned, peeled }), [progress, hopped, returned, peeled]);
   return <HintsContext.Provider value={value}>{children}</HintsContext.Provider>;
 }

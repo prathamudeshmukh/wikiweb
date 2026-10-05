@@ -64,6 +64,19 @@ describe('HintsProvider', () => {
     expect(store.saved()).toEqual({ swipeHintShown: true, backHintShown: true, peelsSeen: 1 });
   });
 
+  it('hands back the progress from before a first hop or return, and nothing after', async () => {
+    const { result } = await renderHints(memoryHintStore()).rendered;
+    await waitFor(() => expect(result.current.progress).toEqual(FRESH_PROGRESS));
+    const firsts: unknown[] = [];
+
+    await act(() => {
+      result.current.peeled();
+      firsts.push(result.current.hopped(), result.current.hopped(), result.current.returned(), result.current.returned());
+    });
+
+    expect(firsts).toEqual([{ ...FRESH_PROGRESS, peelsSeen: 1 }, null, { swipeHintShown: true, backHintShown: false, peelsSeen: 1 }, null]);
+  });
+
   it('shows no hints when its storage cannot be read', async () => {
     const report = jest.spyOn(errors, 'reportError').mockImplementation(() => undefined);
     const broken: HintStore = { load: () => Promise.reject(new Error('disk')), save: async () => undefined };

@@ -1,5 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react-native';
-import { renderWithServices } from '../__testing__/renderWithServices';
+import { memoryCompletedNodes, renderWithServices } from '../__testing__/renderWithServices';
+import type { CompletedNode } from '../interests/completedNodes';
 import { fakeWikiApi, idOf } from '../content/__testing__/fakeWikiApi';
 import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
 import type { JourneySession } from '../journeys/journeySession';
@@ -7,12 +8,18 @@ import { LogbookScreen } from './LogbookScreen';
 
 const nodePage = (title: string) => ({ pageId: idOf(title), title, tileId: null, territory: 'life' as const, thumbnailUrl: null });
 
-async function renderLogbook(journeys: JourneySession = memoryJourneySession()) {
+async function renderLogbook(journeys: JourneySession = memoryJourneySession(), completed: readonly CompletedNode[] = []) {
   const onOpenExpedition = jest.fn();
   const onBack = jest.fn();
   const onOpenSettings = jest.fn();
-  await renderWithServices(<LogbookScreen onBack={onBack} onOpenExpedition={onOpenExpedition} onOpenSettings={onOpenSettings} />, fakeWikiApi({}).api, journeys);
-  return { onOpenExpedition, onBack, onOpenSettings };
+  const onOpenTree = jest.fn();
+  await renderWithServices(
+    <LogbookScreen onBack={onBack} onOpenExpedition={onOpenExpedition} onOpenSettings={onOpenSettings} onOpenTree={onOpenTree} />,
+    fakeWikiApi({}).api,
+    journeys,
+    { completedNodes: memoryCompletedNodes(completed) },
+  );
+  return { onOpenExpedition, onBack, onOpenSettings, onOpenTree };
 }
 
 describe('LogbookScreen', () => {
@@ -71,5 +78,32 @@ describe('LogbookScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Settings' }));
 
     expect(onOpenSettings).toHaveBeenCalled();
+  });
+});
+
+describe('LogbookScreen — Completed (SPEC.md §3.9)', () => {
+  const STOICISM: CompletedNode = { nodePath: 'philosophy/ethics/stoicism', completedAt: new Date(2026, 9, 4).getTime(), articleCount: 37 };
+
+  it('hides the section while nothing is completed', async () => {
+    await renderLogbook();
+
+    await screen.findByText(/No expeditions yet/);
+    expect(screen.queryByText(/COMPLETED/)).toBeNull();
+  });
+
+  it('lists completed nodes with their path, count and date', async () => {
+    await renderLogbook(memoryJourneySession(), [STOICISM]);
+
+    expect(await screen.findByText('COMPLETED · 1')).toBeOnTheScreen();
+    expect(screen.getByText('Stoicism')).toBeOnTheScreen();
+    expect(screen.getByText('PHILOSOPHY › ETHICS · 37 ARTICLES · 4 OCT')).toBeOnTheScreen();
+  });
+
+  it("opens the tree at a completed node's subfield", async () => {
+    const { onOpenTree } = await renderLogbook(memoryJourneySession(), [STOICISM]);
+
+    await fireEvent.press(await screen.findByText('Stoicism'));
+
+    expect(onOpenTree).toHaveBeenCalledWith({ tileId: 'philosophy', subfieldId: 'ethics' });
   });
 });

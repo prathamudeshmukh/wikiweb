@@ -41,6 +41,11 @@ Tangent is a phone app (iOS + Android) for exploring Wikipedia through swipe dec
 | **Journey** | Persisted tree (graph-ready) of all hops/reads in one exploration session |
 | **Node** | One article occurrence in a Journey. Several nodes may share an article ID. |
 | **Find** | An article the user kept with ✦ because they value it — read or not. Collected in the Logbook; a launch point for new expeditions. |
+| **Atlas** | One map of every expedition at the top of the Logbook: territories drawn as continents, articles as places, expeditions as routes (§3.8) |
+| **Place** | One article (`page_id`) on the atlas, however many expeditions reached it |
+| **Set off** | Start a new expedition from the atlas, from a place or into a territory |
+| **Interest tree** | Hand-curated nodes below a tile: **subfield** (level 1) and **leaf** (level 2), e.g. *Philosophy → Logic → Paradoxes* (§3.9) |
+| **Pick** | One saved interest: a tile, subfield or leaf, stored as a path id (`philosophy/logic`) |
 
 ---
 
@@ -51,14 +56,14 @@ Tangent is a phone app (iOS + Android) for exploring Wikipedia through swipe dec
 2. User selects ≥ 3. **Continue** disabled until 3 are picked. **Skip** uses defaults (`Science`, `History`, `Culture`).
 3. Selections persisted; user lands on Home.
 
-Interests are editable later from Settings (Logbook gear → Interests): the same tile picker, starting from the saved picks, with **Save** enabled only when the picks changed and still number ≥ 3. Saving returns straight to Home, which rebuilds from the new picks.
+Interests are editable later from Settings (Logbook gear → Interests): the same tile picker, starting from the saved picks, with **Save** enabled only when the picks changed and still touch ≥ 3 tiles. Saving returns straight to Home, which rebuilds from the new picks. Tiles with an interest tree can be narrowed to subfields and leaves here (§3.9); onboarding itself never shows the tree.
 
 ### 3.2 Home feed
 Infinite column composed per page of 20 cards:
 
 | Share | Source |
 |---|---|
-| ~70 % | Interest picks — `articletopic:<topic>` from `incategory:Featured_articles` and `incategory:Good_articles` **alternately** (Good outnumbers Featured ~7:1, so a combined pool is almost all obscure), each in **random order** (`gsrsort=random`) so every session opens on a fresh slice instead of the same famous few; titles matching the Home blocklist (config) are skipped. Columns are **not** filtered this way. |
+| ~70 % | Interest picks — `articletopic:<topic>` from `incategory:Featured_articles` and `incategory:Good_articles` **alternately** (Good outnumbers Featured ~7:1, so a combined pool is almost all obscure), each in **random order** (`gsrsort=random`) so every session opens on a fresh slice instead of the same famous few; titles matching the Home blocklist (config) are skipped. Columns are **not** filtered this way. A tile narrowed to subfields/leaves (§3.9) draws from those nodes' queries instead (§5.5), rotating over picks rather than tiles. |
 | ~20 % | Today on Wikipedia — featured article, On this day, most-read |
 | ~10 % | Wildcard — a random Featured article from a topic tile the user did **not** pick (rotating). `generator=random` was dropped: live results were mostly obscure stubs. |
 
@@ -90,6 +95,7 @@ Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`
 
 ### 3.5 Journeys
 - **Logbook** screen (from Home header): stamps grid (collected / 24) and expeditions list (title, date, hop count, territory route strip).
+- **Completed** (M8, §3.9): interest-tree nodes the user has read in full (leaves and subfields), newest first, between the stamps and the expeditions — `STOICISM · 37 ARTICLES · {date}`. Hidden while empty. Tapping a row opens the tree screen of its tile, scrolled to the node's parent.
 - Opening an expedition shows its **recap card** (start → end, route strip, tangents/read counts, furthest leap). **Continue expedition** restores its path to the most recent node; a node list reopens any column.
 
 ### 3.6 Learning layer
@@ -106,6 +112,73 @@ Journeys record what the user did; a **Find** records what they valued. (Bookmar
 - **Opening a Find** shows the peek card (*Take a tangent →* / *Read*). A tangent from it starts a **new** expedition, like a hop from Home.
 - **Recap:** `{n} tangents · {r} read · {f} finds` — the finds part is hidden when 0.
 - **Not coupled:** finding earns no stamp (stamps stay earned by reading), Home never resurfaces Finds, and the hop choreography is unchanged. A found card shows solid ✦ wherever it appears.
+
+### 3.8 World atlas (v2)
+One map of every expedition, at the top of the Logbook above the stamps. It shows the shape of the user's curiosity across all expeditions, and every place and territory on it is a starting point for a new one. The set-off actions are the point: a map that only displays history repeats what the stamps grid already says (§11 says how to tell whether it works). Visuals: DESIGN.md §5.12. Mock: https://claude.ai/artifact/5Nhx1k1iX7KuRBDtrrmNyr
+
+**Places**
+- A place is an article that is a node in any expedition, or a Find made on Home. Articles only read from Home, without a find, are not places.
+- A place belongs to the territory of its **first** occurrence (`journey_nodes.territory`, else `finds.territory`). Untagged articles are left off the atlas; they still appear in their expedition's recap.
+- **Fixed position.** Within its territory, a place's slot is its rank by first-occurrence time (earliest = 0), and slots fill outward from the territory's centre. New places only add slots, so the atlas grows outward and no place ever moves. Slots are derived on load, not stored.
+- **Size** grows with visits: nodes for that `page_id` across all expeditions, +1 for a Home find, capped at `ATLAS_MAX_VISIT_SIZE`.
+- **Glyph** follows the card badges: solid when in read history, hollow when only passed through, ✦ when it is a Find.
+
+**Territories**
+- Each territory is a continent sized by its place count. A territory with no places is **uncharted**: dashed outline, no fill, label `{TERRITORY} · UNCHARTED`.
+- **Blind-spot bar** under the map names the territory with the fewest places (ties: one outside the user's interests first, then the order in DESIGN.md §2.2). Copy: `Blind spot: Craft. Never entered.` or `Blind spot: Past. Only 4 places so far.` Hidden once every territory has more than `ATLAS_BLIND_SPOT_MAX_PLACES` places.
+
+**Routes**
+- An expedition's route is its `journey_nodes` parent → child edges drawn between places. An edge whose two nodes are the same place is skipped.
+- With **All** selected, every route is drawn faint. Selecting an expedition draws its route solid, labels its root `SET OFF`, rings its most recent node, and fades every place it didn't pass through. Selecting it again, or **All**, clears this.
+- A row of chips under the map selects expeditions: **All · {n}**, then one per expedition, newest first, each showing date, hop count, title and its route strip (§3.5).
+
+**Interactions**
+
+| Action | Result |
+|---|---|
+| Tap a charted territory | Zoom into it, with every place labelled. *‹ World* zooms out. |
+| Tap a place | Place sheet |
+| Tap an uncharted territory, or the blind-spot bar | Territory sheet |
+| Zoomed into a territory | Button **Set off into {Territory} →** |
+| Tap an expedition chip | Trace its route (above) |
+
+**Place sheet:** `● {TERRITORY} · VISITED {n}× · ✓ READ` (or `PASSED`; `· ✦ FOUND {date}` for a Find), then the title. Primary **Set off from here →**, secondary **Read** (opens the reader, marks the article read, adds no node). Below: `PASSED THROUGH ON {n} EXPEDITIONS` with the 3 newest; tapping one traces its route. A Home find adds `✦ FOUND ON HOME`.
+
+**Territory sheet:** `● {TERRITORY} · {n} PLACES` or `· UNCHARTED`, a title (*You've never been to Craft* / *Only 4 places in Past*), the tiles that map to the territory, and **Set off into {Territory} →**.
+
+**Setting off**
+- **Set off from here** works like *Take a tangent* on a Find (§3.7). It opens a column seeded by the article and starts a **new** expedition with the seed as its root node (`via: 'peek_explore'`, so no migration). The Logbook is only reachable from Home, so no expedition is ever active at this point.
+- **Set off into {Territory}** first picks a seed: one random Featured or Good article from the territory's tiles that is not already a place. It uses the same query as the Home interest stream (§3.2), with the blocklist applied. Then it continues as above.
+- The seed header's label reads `SET OFF FROM YOUR ATLAS`, or `FIRST STEP INTO {TERRITORY}` for an uncharted territory (DESIGN.md §5.5). While a territory seed loads, the column shows its loading compass card with the needle in the territory's colour. If no seed is found or the request fails, the column shows the §8 card.
+- Back from the new column goes to Home, the root of the column stack, and that ends the expedition as usual. The atlas is not part of the column stack.
+
+**Offline:** the atlas is built from local tables only, so it renders offline. *Set off into* needs the network and shows the offline card without it; *Set off from here* follows the column's normal offline behaviour.
+
+### 3.9 Niche interests (M8)
+Broad tiles are too coarse for someone into *Stoicism* or *Logic*: ORES `articletopic` stops at two levels and has no such topics (*Philosophy* is even merged with religion). So some tiles get a hand-curated **interest tree** below them: **tile → subfield → leaf** (e.g. *Philosophy → Logic → Paradoxes*). Decided in a design session 2026-10-04.
+
+**Scope.** Trees for **Philosophy, Science, Maths, History** only. The other 20 tiles stay flat and behave exactly as today; the drill-down affordance shows only on tiles with a tree. More tiles get trees only if people actually drill down (§11).
+
+**Picking**
+- Onboarding stays flat (§3.1) — the tree is never shown before the first Home.
+- The tree lives in **Settings → Interests**: tapping a tile that has a tree opens its **tree screen** (DESIGN.md §5.13) instead of toggling it. One screen per tile, no third level: the broad pick (*All of Philosophy*) at the top, then one card per subfield with its leaves as chips. Subfields and leaves are both pickable. Picks made there are a draft until **Save** on the tile grid, as today.
+- **Most specific pick wins.** A tile with no picks below it means *all of the tile* (its `articletopic` query). Picking any subfield or leaf **narrows** the tile to just those picks; picking a subfield means all of that subfield. Clearing every pick below a tile makes it broad again. A pick and its own ancestor are never both kept — picking a child replaces the ancestor.
+- **Minimum:** at least `MIN_INTEREST_PICKS` **tiles touched** — a tile counts if it is picked itself or has any pick below it. Any number of subfields/leaves within those tiles.
+
+**Home**
+- The interest round-robin (§3.2) rotates over the **effective picks** (broad tiles, subfields, leaves), not over tiles. Five Philosophy leaves plus two broad tiles means Philosophy fills most interest slots — that is what was asked for.
+- A card from a subfield/leaf pick carries that node, and its why-line names it: `★ YOU LIKE STOICISM` (DESIGN.md §5.3). Its **colour, topic label and stamp still come from `cirrusdoc`** (§5.4), so an article looks the same on Home and in any column. The fallback topic for an untagged card is the node's tile.
+
+**Nudges into the tree**
+- **Prompt card.** After the user has read `NICHE_NUDGE_READS` (3) articles whose topic is a tile that has a tree and that they picked **broadly**, Home inserts one prompt card: `NARROW PHILOSOPHY?` with chips for the tile's subfields (DESIGN.md §5.14). Chips are multi-select: each tap toggles that pick at once, and Home rebuilds (as after Settings → Save) `NICHE_CHIP_SETTLE_MS` after the last tap, with one toast naming every pick. Tapping the card body opens the tile's tree. Limits: **once per tile, at most one per app session, never again for that tile once dismissed** (swipe right on it, or scrolled past without acting, counts as dismissed).
+- **Topic label.** Tapping the topic label on any card whose tile has a tree opens that tile's tree in Settings → Interests.
+
+**When a pick runs dry**
+- A subfield/leaf pool is small (tens to low hundreds of articles; *Stoicism* has 37). A node is **exhausted** when every article in its pool is in `read_history`. Shown-but-unread articles don't count — they come back next session. Checked when the node's stream ends, against `read_history`; not stored, so a category that grows on Wikipedia revives the node by itself.
+- First time a node is found exhausted: Home shows a one-time card `YOU'VE READ ALL OF STOICISM · 37 ARTICLES` with chips for sibling nodes not already picked (*Epicureanism, Cynicism*), which behave like the prompt card's chips, and the node is written to `completed_leaves` for the Logbook's **Completed** section.
+- From then on that pick's stream **widens to its parent** (leaf → subfield → tile) until the parent is exhausted too. The saved pick is not changed.
+
+**Tree edits.** Picks are stored as **path ids** (`philosophy/logic/paradoxes`). A saved pick whose node no longer exists resolves to its nearest existing ancestor and reports a warning (`reportError`, reason code only). The first segment is always a tile id, so a pick never resolves below tile level and the tiles-touched minimum can't break. Existing saved tile ids are valid path ids — no migration.
 
 ---
 
@@ -138,11 +211,17 @@ COLUMN_PAGE_SIZE         = 20
 PAGINATE_THRESHOLD       = 5      // cards from end
 BACKLINK_EVERY_N         = 4      // insert one backlink per N link cards
 CARD_CACHE_TTL_HOURS     = 24
-MIN_INTEREST_PICKS       = 3
+MIN_INTEREST_PICKS       = 3      // tiles touched (picked, or with a pick below them)
+NICHE_NUDGE_READS        = 3      // reads in a broad tree tile before its prompt card
+NICHE_CHIP_SETTLE_MS     = 1200   // prompt/exhaustion chips: rebuild Home this long after the last tap
 HINT_PEEL_DISTANCE       = 96     // pt; below the commit distance on the narrowest phone
 HINT_PEEL_HOLD_MS        = 600
 HINT_FIRST_PEEL_DELAY_MS = 800    // after Home appears
 HINT_IDLE_MS             = 8000   // idle on Home before the next peel
+ATLAS_MAX_VISIT_SIZE     = 8      // visits beyond this don't grow a place
+ATLAS_LABEL_MIN_VISITS   = 3      // world view labels only places this visited, plus Finds
+ATLAS_BLIND_SPOT_MAX_PLACES = 10  // hide the blind-spot bar once every territory has more
+ATLAS_ZOOM_MS            = 340    // territory zoom; 0 under Reduce Motion
 ```
 
 ### 4.3 Direction lock
@@ -238,6 +317,15 @@ Tiles map to one or more ORES `articletopic` IDs. Initial set (tunable):
 The last four were added 2026-10-03 (Featured / Good pools: architecture 136 / 1103, engineering 86 / 583, comics-and-anime 67 / 1176, military-and-warfare 1123 / 5321). Military was split out of History. Broad labels (`biography`, `media`, `entertainment`) stay unmapped on purpose: a card takes its highest-scoring mapped tag, so they would relabel large parts of other tiles. Thin pools (`fashion`, `linguistics`, `software`, `radio`, …) can't fill Home.
 
 Mapping lives in a config file, not code.
+
+**Interest tree (§3.9).** Also config, next to the tiles: each subfield and leaf has an id (unique among its siblings), a label, an approximate pool size (shown on leaf chips), three sample article titles for subfields (shown on their cards), and a query:
+- `incategory:<Category>` — **shallow only**. `deepcat:` is never used: it wanders (`deepcat:Logic` + Good/Featured returns *September 11 attacks, Shakespeare, Tolkien, South Park*, live 2026-10-04) and is capped at depth 5 / 256 categories.
+- optionally `morelike:<Anchor article>` alternated with it, for small categories.
+- **No Featured/Good restriction.** Niche categories have no reviewed articles (`incategory:Stoicism` 37 articles, 0 Featured/Good). The hand-picked category is the quality gate instead of review status; the Home blocklist and §5.3 filter still apply.
+- **Order: shuffled tiers** (decided 2026-10-04). Relevance order (`gsrsort=relevance`), each page of `FEED.listPageSize` shuffled. Random order surfaced the obscure tail first (*Supersymmetric WKB approximation* in Quantum mechanics) where relevance gives *Uncertainty principle, Multiverse*; shuffling within pages keeps sessions varied, and read articles drop out, so a reader works outward from the core.
+- A subfield searches its own extra categories plus all its leaves' (`incategory:A|B|C`).
+
+Every node is verified live when added: pool size, and the top results scanned for off-topic or explicit pages. Two levels below the tile at most, ~4–8 children per node.
 
 ### 5.6 Ranking
 Each hydrated batch (≤20 cards) is reordered; cards placed in a slot (sideways, today, wildcard) keep their position. Constants live in `RANKING` (config) and were picked from `npm run eval:feeds` (15 seed columns + 3 Home mixes, live).
@@ -377,13 +465,22 @@ CREATE TABLE finds (
 CREATE INDEX idx_finds_journey ON finds(journey_id);
 ```
 
+```sql
+-- M8 (§3.9) — the Logbook record; whether a node is exhausted *now* is derived from read_history
+CREATE TABLE completed_leaves (
+  node_path      TEXT PRIMARY KEY,      -- e.g. 'philosophy/ethics/stoicism'
+  completed_at   INTEGER NOT NULL,
+  article_count  INTEGER NOT NULL       -- pool size when completed
+);
+```
+
 `read_history` and `card_cache` payloads include `topic`. Recap stats are derived from `journey_nodes` + `card_cache`, not stored.
 
 **As built (M4):** `journey_nodes` also stores `tile_id`, `territory` and `thumbnail_url` (the topic a card had when it was hopped into), so routes and resumed columns render offline and before `card_cache` exists (M5). A `journey_reads(journey_id, page_id)` table records which articles were read on which expedition, for the recap's *n read*. Schema changes go through `PRAGMA user_version` migrations.
 
 **Journey rules (M4):** a swipe or *Take a tangent* from Home starts an expedition; every hop adds a node under the node of the column it left. *Read* on a peek card adds a `peek_read` node under the column (or previous in-place read) the reader was opened from; a tangent from the reader then leaves from that node. Reading a card from a column marks it read but adds no node. *Continue expedition* reopens the column ancestors of the most recent node (in-place reads reopen the column they were read from). Visited = the article is a node of the active expedition; read = in read history.
 
-Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]`, `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`).
+Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]` (path ids, §3.9; plain tile ids are valid), `nichePromptsSeen: string[]` (tile ids whose prompt card was shown), `nicheReads: Record<string, number>` (reads per tree tile towards its prompt, counted from every read once its topic is known), `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`), `analyticsOptOut: boolean` (Settings switch, §11).
 
 All repository functions return new objects; no in-place mutation of domain state.
 
@@ -402,11 +499,12 @@ src/
   reader/          reader sheet, webview bridge, peek card
   journeys/        repository, journey store, recap
   logbook/         logbook screen, stamps, settings
+  atlas/           place/route builder and slot geometry (pure), atlas map (react-native-svg), sheets
   theme/           tokens (DESIGN.md §2–4), fonts, territory map
   onboarding/      tiles screen, interests store
   prefetch/        dwell tracker, prefetch queue, caches
   analytics/       event constants + thin PostHog wrapper
-  config/          constants (§4.2), tile→topic map
+  config/          constants (§4.2), tile→topic map, interest tree
 ```
 
 `content/` depends only on interfaces of `wiki-api/` (injected), never on React.
@@ -415,24 +513,38 @@ src/
 
 ---
 
-## 11. Analytics (PostHog, minimal)
+## 11. Analytics (PostHog)
 
-| Event | Properties |
-|---|---|
-| `swipe_left` | `depth`, `source` (`link`/`backlink`/`morelike`/`home_interest`/`home_today`/`home_wildcard`) |
-| `swipe_right` | `depth` |
-| `read_open` | `depth`, `entry` (`card`/`peek_read`) |
-| `journey_depth` | `max_depth`, `node_count` — sent when a Journey goes idle / app backgrounds |
-| `stamp_earned` | `topic`, `territory` |
-| `first_hop` | `route` (`swipe`/`tangent`), `peels_seen`, `seconds_on_home` (total Home time before the hop) — once per install |
-| `first_return` | `route` (`swipe`/`crumb`/`system_back`) — once per install |
-| `find_added` | `surface` (`home`/`column`/`reader`/`peek`), `in_expedition` (M6) |
-| `find_removed` | `undone` (M6) |
-| `find_opened` | `action` (`tangent`/`read`) (M6) — key metric: share of Finds ever reopened |
+Analytics exists mainly to judge **feed quality**: which columns and Home picks keep people hopping and reading, and which they back out of.
 
-No article titles, no PII. Anonymous distinct ID. Opt-out toggle in Settings.
+**Setup.** `posthog-react-native` on the EU host. The project key comes from `EXPO_PUBLIC_POSTHOG_KEY` (host override: `EXPO_PUBLIC_POSTHOG_HOST`). With no key, analytics is a no-op; development builds log events to the console instead of sending. Anonymous: `personProfiles: 'never'`, GeoIP off, session replay off. Touch autocapture and app lifecycle events are on. Screen views are sent by hand as route patterns (`/expedition/[id]`), never with params.
 
----
+**Privacy rule.** Article titles are sent **only** on the feed-quality events (`card_seen`, `column_left`, `hop`, `return`, `read_open`), and only for the column's seed and the card acted on. Everything else is title-free: views that show a title carry `ph-no-capture`, so touch autocapture sends nothing from them; errors are sent as fixed reason codes. Settings has a **Share usage data** switch (on by default) that says it includes the titles of articles explored. Store listings must declare browsing history.
+
+| Event | When | Properties |
+|---|---|---|
+| `card_seen` | A card dwells (§7: ≥ 75 % visible for 600 ms) in the column on top; once per card per column visit | `card_title`, `source`, `topic`, `territory`, `position`, `hub`, `seed_title`, `depth`, `interest_node` (path id of the subfield/leaf a Home card came from, else null) |
+| `column_left` | The column on top stops being on top | `seed_title`, `depth`, `outcome` (`hop`/`swipe`/`crumb`/`system_back`/`refresh`/`resume`/`background`/`replaced`), `cards_seen`, `deepest_position`, `reads`, `seconds`, `feed_end` (`dead_end`/`error`/null) |
+| `hop` | A hop lands | `route` (`swipe`/`tangent`/`atlas`), card properties (`position` null for a tangent, or a card swiped before it dwelt), `seed_title` and `depth` of the column left |
+| `return` | Back to a lower column | `route` (`swipe`/`crumb`/`system_back`), `columns_popped`, `seed_title` and `depth` of the column left |
+| `read_open` | The reader opens | `entry: card` + card and column properties, or `entry: peek_read` + `card_title` |
+| `expedition_ended` | Back on Home, or the app goes to the background mid-expedition | `expedition_id`, `ended_by` (`home`/`background`), `node_count`, `max_depth`, `reads`, `duration_s`, `territories`, `stamps_earned`. May repeat per expedition; the latest per `expedition_id` wins. |
+| `stamp_earned` | A new stamp | `topic`, `territory` |
+| `first_hop` | Once per install | `route`, `peels_seen`, `seconds_on_home` (Home time this launch, while Home is on top and the app foregrounded) |
+| `first_return` | Once per install | `route` |
+| `interests_saved` | Picks saved (§3.9) | `from` (`onboarding`/`settings`/`prompt`/`exhaustion`), `tiles`, `subfields`, `leaves` (counts after the save), `added` (path ids). Title-free. |
+| `interest_tree_opened` | A tree screen opens | `tile`, `from` (`settings`/`prompt`/`topic_label`/`completed`) |
+| `niche_prompt_shown` | A prompt card dwells | `tile` |
+| `niche_prompt_dismissed` | A prompt card is swiped away or scrolled past without a chip | `tile`, `how` (`swipe`/`scrolled_past`) |
+| `niche_node_exhausted` | A node is first found exhausted | `node` (path id), `articles` |
+| `atlas_set_off` | Set off from the atlas (§3.8), before the column lands | `from` (`place`/`territory_sheet`/`blind_spot`/`zoom`), `territory`, `charted`, `place_count` (in that territory). Title-free. |
+| `app_error` | Anything passed to `reportError` | `scope`, `reason` (`http_429`, `api_<code>`, `network`, `parse`, `cancelled`, or the error class — never the message) |
+
+A column **visit** runs from the column becoming the one on top to it stopping (a hop covering it counts as leaving, with `outcome: hop`); time with the reader, Logbook or Settings over it counts towards the visit. Only the app going to the background ends a visit or reports an expedition — iOS *inactive* (Control Centre, alerts) doesn't. Cards already dwelt on when a column comes on top count as seen, and a feed that ended before then still sets `feed_end`. Opting out also drops events not yet sent, and `Application Opened` is sent without its launch URL (a deep link can name an article). Skip rate is `card_seen` without a matching `hop` or `read_open`; a flat column is a `column_left` with no hop out and no reads.
+
+**Do people drill down?** (§3.9) Read 4 weeks after release: the share of active users with a narrowed tile, `interests_saved` split by `from` (does the prompt card do the work?), prompt dismiss rate, and node-card skip rate against broad interest cards.
+
+**Is the atlas worth it?** (§3.8) Two measures, read 4 weeks after release: the share of new expeditions started from the atlas (`hop` with `route: atlas`), and, for users who set off at least once, the territories per expedition (`expedition_ended.territories`) before and after their first set-off. If under 5 % of expeditions start from the atlas and territory spread doesn't move, reduce the atlas to a per-expedition map (§1 non-goals).
 
 ## 12. Testing
 
@@ -440,7 +552,10 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 
 - **Unit (Jest):** column builder (mixing, dedup, path exclusion, visited/read annotation), quality filter regexes, home interleave, tile→topic mapping, breadcrumb collapse, column-stack push/pop/jump.
 - **Integration:** `wiki-api` against recorded JSON fixtures (incl. `continue` paging, redirects, disambiguation); journey repository against in-memory SQLite.
-- **E2E (Maestro):** onboarding → Home; left swipe ×2 → breadcrumb shows 3 crumbs; right swipe returns to same scroll position; tap → reader → inline link → Explore creates column; reopen Journey from list.
+- **Unit (Jest), atlas (§3.8):** places from nodes + Home finds (Home reads excluded); first occurrence sets territory; untagged left off; slots unchanged when a new expedition is added; visit count and cap; blind-spot choice and ties; territory seed skips existing places.
+- **Unit (Jest), niche interests (§3.9):** most-specific-wins resolution (child replaces ancestor, clearing restores broad); tiles-touched minimum; missing node → nearest ancestor + warning; plain tile ids still resolve; round-robin over effective picks; why-line names the node while colour stays from `cirrusdoc`; exhaustion only when every pool article is read (shown-unread doesn't count); widening leaf → subfield → tile; prompt card once per tile / once per session / never after dismissal.
+- **Config check (live, `npm run test:live`):** every tree node's query returns ≥ 1 article and uses no `deepcat:`.
+- **E2E (Maestro):** onboarding → Home; left swipe ×2 → breadcrumb shows 3 crumbs; right swipe returns to same scroll position; tap → reader → inline link → Explore creates column; reopen Journey from list; Logbook → atlas place → *Set off from here* → column seeded by it, and a new expedition is listed.
 - **Manual device checks:** swipe feel, direction lock, Android back, iOS edge swipe.
 
 ---
@@ -454,8 +569,10 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | M2 ✅ | Columns + Home + onboarding | Live infinite Home; hops into real columns — done 2026-10-01: Expo Router, onboarding (persisted in expo-sqlite kv-store), live Home and column feeds, the M0 hop on real data, breadcrumb jumps, skeleton/error/dead-end cards, Paper + Night atlas. Verified on an Android emulator; 185 tests, 92 % coverage. Card tap → reader is M3; Logbook button is M4. |
 | M3 ✅ | Reader + peek card | Inline links intercepted; Explore/Read work — done 2026-10-01: reader modal (mobile-html themed via Wikipedia's CSS variables, fonts embedded, CC BY-SA footer), peek card with Take a tangent / Read, hop from the peek card after the sheet closes. Verified on an Android emulator in Paper and Night atlas. Marking articles *read* lands with Journeys in M4. |
 | M4 ✅ | Journeys + breadcrumb | Persisted, reopenable Journeys; visited/read badges — done 2026-10-02: journeys in expo-sqlite (hops, in-place reads, read history, stamps), live ◌/✓ badges, Logbook (stamp grid, expeditions) and recap card with *Continue expedition* and a reopenable node list. Verified on an Android emulator; 307 tests, 92 % coverage. New-territory toast and Settings (Logbook gear) move to M5. |
-| M5 | Prefetch, caches, states, analytics | Perf targets met; all §8 states; events firing |
+| M5 | Prefetch, caches, states, analytics | Perf targets met; all §8 states; events firing — analytics done 2026-10-03: feed-quality events with titles (§11), opt-out switch in Settings, `app_error` from `reportError`. |
 | M6 | Finds (§3.7) | ✦ on cards, reader and peek card; `finds` migration; Logbook Finds strip + list; undo toast; recap count; `find_*` events; card accessibility action *Keep as a find* / *Remove find*; wildcard why-line re-glyphed `✦` → `↯` |
+| M7 | World atlas (§3.8) | Atlas at the top of the Logbook; place, territory and blind-spot sheets; *Set off from here* / *Set off into*; route tracing; territory zoom; `atlas_set_off` |
+| M8 (built, device check pending) | Niche interests (§3.9) | Live-verified trees for Philosophy, Science, Maths, History; tree in Settings → Interests; path-id picks with ancestor fallback; Home rotates over effective picks; node why-line; prompt card + tappable topic label; exhaustion card, widening, `completed_leaves` + Logbook *Completed* |
 
 ---
 
@@ -471,4 +588,12 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | Open: lead-section links ranked higher? | Decide after M2 dogfooding |
 | Journey "idle" definition for closing a session | Decided (M4): returning to Home ends the expedition; the next hop from Home starts a new one. Restarting the app opens on Home, so it ends one too. Background timeout not needed. |
 | Open: screen-reader users can't hop | Cards expose only "Opens the article". Add accessibility actions *Take a tangent* / *Read* on cards and *Go back* on columns (DESIGN.md §10), plus an at-rest hop animation for action-triggered hops. Not part of the first-hop hints work. |
+| Atlas: territory tints break DESIGN.md §2.4 | Decided: exception written into §2.4 (continent fill and outline inside the atlas only) |
+| Atlas: crowding at scale | World view labels only frequent places and Finds. Past ~200 places in one territory, show count badges instead of dots. Decide after dogfooding a heavy profile. |
+| Atlas: a removed Home find leaves the atlas | Later places in that territory shift by one slot. Accepted: rare and small. Persist slots if expedition deletion is ever added. |
+| Atlas: set off from a place vs. resume an expedition | The place sheet leads with *Set off*; resuming stays on the recap card. Revisit if `atlas_set_off` is low but route tracing is used heavily. |
+| Niche: tree curation cost | ~25 nodes per tile, each verified live. Start with 4 tiles; extend only if people drill down. |
+| Niche: Wikipedia categories change | A renamed/emptied category makes a node return nothing; the live config check (§12) catches it, and Home's round-robin skips an empty stream meanwhile. |
+| Niche: unreviewed articles reach Home | Categories are hand-picked and scanned; blocklist and §5.3 filter still apply. Watch skip rate of node cards (`card_seen` without hop/read). |
+| Niche: do people drill down? | Decided (§11): `interests_saved` by `from`, `interest_tree_opened` by `from`, prompt shown/dismissed, `niche_node_exhausted`, and `card_seen.interest_node` for node-card skip rate. Extend trees past 4 tiles only if ≥ 15 % of active users narrow a tile within 4 weeks. |
 | Name "Tangent" | Check App Store / Play Store / domain availability. Do not use "Wikipedia" or Wikimedia marks in name or icon |

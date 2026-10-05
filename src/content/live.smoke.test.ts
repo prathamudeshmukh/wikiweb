@@ -51,7 +51,7 @@ describeLive('live Wikipedia', () => {
     'builds a Home page for Animals + Space + History',
     async () => {
       const feed = createHomeFeed(api, {
-        interestTileIds: ['animals', 'space', 'history'],
+        interestPicks: ['animals', 'space', 'history'],
         today: new Date(),
         visitedIds: new Set(),
         isRead: () => false,

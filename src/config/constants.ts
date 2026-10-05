@@ -90,6 +90,18 @@ export const HINT = {
   idleMs: 8000,
 } as const;
 
+/** Niche-interest nudges on Home (SPEC.md §3.9, §4.2). */
+export const NICHE = {
+  /** Reads in a broadly picked tree tile before its prompt card. */
+  nudgeReads: 3,
+  /** Prompt/exhaustion chips: Home rebuilds this long after the last tap. */
+  chipSettleMs: 1200,
+  /** A nudge never comes before this many cards, so Home always opens on an article. */
+  minIndex: 3,
+  /** How long the "Added … · Home is rebuilding" toast stays (DESIGN.md §5.14). */
+  toastMs: 1800,
+} as const;
+
 /**
  * Wikimedia asks every client to identify itself with contact details; requests without them risk being blocked.
  * The contact (URL or email) is configuration, not code — it comes from EXPO_PUBLIC_WIKI_API_CONTACT.
@@ -99,3 +111,8 @@ export function buildUserAgent(contact: string): string {
   if (!trimmed) throw new Error('A contact (URL or email) is required for the Wikipedia API user agent.');
   return `${WIKI.clientName} (${trimmed})`;
 }
+
+/** PostHog (SPEC.md §11). The project key comes from EXPO_PUBLIC_POSTHOG_KEY; without one analytics is off. */
+export const ANALYTICS = {
+  defaultHost: 'https://eu.i.posthog.com',
+} as const;

@@ -1,4 +1,4 @@
-import { memo, type ReactElement, useCallback, useState } from 'react';
+import { memo, type ReactElement, useCallback, useMemo, useState } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { FlatList, GestureDetector, RefreshControl } from 'react-native-gesture-handler';
 import Animated, { type SharedValue } from 'react-native-reanimated';
@@ -10,9 +10,14 @@ import type { Card } from '../content/card';
 import type { FeedView } from '../feeds/useFeed';
 import { useColumnHint } from '../hints/useColumnHint';
 import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
+import { NudgeCard } from '../nudges/NudgeCard';
+import { Toast } from '../nudges/Toast';
+import { type HomeNudgeView, type NicheActions, useHomeNudge } from '../nudges/useHomeNudge';
+import { useAppServices } from '../services/AppServices';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { Breadcrumb } from './Breadcrumb';
+import { type ColumnItem, columnItems } from './columnItems';
 import { type ColumnEntry, isSeeded, type SeededEntry } from './columnStack';
 import { useDwellPrefetch } from './dwellPrefetch';
 import { HomeHeader } from './HomeHeader';
@@ -20,6 +25,7 @@ import type { HopController } from './hopController';
 import { SwipeCard } from './SwipeCard';
 import { useColumnFeed } from './useColumnFeed';
 import { useColumnMotion } from './useColumnMotion';
+import { useColumnVisit } from './useExploreAnalytics';
 import { useHomeFeed } from './useHomeFeed';
 
 export interface PulseTarget {
@@ -41,6 +47,8 @@ interface ColumnViewProps {
   onOpenLogbook: () => void;
   /** Nothing (the reader, the Logbook) is over the explore screen. */
   isScreenFocused: boolean;
+  /** Interest-tree actions for Home's nudge cards and topic labels (SPEC.md §3.9). */
+  niche: NicheActions;
 }
 
 /** A column's cards, plus what Home adds: pull-to-refresh, and a list that starts over with each fresh Home. */
@@ -49,6 +57,8 @@ interface ColumnFeed {
   listKey?: string;
   refreshControl?: ReactElement<RefreshControlProps>;
   onUserScroll?: () => void;
+  /** Home's prompt or exhaustion card, if one is due. */
+  nudge?: HomeNudgeView;
 }
 
 // FlatList measures this in screen-heights; one card fills a screen, so this is ~5 cards from the end (SPEC.md §7).
@@ -82,10 +92,16 @@ function ColumnHeader({ entry, entryProgress, onJump, onOpenLogbook }: ColumnHea
 }
 
 function HomeColumn(props: ColumnViewProps) {
-  const { interests, isTop, onOpen } = props;
+  const { interests, isTop, onOpen, niche } = props;
   const palette = useTheme();
   const home = useHomeFeed(interests, isTop);
-  const { touched } = home;
+  const nudge = useHomeNudge({ interests, generation: home.generation, cardCount: home.cards.length, niche });
+  const { columnVisits } = useAppServices();
+  const { touched, refresh } = home;
+  const pullToRefresh = useCallback(() => {
+    columnVisits.restart('refresh');
+    refresh();
+  }, [columnVisits, refresh]);
   const openFromHome = useCallback(
     (card: Card) => {
       touched();
@@ -94,9 +110,14 @@ function HomeColumn(props: ColumnViewProps) {
     [touched, onOpen],
   );
   const refreshControl = (
-    <RefreshControl refreshing={home.refreshing} onRefresh={home.refresh} tintColor={palette.muted} colors={[palette.ink]} progressBackgroundColor={palette.card} />
+    <RefreshControl refreshing={home.refreshing} onRefresh={pullToRefresh} tintColor={palette.muted} colors={[palette.ink]} progressBackgroundColor={palette.card} />
   );
-  return <ColumnBody {...props} onOpen={openFromHome} feed={{ view: home, listKey: String(home.generation), refreshControl, onUserScroll: touched }} />;
+  return (
+    <>
+      <ColumnBody {...props} onOpen={openFromHome} feed={{ view: home, listKey: String(home.generation), refreshControl, onUserScroll: touched, nudge }} />
+      {nudge.toast && <Toast message={nudge.toast} />}
+    </>
+  );
 }
 
 function SeededColumn(props: ColumnViewProps & { entry: SeededEntry }) {
@@ -110,15 +131,18 @@ function ColumnViewImpl(props: ColumnViewProps) {
 }
 
 function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
-  const { entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, isScreenFocused, feed } = props;
+  const { entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, isScreenFocused, feed, niche } = props;
+  const openTopic = useCallback((tileId: string) => niche.openTree({ tileId }, 'topic_label'), [niche]);
   const palette = useTheme();
   const marks = useJourneyMarks();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [listHeight, setListHeight] = useState(0);
   const isHome = entry.seed === null;
-  const { view } = feed;
-  const dwellPrefetch = useDwellPrefetch(entry, isTop);
+  const { view, nudge } = feed;
+  const dwell = useDwellPrefetch(entry, isTop, nudge?.onVisible);
+  const items = useMemo(() => columnItems(view.cards, nudge?.index ?? null), [view.cards, nudge?.index]);
+  useColumnVisit({ entry, isTop, status: view.status, dwelling: dwell.dwelling });
   const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, entry: entryProgress, onBack });
 
   const cardWidth = screenWidth - LAYOUT.gutter * 2;
@@ -134,23 +158,40 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
     [settled, interval],
   );
 
-  const renderCard = useCallback(
-    ({ item, index }: { item: Card; index: number }) => (
-      <SwipeCard
-        card={withMarks(item, marks)}
+  const renderItem = useCallback(
+    ({ item, index }: { item: ColumnItem; index: number }) =>
+      item.kind === 'nudge' ? (
+        nudge?.nudge ? (
+          <NudgeCard
+            nudge={nudge.nudge}
+            chips={nudge.chips}
+            pickedChips={nudge.pickedChips}
+            width={cardWidth}
+            height={cardHeight}
+            enabled={isTop}
+            onChip={nudge.onChip}
+            onOpenTree={nudge.onOpenTree}
+            onDismiss={nudge.onDismiss}
+            columnPan={backPan}
+          />
+        ) : null
+      ) : (
+        <SwipeCard
+        card={withMarks(item.card, marks)}
         seedTitle={seedTitle}
         width={cardWidth}
         height={cardHeight}
         enabled={isTop}
-        candidate={candidateCardId === item.pageId}
+        candidate={candidateCardId === item.card.pageId}
         hop={hop}
         onOpen={onOpen}
-        pulseToken={pulse?.cardId === item.pageId ? pulse.token : undefined}
+        pulseToken={pulse?.cardId === item.card.pageId ? pulse.token : undefined}
         hint={index === hint.cardIndex ? hint.kind : null}
         peelToken={index === hint.cardIndex ? hint.peelToken : null}
+        onOpenTopic={openTopic}
       />
-    ),
-    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken],
+      ),
+    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken, nudge, backPan, openTopic],
   );
 
   return (
@@ -169,10 +210,10 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
             <FlatList
               key={feed.listKey}
               testID="column-list"
-              data={view.cards}
-              keyExtractor={(card) => String(card.pageId)}
-              renderItem={renderCard}
-              extraData={renderCard}
+              data={items}
+              keyExtractor={columnItemKey}
+              renderItem={renderItem}
+              extraData={renderItem}
               showsVerticalScrollIndicator={false}
               snapToInterval={interval}
               decelerationRate="fast"
@@ -183,7 +224,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
               maxToRenderPerBatch={3}
               windowSize={5}
               // No removeClippedSubviews: on Android it left cards blank after the column re-rendered while hidden.
-              viewabilityConfigCallbackPairs={dwellPrefetch}
+              viewabilityConfigCallbackPairs={dwell.viewabilityPairs}
               refreshControl={feed.refreshControl}
               onScrollBeginDrag={feed.onUserScroll}
               onScrollEndDrag={onScrollSettled}
@@ -205,6 +246,8 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
 }
 
 export const ColumnView = memo(ColumnViewImpl);
+
+const columnItemKey = (item: ColumnItem) => (item.kind === 'card' ? String(item.card.pageId) : 'nudge');
 
 function CardGap() {
   return <View style={{ height: LAYOUT.cardGap }} />;

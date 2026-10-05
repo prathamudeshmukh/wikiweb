@@ -17,7 +17,7 @@ describe('migrate', () => {
     await migrate(db);
 
     const [{ user_version: version }] = await db.getAllAsync<{ user_version: number }>('PRAGMA user_version', []);
-    expect(version).toBe(1);
+    expect(version).toBe(2);
   });
 });
 

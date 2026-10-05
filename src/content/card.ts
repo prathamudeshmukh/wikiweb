@@ -14,6 +14,8 @@ export interface Card extends PageRef {
   incomingLinks: number | null;
   /** Why this card is in its column — drives the why-line (DESIGN.md §5.3). */
   source: CardSource;
+  /** Path id of the subfield/leaf pick a Home card came from (SPEC.md §3.9); absent for every other card. */
+  interestNode?: string;
   /** Seen on another branch of the current expedition. */
   visited: boolean;
   read: boolean;
@@ -28,6 +30,8 @@ export interface Candidate {
   fallbackTopic: CardTopic;
   /** How often the seed's section links it (section links only). */
   mentions?: number;
+  /** Home interest candidates from a subfield/leaf pick (SPEC.md §3.9). */
+  interestNode?: string;
 }
 
 export interface Annotations {
@@ -46,6 +50,7 @@ export function toCard(article: Article, candidate: Candidate, annotations: Anno
     topicIsFallback: true,
     incomingLinks: null,
     source: candidate.source,
+    ...(candidate.interestNode ? { interestNode: candidate.interestNode } : {}),
     visited: annotations.visitedIds.has(article.pageId),
     read: annotations.readIds.has(article.pageId),
   };

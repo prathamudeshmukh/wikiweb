@@ -1,5 +1,6 @@
 import { fakeWikiApi, idOf } from './__testing__/fakeWikiApi';
 import { createHomeFeed, type HomeContext } from './homeFeed';
+import type { ExhaustedNode } from './nodeStream';
 
 const titles = (prefix: string, count: number) => Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}`);
 
@@ -9,10 +10,12 @@ const GOOD_SPACE = 'articletopic:space incategory:Good_articles';
 const FEATURED_HISTORY = featuredQuery('history');
 // First tile in TOPIC_TILES order that the user did not pick (when they picked Space).
 const WILDCARD_ANIMALS = 'articletopic:biology incategory:Featured_articles';
+const STOICISM = 'incategory:Stoicism';
+const FEATURED_PHILOSOPHY = featuredQuery('philosophy-and-religion');
 
 function context(overrides: Partial<HomeContext> = {}): HomeContext {
   return {
-    interestTileIds: ['space'],
+    interestPicks: ['space'],
     today: new Date(Date.UTC(2026, 9, 1)),
     visitedIds: new Set(),
     isRead: () => false,
@@ -50,7 +53,7 @@ describe('createHomeFeed', () => {
   it('rotates between interest tiles', async () => {
     const { api } = plentiful();
 
-    const page = (await createHomeFeed(api, context({ interestTileIds: ['space', 'history'] })).nextPage()).cards;
+    const page = (await createHomeFeed(api, context({ interestPicks: ['space', 'history'] })).nextPage()).cards;
 
     const interests = page.filter((c) => c.source === 'home_interest').map((c) => c.title.split(' ')[0]);
     expect(interests.slice(0, 4)).toEqual(['Space', 'History', 'Space', 'History']);
@@ -186,7 +189,60 @@ describe('createHomeFeed', () => {
   it('rejects an empty or unknown interest list', () => {
     const { api } = plentiful();
 
-    expect(() => createHomeFeed(api, context({ interestTileIds: [] }))).toThrow(/at least one interest/);
-    expect(() => createHomeFeed(api, context({ interestTileIds: ['astrology'] }))).toThrow(/Unknown interest "astrology"/);
+    expect(() => createHomeFeed(api, context({ interestPicks: [] }))).toThrow(/at least one interest/);
+    expect(() => createHomeFeed(api, context({ interestPicks: ['astrology'] }))).toThrow(/Unknown interest "astrology"/);
+  });
+});
+
+describe('createHomeFeed with niche picks (SPEC.md §3.9)', () => {
+  function niche() {
+    return fakeWikiApi({
+      searches: { [FEATURED_SPACE]: titles('Space', 40), [STOICISM]: titles('Stoic', 30), [FEATURED_PHILOSOPHY]: titles('Philo', 10), [WILDCARD_ANIMALS]: titles('Wild', 10) },
+      featured: titles('Today', 10),
+    });
+  }
+
+  it('rotates over the effective picks, not tiles', async () => {
+    const { api } = niche();
+
+    const page = (await createHomeFeed(api, context({ interestPicks: ['philosophy/ethics/stoicism', 'space'] })).nextPage()).cards;
+
+    const interests = page.filter((c) => c.source === 'home_interest').map((c) => c.title.split(' ')[0]);
+    expect(interests.slice(0, 4)).toEqual(['Stoic', 'Space', 'Stoic', 'Space']);
+  });
+
+  it('marks a card with the node it came from, and its tile as the fallback topic', async () => {
+    const { api } = niche();
+
+    const page = (await createHomeFeed(api, context({ interestPicks: ['philosophy/ethics/stoicism'] })).nextPage()).cards;
+
+    const stoic = page.find((c) => c.title.startsWith('Stoic'));
+    expect(stoic?.interestNode).toBe('philosophy/ethics/stoicism');
+    expect(stoic?.topic).toEqual({ tileId: 'philosophy', territory: 'mind' });
+  });
+
+  it('leaves broad interest cards without a node', async () => {
+    const { api } = niche();
+
+    const page = (await createHomeFeed(api, context()).nextPage()).cards;
+
+    expect(page.find((c) => c.source === 'home_interest')?.interestNode).toBeUndefined();
+  });
+
+  it('never draws wildcards from a tile narrowed to a node', async () => {
+    const { api, calls } = niche();
+
+    await createHomeFeed(api, context({ interestPicks: ['philosophy/ethics/stoicism', 'space'] })).nextPage();
+
+    expect(calls.searches.map((s) => s.query)).not.toContain(FEATURED_PHILOSOPHY);
+  });
+
+  it('passes on a node found exhausted', async () => {
+    const { api } = fakeWikiApi({ searches: { [STOICISM]: ['Stoic 1'], [FEATURED_SPACE]: titles('Space', 40) } });
+    const exhausted: ExhaustedNode[] = [];
+
+    await createHomeFeed(api, context({ interestPicks: ['philosophy/ethics/stoicism', 'space'], isRead: (id) => id === idOf('Stoic 1'), onNodeExhausted: (n) => exhausted.push(n) })).nextPage();
+
+    expect(exhausted).toEqual([{ path: 'philosophy/ethics/stoicism', articleCount: 1 }]);
   });
 });
