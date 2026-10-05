@@ -2,6 +2,8 @@ import { ArrowRight } from 'phosphor-react-native';
 import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FindStar } from '../finds/FindStar';
+import { useFindsState } from '../finds/useFinds';
 import { depthOf, recapOf, resumeNodeId } from '../journeys/expedition';
 import type { Expedition, JourneyNode, NodeVia } from '../journeys/journeyTypes';
 import { useAppServices } from '../services/AppServices';
@@ -10,7 +12,7 @@ import { LAYOUT, TYPE } from '../theme/layout';
 import { territoryColor } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { LoadStatus } from './LoadStatus';
-import { logDate, recapCounts, territoriesCrossed } from './logbookFormat';
+import { findCount, logDate, recapCounts, territoriesCrossed } from './logbookFormat';
 import { RouteStrip } from './RouteStrip';
 import { ScreenHeader } from './ScreenHeader';
 import { useLoaded } from './useLoaded';
@@ -25,6 +27,25 @@ interface RecapScreenProps {
 const INDENT = 14;
 const MAX_INDENT_LEVELS = 5;
 
+const COUNT_STAR_SIZE = 12;
+
+/** `{n} tangents · {r} read · ✦ {f} finds` — the finds part only when there are some (DESIGN.md §5.10). */
+function RecapCounts({ text, finds }: { text: string; finds: number }) {
+  const palette = useTheme();
+  const label = finds > 0 ? `${text} · ${findCount(finds)}` : text;
+  return (
+    <View style={styles.counts} accessible accessibilityLabel={label}>
+      <Text style={[styles.body, { color: palette.ink }]}>{finds > 0 ? `${text} · ` : text}</Text>
+      {finds > 0 && (
+        <View style={styles.findCount}>
+          <FindStar found size={COUNT_STAR_SIZE} color={palette.ink} outlineColor={palette.ink} />
+          <Text style={[styles.body, { color: palette.ink }]}>{findCount(finds)}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
 const VIA_MARK: Readonly<Record<NodeVia, string>> = { swipe: '→', peek_explore: '↗', peek_read: '✓' };
 const VIA_LABEL: Readonly<Record<NodeVia, string>> = { swipe: 'Tangent', peek_explore: 'Tangent from the reader', peek_read: 'Read' };
 
@@ -32,6 +53,8 @@ function RecapCard({ expedition, onContinue }: { expedition: Expedition; onConti
   const palette = useTheme();
   const recap = recapOf(expedition);
   const sameEnd = recap.startTitle === recap.endTitle;
+  const { id } = expedition.journey;
+  const finds = useFindsState().finds.filter((find) => find.expedition?.id === id).length;
   return (
     <View style={[styles.card, { backgroundColor: palette.card, borderColor: palette.line }]}>
       <Text style={[styles.eyebrow, { color: palette.muted }]}>{`EXPEDITION LOG · ${logDate(expedition.journey.createdAt)}`}</Text>
@@ -42,7 +65,7 @@ function RecapCard({ expedition, onContinue }: { expedition: Expedition; onConti
         <RouteStrip route={recap.route} />
         <Text style={[styles.eyebrow, { color: palette.muted }]}>{territoriesCrossed(recap.route).map((t) => t.toUpperCase()).join('  ·  ')}</Text>
       </View>
-      <Text style={[styles.body, { color: palette.ink }]}>{recapCounts(recap)}</Text>
+      <RecapCounts text={recapCounts(recap)} finds={finds} />
       {recap.furthestLeap && (
         <View>
           <Text style={[styles.body, { color: palette.muted }]}>Furthest leap:</Text>
@@ -120,6 +143,8 @@ const styles = StyleSheet.create({
   headline: { fontFamily: FONT.displayItalic, fontSize: 26, lineHeight: 32 },
   route: { gap: 6 },
   body: { fontFamily: FONT.body, ...TYPE.body },
+  counts: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+  findCount: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   primary: { height: 48, borderRadius: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   primaryLabel: { fontFamily: FONT.bodyStrong, fontSize: 16 },
   pressed: { opacity: 0.7 },

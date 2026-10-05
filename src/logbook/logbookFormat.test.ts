@@ -1,5 +1,5 @@
 import { TOPIC_TILES } from '../config/topicTiles';
-import { completedCaption, logDate, recapCounts, stampTiltDeg, tangentCount, territoriesCrossed, tileLabel } from './logbookFormat';
+import { completedCaption, findCount, logDate, recapCounts, stampTiltDeg, tangentCount, territoriesCrossed, tileLabel } from './logbookFormat';
 
 describe('logbook format', () => {
   it('dates an expedition like a log entry', () => {
@@ -10,6 +10,11 @@ describe('logbook format', () => {
     expect(recapCounts({ tangents: 7, reads: 3 })).toBe('7 tangents · 3 read');
     expect(recapCounts({ tangents: 1, reads: 0 })).toBe('1 tangent · 0 read');
     expect(tangentCount(1)).toBe('1 TANGENT');
+  });
+
+  it('counts finds', () => {
+    expect(findCount(1)).toBe('1 find');
+    expect(findCount(2)).toBe('2 finds');
   });
 
   it('lists each territory a route crossed once, in order', () => {

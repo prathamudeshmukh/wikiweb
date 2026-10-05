@@ -54,6 +54,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (result.ok) result.services.journeys.load().catch((error: unknown) => reportError('journeys.load', error));
+    if (result.ok) result.services.finds.load().catch((error: unknown) => reportError('finds.load', error));
     if (result.ok) result.services.nudges.load().catch((error: unknown) => reportError('nudges.load', error));
   }, [result]);
 
@@ -80,6 +81,7 @@ export default function RootLayout() {
                     {/* The reader slides up over the column it was opened from (SPEC.md §3.4). */}
                     <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
                     <Stack.Screen name="logbook" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="finds" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="settings/index" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="settings/interests" options={{ animation: 'slide_from_right' }} />

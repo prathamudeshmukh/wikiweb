@@ -7,10 +7,13 @@ import { type ColumnVisits, createColumnVisits } from '../analytics/columnVisits
 import { createAnalytics, type PostHogFactory } from '../analytics/createAnalytics';
 import { errorReason } from '../analytics/errorReason';
 import { createExpeditionReporter, type ExpeditionReporter } from '../analytics/expeditionReport';
+import { findEvents } from '../analytics/findEvents';
 import { buildUserAgent, PREFETCH, REQUEST_BUDGET } from '../config/constants';
 import { topicOfPage } from '../content/topicResolution';
 import { columnFeedFor } from '../explore/columnFeedFor';
 import { type ColumnPrefetcher, createColumnPrefetcher } from '../explore/columnPrefetch';
+import { createFindRepository } from '../finds/findRepository';
+import { createFindsStore, type FindsStore } from '../finds/findsStore';
 import { createHintStore, type HintStore } from '../hints/hintStore';
 import { type CompletedNodes, createCompletedNodes } from '../interests/completedNodes';
 import { createInterestsStore, type InterestsStore } from '../interests/interestsStore';
@@ -36,6 +39,8 @@ export interface AppServices {
   nudges: Nudges;
   hints: HintStore;
   journeys: JourneySession;
+  /** Articles kept with ✦ (SPEC.md §3.7). */
+  finds: FindsStore;
   prefetcher: ColumnPrefetcher;
   analytics: Analytics;
   /** The PostHog client, for touch autocapture; null when events aren't sent. */
@@ -86,6 +91,21 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
       articleRead: (topic) => void nudges.articleRead(topic),
     },
   });
+  const finds = createFindsStore({
+    repo: createFindRepository(openDatabase),
+    now: Date.now,
+    expedition: () => {
+      const active = journeys.getState().active?.journey;
+      return active ? { id: active.id, title: active.title } : null;
+    },
+    journeysSaved: journeys.whenSaved,
+    describe: async (page) => {
+      const [topic, article] = await Promise.all([topicOfPage(api, page.pageId), api.summary(page.title)]);
+      return { topic, thumbnailUrl: article.thumbnail?.url ?? null };
+    },
+    onError: reportError,
+    events: findEvents(analytics),
+  });
   return {
     ok: true,
     services: {
@@ -95,6 +115,7 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
       nudges,
       hints: createHintStore(Storage),
       journeys,
+      finds,
       prefetcher,
       analytics,
       analyticsClient: client,

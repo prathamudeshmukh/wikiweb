@@ -56,6 +56,19 @@ const MIGRATIONS: readonly string[] = [
     article_count  INTEGER NOT NULL
   );
   `,
+  // M6 (SPEC.md §3.7) — articles kept with ✦. The card is snapshotted so the Logbook renders offline.
+  `
+  CREATE TABLE finds (
+    page_id        INTEGER PRIMARY KEY,
+    found_at       INTEGER NOT NULL,
+    journey_id     TEXT REFERENCES journeys(id) ON DELETE SET NULL,
+    title          TEXT NOT NULL,
+    thumbnail_url  TEXT,
+    tile_id        TEXT,
+    territory      TEXT
+  );
+  CREATE INDEX idx_finds_journey ON finds(journey_id);
+  `,
 ];
 
 /** Brings the schema up to date, one migration per `user_version`. */

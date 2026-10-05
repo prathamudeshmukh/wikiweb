@@ -56,7 +56,21 @@ describe('ExploreScreen', () => {
     expect(await screen.findByText('Space 1')).toBeOnTheScreen();
   });
 
-  it('opens the Logbook from Home', async () => {
+  it('keeps a Home card as a find, confirms it and remembers it on Home', async () => {
+    const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: titles('Space', 30) } });
+    const { services } = await renderExplore(api);
+    await layOutColumns();
+    await screen.findByText('Space 1');
+    const [firstCard] = screen.getAllByHintText('Opens the article');
+
+    await fireEvent(firstCard, 'accessibilityAction', { nativeEvent: { actionName: 'find' } });
+
+    expect(services.finds.getState().finds).toEqual([expect.objectContaining({ title: 'Space 1', expedition: null })]);
+    expect(screen.getByText('KEPT IN FINDS')).toBeOnTheScreen();
+    expect(screen.getByLabelText(/^Space 1\..*Kept as a find/)).toBeOnTheScreen();
+  });
+
+    it('opens the Logbook from Home', async () => {
     const { api } = fakeWikiApi({ searches: { [FEATURED_SPACE]: titles('Space', 30) } });
     const onOpenLogbook = jest.fn();
 

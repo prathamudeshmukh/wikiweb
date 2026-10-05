@@ -5,6 +5,8 @@ import { type MemoryAnalytics, memoryAnalytics } from '../analytics/__testing__/
 import { createAnalyticsConsent } from '../analytics/analyticsConsent';
 import { createColumnVisits } from '../analytics/columnVisits';
 import { createExpeditionReporter } from '../analytics/expeditionReport';
+import { findEvents } from '../analytics/findEvents';
+import { memoryFindsStore } from '../finds/__testing__/memoryFindsStore';
 import type { CompletedNode, CompletedNodes } from '../interests/completedNodes';
 import type { InterestsStore } from '../interests/interestsStore';
 import { PREFETCH } from '../config/constants';
@@ -67,6 +69,7 @@ export function testServices(api: WikiApi, journeys: JourneySession = memoryJour
     nudges: createNudges({ store: createNudgeStore(memoryKv()), completedNodes, analytics, now: Date.now }),
     hints: memoryHintStore(),
     journeys,
+    finds: memoryFindsStore(journeys, findEvents(analytics)),
     prefetcher,
     analytics,
     analyticsClient: null,

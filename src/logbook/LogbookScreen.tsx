@@ -1,8 +1,12 @@
 import { GearSix } from 'phosphor-react-native';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TOPIC_TILES } from '../config/topicTiles';
+import { type FindActions, FindSheet } from '../finds/FindSheet';
+import { FindToast } from '../finds/FindToast';
+import type { Find } from '../finds/findTypes';
+import { useFindsState } from '../finds/useFinds';
 import { recapOf } from '../journeys/expedition';
 import type { Expedition } from '../journeys/journeyTypes';
 import type { CompletedNode } from '../interests/completedNodes';
@@ -13,6 +17,7 @@ import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { CompletedSection } from './CompletedSection';
+import { FindsSection } from './FindsSection';
 import { LoadStatus } from './LoadStatus';
 import { logDate, tangentCount } from './logbookFormat';
 import { RouteStrip } from './RouteStrip';
@@ -26,6 +31,10 @@ interface LogbookScreenProps {
   onOpenSettings: () => void;
   /** A Completed row opens its tile's tree (SPEC.md §3.5). */
   onOpenTree: (target: TreeTarget) => void;
+  onOpenFinds: () => void;
+  findActions: FindActions;
+  /** On top, so its toasts show (false while a screen is pushed over it). */
+  isFocused?: boolean;
 }
 
 interface LogbookData {
@@ -81,17 +90,21 @@ interface LogbookContentProps {
   data: LogbookData;
   onOpenExpedition: (journeyId: string) => void;
   onOpenTree: (target: TreeTarget) => void;
+  onOpenFind: (find: Find) => void;
+  onOpenFinds: () => void;
 }
 
-function LogbookContent({ data: { logbook, completed }, onOpenExpedition, onOpenTree }: LogbookContentProps) {
+function LogbookContent({ data: { logbook, completed }, onOpenExpedition, onOpenTree, onOpenFind, onOpenFinds }: LogbookContentProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
+  const { finds } = useFindsState();
   const collected = new Set(logbook.stamps.map((stamp) => stamp.tileId));
   // An expedition with no nodes never got past its first write; there's nothing to show or resume.
   const expeditions = logbook.expeditions.filter((expedition) => expedition.nodes.length > 0);
   return (
     <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + LAYOUT.gutter }]}>
       <StampGrid collected={collected} />
+      <FindsSection finds={finds} onOpenFind={onOpenFind} onSeeAll={onOpenFinds} />
       <CompletedSection completed={completed} onOpenTree={onOpenTree} />
       <View style={styles.section}>
         <Text style={[styles.eyebrow, { color: palette.muted }]}>EXPEDITIONS</Text>
@@ -105,8 +118,8 @@ function LogbookContent({ data: { logbook, completed }, onOpenExpedition, onOpen
   );
 }
 
-/** Stamps collected, interest-tree nodes completed and every expedition so far (DESIGN.md §6.5). */
-export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings, onOpenTree }: LogbookScreenProps) {
+/** Stamps collected, finds, interest-tree nodes completed and every expedition so far (DESIGN.md §6.5). */
+export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings, onOpenTree, onOpenFinds, findActions, isFocused = true }: LogbookScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const { journeys, completedNodes } = useAppServices();
@@ -115,6 +128,7 @@ export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings, onOpen
     return { logbook, completed };
   }, [journeys, completedNodes]);
   const { state, retry } = useLoaded('logbook.load', load);
+  const [openFind, setOpenFind] = useState<Find | null>(null);
 
   return (
     <View style={[styles.root, { backgroundColor: palette.paper, paddingTop: insets.top }]}>
@@ -127,7 +141,13 @@ export function LogbookScreen({ onBack, onOpenExpedition, onOpenSettings, onOpen
           </Pressable>
         }
       />
-      {state.status === 'ready' ? <LogbookContent data={state.value} onOpenExpedition={onOpenExpedition} onOpenTree={onOpenTree} /> : <LoadStatus status={state.status} onRetry={retry} />}
+      {state.status === 'ready' ? (
+        <LogbookContent data={state.value} onOpenExpedition={onOpenExpedition} onOpenTree={onOpenTree} onOpenFind={setOpenFind} onOpenFinds={onOpenFinds} />
+      ) : (
+        <LoadStatus status={state.status} onRetry={retry} />
+      )}
+      {openFind && <FindSheet find={openFind} actions={findActions} onClose={() => setOpenFind(null)} />}
+      <FindToast active={isFocused} />
     </View>
   );
 }

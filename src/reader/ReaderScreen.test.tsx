@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { renderWithServices } from '../__testing__/renderWithServices';
-import { fakeWikiApi, makeArticle } from '../content/__testing__/fakeWikiApi';
+import { fakeWikiApi, idOf, makeArticle } from '../content/__testing__/fakeWikiApi';
 import { ReaderScreen } from './ReaderScreen';
 
 jest.mock('./readerFonts', () => ({ loadReaderFontFaces: async () => '' }));
@@ -38,9 +38,12 @@ async function openReader(overrides: Parameters<typeof fakeWikiApi>[0] = {}) {
   const onTangent = jest.fn();
   const onClose = jest.fn();
   const onReadLink = jest.fn();
-  await renderWithServices(<ReaderScreen initialTitle="Iron gall ink" onTangent={onTangent} onReadLink={onReadLink} onClose={onClose} />, fake.api);
+  const { services } = await renderWithServices(
+    <ReaderScreen initialPage={{ pageId: idOf('Iron gall ink'), title: 'Iron gall ink' }} onTangent={onTangent} onReadLink={onReadLink} onClose={onClose} />,
+    fake.api,
+  );
   await screen.findByTestId('reader-webview');
-  return { ...fake, onTangent, onReadLink, onClose };
+  return { ...fake, onTangent, onReadLink, onClose, finds: services.finds };
 }
 
 describe('ReaderScreen', () => {
@@ -137,12 +140,32 @@ describe('ReaderScreen', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('offers a retry when the article fails to load', async () => {
+  it('keeps the article with ✦ in the header and confirms it', async () => {
+    const { finds } = await openReader();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Keep as a find' }));
+
+    expect(finds.getState().finds).toEqual([expect.objectContaining({ title: 'Iron gall ink' })]);
+    expect(screen.getByRole('button', { name: 'Remove find' })).toBeOnTheScreen();
+    expect(screen.getByText('KEPT IN FINDS')).toBeOnTheScreen();
+  });
+
+  it('keeps the article read in place, not the one first opened', async () => {
+    const { finds } = await openReader();
+    await act(async () => void tapLink(`${BASE}Ink`));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Read' }));
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Keep as a find' }));
+
+    expect(finds.getState().finds).toEqual([expect.objectContaining({ pageId: idOf('Ink'), title: 'Ink' })]);
+  });
+
+    it('offers a retry when the article fails to load', async () => {
     const fake = fakeWikiApi({});
     let fail = true;
     const articleHtml = fake.api.articleHtml;
     fake.api.articleHtml = (title) => (fail ? Promise.reject(new Error('offline')) : articleHtml(title));
-    await renderWithServices(<ReaderScreen initialTitle="Ink" onTangent={jest.fn()} onReadLink={jest.fn()} onClose={jest.fn()} />, fake.api);
+    await renderWithServices(<ReaderScreen initialPage={{ pageId: idOf('Ink'), title: 'Ink' }} onTangent={jest.fn()} onReadLink={jest.fn()} onClose={jest.fn()} />, fake.api);
 
     const retry = await screen.findByRole('button', { name: 'Couldn’t load this article. Tap to retry.' });
     fail = false;

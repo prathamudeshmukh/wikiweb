@@ -1,5 +1,6 @@
 import type { CardSource } from '../content/card';
 import type { Territory } from '../config/topicTiles';
+import type { FindFrom } from '../finds/findTypes';
 
 /**
  * Every event Tangent sends (SPEC.md §11). Article titles appear only on the feed-quality events
@@ -80,6 +81,9 @@ export type AnalyticsEvent =
   | { name: 'niche_prompt_shown'; properties: { tile: string } }
   | { name: 'niche_prompt_dismissed'; properties: { tile: string; how: 'swipe' | 'scrolled_past' } }
   | { name: 'niche_node_exhausted'; properties: { node: string; articles: number } }
+  | { name: 'find_kept'; properties: { from: FindFrom; topic: string | null; territory: Territory | null; on_expedition: boolean } }
+  | { name: 'find_removed'; properties: { from: FindFrom } }
+  | { name: 'find_restored'; properties: Record<string, never> }
   | { name: 'app_error'; properties: { scope: string; reason: string } };
 
 export type AnalyticsEventName = AnalyticsEvent['name'];

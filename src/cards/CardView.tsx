@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 import type { GestureType } from 'react-native-gesture-handler';
 import type { Card } from '../content/card';
+import { CardFindButton, type CardFind } from '../finds/CardFindButton';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { type Palette, territoryColor } from '../theme/tokens';
@@ -24,12 +25,14 @@ interface CardViewProps {
   /** Title of the column's seed; null on Home. */
   seedTitle: string | null;
   topicButton?: TopicButton;
+  /** ✦ (DESIGN.md §5.11); left out on cards that can't be kept. */
+  find?: CardFind;
 }
 
 const TYPOGRAPHIC_ICON_SIZE = 48;
 
 /** A card's face (DESIGN.md §5.1 / §5.2). Layout only — gestures live in SwipeCard. */
-export function CardView({ card, seedTitle, topicButton }: CardViewProps) {
+export function CardView({ card, seedTitle, topicButton, find }: CardViewProps) {
   const palette = useTheme();
   const accent = territoryColor(palette, card.topic.territory);
   const label = topicLabel(card);
@@ -42,7 +45,7 @@ export function CardView({ card, seedTitle, topicButton }: CardViewProps) {
       key={palette.cardShadow ? 'paper' : 'night'}
       style={[styles.card, surface(palette)]}
       accessible
-      accessibilityLabel={[card.title, card.description, card.visited && 'Visited on this expedition', card.read && 'Read'].filter(Boolean).join('. ')}
+      accessibilityLabel={[card.title, card.description, card.visited && 'Visited on this expedition', card.read && 'Read', find?.found && 'Kept as a find'].filter(Boolean).join('. ')}
     >
       {card.thumbnail ? (
         <>
@@ -78,6 +81,7 @@ export function CardView({ card, seedTitle, topicButton }: CardViewProps) {
           </Text>
         )}
         <Badges visited={card.visited} read={card.read} color={palette.muted} />
+        {find && <CardFindButton find={find} color={accent} />}
       </View>
       {card.extract ? <Extract text={card.extract} color={palette.ink} /> : null}
       <Text style={[styles.why, { color: palette.muted }]} numberOfLines={1}>{whyLine(card, seedTitle)}</Text>
