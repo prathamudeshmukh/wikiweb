@@ -75,6 +75,12 @@ Mix is interleaved deterministically (e.g. pattern of 10: `I I W? I T I I T I I`
 - **Pull-to-refresh** on Home (only — columns are deterministic reading order) does the same on demand.
 - No refreshed Home repeats a card an earlier Home showed this app session (in memory only), nor one read since it was built.
 
+**Cold start.** Opening the app reopens on the Home saved last time, with no network request; only pull-to-refresh, a return from an expedition or new interests replace it. Decided 2026-10-05.
+- Home's loaded cards (up to `HOME_SNAPSHOT.maxCards`) are saved to `home_snapshot` whenever they change, shortly after they settle — never only on going to the background, which the OS may skip.
+- It reopens at the top. Read articles are left out (checked against `read_history`, which the session may still be loading), and so are *Today on Wikipedia* cards featured on another UTC day (each carries its own day, so re-saving never refreshes it).
+- Scrolling past the saved cards continues with a freshly built Home that leaves them out; its first request waits for that scroll.
+- No snapshot, one for other interests, nothing left after filtering, or a read that fails (reported) → Home loads the normal way.
+
 ### 3.3 Exploring
 - **Left swipe** a card → new column seeded by it, pushed onto the path. If no Journey is active, one is created (first hop from Home starts a Journey).
 - **Right swipe** anywhere → pop to parent column, restored at its previous scroll offset; the card we came from pulses briefly.
@@ -463,6 +469,15 @@ CREATE TABLE finds (
   territory      TEXT
 );
 CREATE INDEX idx_finds_journey ON finds(journey_id);
+```
+
+```sql
+-- §3.2 — the Home on screen, so a cold start reopens on it offline. One row.
+CREATE TABLE home_snapshot (
+  id             INTEGER PRIMARY KEY CHECK (id = 1),
+  interests_key  TEXT NOT NULL,         -- the picks it was built for, joined with '|'
+  cards          TEXT NOT NULL          -- JSON Card[]; validated on load, dropped if its shape has changed
+);
 ```
 
 ```sql

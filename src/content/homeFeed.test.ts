@@ -42,6 +42,14 @@ describe('createHomeFeed', () => {
     expect([count('home_interest'), count('home_today'), count('home_wildcard')]).toEqual([14, 4, 2]);
   });
 
+  it('dates Today on Wikipedia cards with the UTC day they were featured', async () => {
+    const { api } = plentiful();
+
+    const page = (await createHomeFeed(api, context()).nextPage()).cards;
+
+    expect(new Set(page.filter((c) => c.source === 'home_today').map((c) => c.featuredOn))).toEqual(new Set(['2026-10-01']));
+  });
+
   it('interleaves sources instead of clumping them', async () => {
     const { api } = plentiful();
 

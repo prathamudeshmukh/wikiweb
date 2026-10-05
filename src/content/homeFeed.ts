@@ -8,6 +8,7 @@ import { createBlocklistMatcher, isLowValueTitle } from './quality';
 import type { RankingPolicy } from './ranking';
 import { alternateStreams, onceStream, optionalStream, pagedStream, type Stream } from './refStream';
 import { type CardTopic, NO_TOPIC } from './topics';
+import { utcDay } from './utcDay';
 
 export interface HomeContext {
   /** Picks as path ids: broad tiles, subfields and leaves (SPEC.md §3.9). */
@@ -58,6 +59,7 @@ interface TaggedRef {
   ref: PageRef;
   fallbackTopic: CardTopic;
   interestNode?: string;
+  featuredOn?: string;
 }
 
 /** One stream in a rotation: its tile gives untagged cards a topic; `node` is set for subfield/leaf picks. */
@@ -126,7 +128,7 @@ function homeCandidates(api: WikiApi, context: HomeContext): CandidateSource {
 
   async function nextToday(): Promise<TaggedRef | null> {
     const ref = await today.next();
-    return ref ? { ref, fallbackTopic: NO_TOPIC } : null;
+    return ref ? { ref, fallbackTopic: NO_TOPIC, featuredOn: utcDay(context.today) } : null;
   }
 
   const forSlot: Readonly<Record<Slot, () => Promise<TaggedRef | null>>> = { interest: nextInterest, today: nextToday, wildcard: nextWildcard };

@@ -16,6 +16,8 @@ export interface Card extends PageRef {
   source: CardSource;
   /** Path id of the subfield/leaf pick a Home card came from (SPEC.md §3.9); absent for every other card. */
   interestNode?: string;
+  /** UTC day (`YYYY-MM-DD`) a Today on Wikipedia card was featured; absent for every other card. */
+  featuredOn?: string;
   /** Seen on another branch of the current expedition. */
   visited: boolean;
   read: boolean;
@@ -32,6 +34,8 @@ export interface Candidate {
   mentions?: number;
   /** Home interest candidates from a subfield/leaf pick (SPEC.md §3.9). */
   interestNode?: string;
+  /** Home's Today on Wikipedia candidates. */
+  featuredOn?: string;
 }
 
 export interface Annotations {
@@ -51,6 +55,7 @@ export function toCard(article: Article, candidate: Candidate, annotations: Anno
     incomingLinks: null,
     source: candidate.source,
     ...(candidate.interestNode ? { interestNode: candidate.interestNode } : {}),
+    ...(candidate.featuredOn ? { featuredOn: candidate.featuredOn } : {}),
     visited: annotations.visitedIds.has(article.pageId),
     read: annotations.readIds.has(article.pageId),
   };

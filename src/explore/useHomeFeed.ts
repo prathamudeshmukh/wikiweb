@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { HOME_SNAPSHOT } from '../config/constants';
 import { HOME_TITLE_BLOCKLIST } from '../config/homeBlocklist';
+import type { Card } from '../content/card';
 import { createHomeFeed } from '../content/homeFeed';
 import type { Feed, FeedPage } from '../content/pagedFeed';
+import { createRestoringFeed } from '../content/restoringFeed';
 import { type FeedView, useFeed } from '../feeds/useFeed';
+import type { JourneySession } from '../journeys/journeySession';
 import { useAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
 import { createHomeRefresher, type HomeRefresher } from './homeRefresh';
+import { restorableCards, snapshotOf } from './homeSnapshot';
+import type { HomeSnapshotStore } from './homeSnapshotStore';
 
 export interface HomeFeedView extends FeedView {
   /** Goes up each time a fresh Home replaces the old one; the list starts again from the top. */
@@ -21,6 +27,11 @@ const NO_IDS: ReadonlySet<number> = new Set();
 
 const onSourceError = (error: unknown) => reportError('feed.source', error);
 const onRefreshError = (error: unknown) => reportError('feed.home_refresh', error);
+const onRestoreError = (error: unknown) => reportError('feed.home_restore', error);
+const onSaveError = (error: unknown) => reportError('feed.home_save', error);
+
+// Read history loads asynchronously and grows while browsing, so ask the session each time.
+const readCheck = (journeys: JourneySession) => (pageId: number) => journeys.getState().readIds.has(pageId);
 
 interface ShownHome {
   refresher: HomeRefresher;
@@ -32,9 +43,8 @@ interface ShownHome {
 function useRefresher(interests: readonly string[]): HomeRefresher {
   const { api, journeys, nudges } = useAppServices();
   const interestsKey = interests.join('|');
-  // Read history loads asynchronously and grows while browsing, so ask the session each time instead of rebuilding Home.
   return useMemo(() => {
-    const isRead = (pageId: number) => journeys.getState().readIds.has(pageId);
+    const isRead = readCheck(journeys);
     return createHomeRefresher({
       buildFeed: (wasShown) =>
         createHomeFeed(api, {
@@ -54,16 +64,59 @@ function useRefresher(interests: readonly string[]): HomeRefresher {
   }, [api, journeys, nudges, interestsKey]);
 }
 
-/** Home's feed, refreshed when the user comes back from an expedition (SPEC.md §3.2) or pulls it down. */
+interface ColdStart {
+  refresher: HomeRefresher;
+  store: HomeSnapshotStore;
+  interestsKey: string;
+  isRead: (pageId: number) => boolean;
+}
+
+/** The Home saved last time, with no network, then the opening Home's cards past it (SPEC.md §3.2). */
+function coldStartFeed({ refresher, store, interestsKey, isRead }: ColdStart): Feed {
+  return createRestoringFeed({
+    restore: async () => {
+      const snapshot = await store.load();
+      return snapshot ? restorableCards(snapshot, { interestsKey, now: new Date(), isRead }) : [];
+    },
+    fresh: refresher.openingFeed(),
+    onRestored: (cards) => refresher.markShown(cards),
+    onError: onRestoreError,
+  });
+}
+
+/** Saves the Home on screen for the next cold start, once its cards have settled. */
+function useSavedHome(cards: readonly Card[], interestsKey: string) {
+  const { homeSnapshots } = useAppServices();
+  useEffect(() => {
+    if (cards.length === 0) return undefined;
+    const timer = setTimeout(() => {
+      homeSnapshots.save(snapshotOf({ interestsKey, cards })).catch(onSaveError);
+    }, HOME_SNAPSHOT.saveDelayMs);
+    return () => clearTimeout(timer);
+  }, [homeSnapshots, cards, interestsKey]);
+}
+
+/**
+ * Home's feed. A cold start reopens on the Home saved last time; it is refreshed when the user comes back from an
+ * expedition (SPEC.md §3.2) or pulls it down.
+ */
 export function useHomeFeed(interests: readonly string[], isTop: boolean): HomeFeedView {
+  const { journeys, homeSnapshots } = useAppServices();
+  const interestsKey = interests.join('|');
   const refresher = useRefresher(interests);
-  const [stored, setShown] = useState<ShownHome>(() => ({ refresher, generation: 0, feed: refresher.openingFeed(), firstPage: null }));
+  const [stored, setShown] = useState<ShownHome>(() => ({
+    refresher,
+    generation: 0,
+    feed: coldStartFeed({ refresher, store: homeSnapshots, interestsKey, isRead: readCheck(journeys) }),
+    firstPage: null,
+  }));
   // New interests mean a new refresher, and Home starts over from it.
   const shown = stored.refresher === refresher ? stored : { refresher, generation: stored.generation + 1, feed: refresher.openingFeed(), firstPage: null };
   if (shown !== stored) setShown(shown);
   const view = useFeed(shown.feed, shown.firstPage);
 
   useEffect(() => refresher.markShown(view.cards), [refresher, view.cards]);
+  useSavedHome(view.cards, interestsKey);
 
   /** Puts the ready next Home on screen; false when there was none to take. */
   const swapIn = useCallback((): boolean => {

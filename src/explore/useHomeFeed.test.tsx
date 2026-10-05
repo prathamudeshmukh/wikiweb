@@ -1,9 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
-import { testServices } from '../__testing__/renderWithServices';
+import { memoryHomeSnapshotStore, testServices } from '../__testing__/renderWithServices';
+import { HOME_SNAPSHOT } from '../config/constants';
 import { fakeWikiApi } from '../content/__testing__/fakeWikiApi';
+import type { Card } from '../content/card';
+import { NO_TOPIC } from '../content/topics';
 import { AppServicesProvider } from '../services/AppServices';
 import type { WikiApi } from '../wiki-api/types';
+import type { HomeSnapshotStore } from './homeSnapshotStore';
 import { useHomeFeed } from './useHomeFeed';
 
 import { reportError } from '../services/reportError';
@@ -21,8 +25,8 @@ interface HomeProps {
   interests?: readonly string[];
 }
 
-function renderHome(api: WikiApi = fakeWikiApi({ searches: SEARCHES }).api) {
-  const services = testServices(api);
+function renderHome(api: WikiApi = fakeWikiApi({ searches: SEARCHES }).api, homeSnapshots: HomeSnapshotStore = memoryHomeSnapshotStore()) {
+  const services = { ...testServices(api), homeSnapshots };
   const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
   return renderHook(({ isTop, interests = ['space'] }: HomeProps) => useHomeFeed(interests, isTop), { wrapper, initialProps: { isTop: true } as HomeProps });
 }
@@ -56,8 +60,8 @@ const firstTitle = (cards: readonly { title: string }[]) => cards[0]?.title;
 
 const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
-async function openedHome(api?: WikiApi) {
-  const rendered = await renderHome(api);
+async function openedHome(api?: WikiApi, homeSnapshots?: HomeSnapshotStore) {
+  const rendered = await renderHome(api, homeSnapshots);
   await waitFor(() => expect(rendered.result.current.status).toBe('idle'));
   return rendered;
 }
@@ -183,5 +187,54 @@ describe('useHomeFeed', () => {
     await act(() => slow.release());
 
     await waitFor(() => expect(firstTitle(result.current.cards)).toBe('History 1'));
+  });
+
+  describe('on a cold start', () => {
+    const savedCard = (title: string): Card => ({
+      pageId: 1000 + Number(title.split(' ')[1]),
+      title,
+      description: null,
+      extract: null,
+      thumbnail: null,
+      topic: NO_TOPIC,
+      topicIsFallback: true,
+      incomingLinks: null,
+      source: 'home_interest',
+      visited: false,
+      read: false,
+    });
+    const SAVED = [savedCard('Saved 1'), savedCard('Saved 2')];
+    const savedHome = () => memoryHomeSnapshotStore({ interestsKey: 'space', cards: SAVED });
+
+    function countingHydrate() {
+      const { api } = fakeWikiApi({ searches: SEARCHES });
+      const hydrate = jest.fn(api.hydrate);
+      return { api: { ...api, hydrate }, hydrate };
+    }
+
+    it('reopens on the saved Home without asking Wikipedia', async () => {
+      const { api, hydrate } = countingHydrate();
+
+      const { result } = await openedHome(api, savedHome());
+
+      expect(result.current.cards.map((c) => c.title)).toEqual(['Saved 1', 'Saved 2']);
+      expect(hydrate).not.toHaveBeenCalled();
+    });
+
+    it('continues past the saved cards with fresh ones', async () => {
+      const { result } = await openedHome(undefined, savedHome());
+
+      await act(() => result.current.loadMore());
+
+      await waitFor(() => expect(result.current.cards.length).toBeGreaterThan(SAVED.length));
+      expect(result.current.cards[SAVED.length].title).toBe('Space 1');
+    });
+
+    it('saves the Home on screen for the next cold start', async () => {
+      const homeSnapshots = memoryHomeSnapshotStore();
+      const { result } = await openedHome(undefined, homeSnapshots);
+
+      await waitFor(async () => expect((await homeSnapshots.load())?.cards).toEqual(result.current.cards), { timeout: HOME_SNAPSHOT.saveDelayMs * 3 });
+    });
   });
 });

@@ -69,6 +69,14 @@ const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX idx_finds_journey ON finds(journey_id);
   `,
+  // SPEC.md §3.2 — the Home on screen, so a cold start reopens on it without the network. One row only.
+  `
+  CREATE TABLE home_snapshot (
+    id             INTEGER PRIMARY KEY CHECK (id = 1),
+    interests_key  TEXT NOT NULL,
+    cards          TEXT NOT NULL
+  );
+  `,
 ];
 
 /** Brings the schema up to date, one migration per `user_version`. */

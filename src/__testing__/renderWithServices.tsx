@@ -7,6 +7,8 @@ import { createColumnVisits } from '../analytics/columnVisits';
 import { createExpeditionReporter } from '../analytics/expeditionReport';
 import { findEvents } from '../analytics/findEvents';
 import { memoryFindsStore } from '../finds/__testing__/memoryFindsStore';
+import type { HomeSnapshot } from '../explore/homeSnapshot';
+import type { HomeSnapshotStore } from '../explore/homeSnapshotStore';
 import type { CompletedNode, CompletedNodes } from '../interests/completedNodes';
 import type { InterestsStore } from '../interests/interestsStore';
 import { PREFETCH } from '../config/constants';
@@ -45,6 +47,16 @@ export function memoryCompletedNodes(initial: readonly CompletedNode[] = []): Co
   };
 }
 
+export function memoryHomeSnapshotStore(initial: HomeSnapshot | null = null): HomeSnapshotStore {
+  let saved = initial;
+  return {
+    load: async () => saved,
+    save: async (snapshot) => {
+      saved = snapshot;
+    },
+  };
+}
+
 function memoryKv() {
   let values: Record<string, string> = {};
   return {
@@ -65,6 +77,7 @@ export function testServices(api: WikiApi, journeys: JourneySession = memoryJour
   return {
     api,
     interests: memoryInterestsStore(),
+    homeSnapshots: memoryHomeSnapshotStore(),
     completedNodes,
     nudges: createNudges({ store: createNudgeStore(memoryKv()), completedNodes, analytics, now: Date.now }),
     hints: memoryHintStore(),
