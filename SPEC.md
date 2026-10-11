@@ -8,7 +8,7 @@ Status: Draft · 2026-10-01 · Visual design: [DESIGN.md](./DESIGN.md)
 
 ## 1. Overview
 
-Tangent is a phone app (iOS + Android) for exploring Wikipedia through swipe decisions instead of search. The user starts in an interest-based feed of article cards. Left-swiping a card opens a new **column** — an infinite feed of articles connected to that card. Right-swiping goes back. Tapping reads. Every session becomes a **Journey**: a saved tree of the hops the user took.
+Tangent is a phone app (iOS + Android, plus phone browsers — §15) for exploring Wikipedia through swipe decisions instead of search. The user starts in an interest-based feed of article cards. Left-swiping a card opens a new **column** — an infinite feed of articles connected to that card. Right-swiping goes back. Tapping reads. Every session becomes a **Journey**: a saved tree of the hops the user took.
 
 ### Goals
 - Make wandering through Wikipedia feel playful and spatial, not like search.
@@ -199,7 +199,7 @@ Broad tiles are too coarse for someone into *Stoicism* or *Logic*: ORES `article
 | Release left under threshold | On a card | Spring back, no-op |
 | Horizontal drag right | Anywhere in a non-root column | Column slides off revealing parent; commit past threshold |
 | Right on Home | Home | Rubber-band bounce, no-op |
-| System back (Android button / gesture, iOS edge swipe) | Anywhere | Same as right swipe |
+| System back (Android button / gesture, iOS edge swipe, browser Back on web) | Anywhere | Same as right swipe |
 | Tap | Card | Open reader |
 | Swipe down | Reader sheet | Dismiss |
 
@@ -503,7 +503,7 @@ All repository functions return new objects; no in-place mutation of domain stat
 
 ## 10. Architecture
 
-**Stack:** Expo (managed) · React Native · TypeScript (strict) · `react-native-gesture-handler` · `react-native-reanimated` · `react-native-webview` · `expo-sqlite` · `expo-image` · `expo-haptics` · `posthog-react-native`. Input validation of API responses with `zod`.
+**Stack:** Expo (managed) · React Native · TypeScript (strict) · `react-native-gesture-handler` · `react-native-reanimated` · `react-native-webview` · `expo-sqlite` · `expo-image` · `expo-haptics` · `posthog-react-native`. Web (§15): `react-native-web`, with `.web` files swapping in `sql.js`, `localStorage`, a sandboxed iframe reader and `posthog-js`. Input validation of API responses with `zod`.
 
 **Feature-oriented layout:**
 ```
@@ -575,6 +575,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 - **Config check (live, `npm run test:live`):** every tree node's query returns ≥ 1 article and uses no `deepcat:`.
 - **E2E (Maestro):** onboarding → Home; left swipe ×2 → breadcrumb shows 3 crumbs; right swipe returns to same scroll position; tap → reader → inline link → Explore creates column; reopen Journey from list; Logbook → atlas place → *Set off from here* → column seeded by it, and a new expedition is listed.
 - **Manual device checks:** swipe feel, direction lock, Android back, iOS edge swipe.
+- **Web:** see §15.8.
 
 ---
 
@@ -591,6 +592,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | M6 (built, device check pending) | Finds (§3.7) | ✦ on cards, reader and peek card; `finds` migration; Logbook Finds strip + list; undo toast; recap count; `find_*` events; card accessibility action *Keep as a find* / *Remove find*; wildcard why-line re-glyphed `✦` → `↯` |
 | M7 | World atlas (§3.8) | Atlas at the top of the Logbook; place, territory and blind-spot sheets; *Set off from here* / *Set off into*; route tracing; territory zoom; `atlas_set_off` |
 | M8 (built, device check pending) | Niche interests (§3.9) | Live-verified trees for Philosophy, Science, Maths, History; tree in Settings → Interests; path-id picks with ancestor fallback; Home rotates over effective picks; node why-line; prompt card + tappable topic label; exhaustion card, widening, `completed_leaves` + Logbook *Completed* |
+| M9 | Web (§15) | Bundle under budget; web adapters behind their seams with tests; Playwright E2E green on Pixel 7 + iPhone WebKit; Vercel previews per PR and production from `main`. Spike done 2026-10-11: export builds, reader iframe and sql.js verified. |
 
 ---
 
@@ -614,4 +616,79 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | Niche: Wikipedia categories change | A renamed/emptied category makes a node return nothing; the live config check (§12) catches it, and Home's round-robin skips an empty stream meanwhile. |
 | Niche: unreviewed articles reach Home | Categories are hand-picked and scanned; blocklist and §5.3 filter still apply. Watch skip rate of node cards (`card_seen` without hop/read). |
 | Niche: do people drill down? | Decided (§11): `interests_saved` by `from`, `interest_tree_opened` by `from`, prompt shown/dismissed, `niche_node_exhausted`, and `card_seen.interest_node` for node-card skip rate. Extend trees past 4 tiles only if ≥ 15 % of active users narrow a tile within 4 weeks. |
+| Web: browser gestures feel worse than native | Edge guard + `touch-action`; judged by §15.11 point 2 |
+| Web: Safari evicts site data (7-day cap without interaction for non-installed sites) | Journeys could vanish for rare visitors. Installing to the home screen avoids the cap; say so if it shows up in `app_error`s |
+| Web: Wikimedia user-agent policy | Browsers can't set `User-Agent`; `Api-User-Agent` is sent instead (already in `http.ts`) |
 | Name "Tangent" | Check App Store / Play Store / domain availability. Do not use "Wikipedia" or Wikimedia marks in name or icon |
+
+---
+
+## 15. Web (M9)
+
+Tangent also runs in a phone browser, from the same codebase. Web is how iPhone users and people who won't install an app reach it.
+
+### 15.1 Scope
+- **Audience:** phone browsers first. On a wide screen the app sits in a centred phone-width column (max 480 px) on the paper background. A real multi-column desktop layout is later.
+- **Features:** full parity with native — onboarding, Home, columns, reader + peek card, Finds, Logbook + atlas, expeditions, Settings. Haptics are a no-op. External links open in a new tab.
+- **Not on web:** offline use, a "get the app" banner (Android is a sideloaded APK; there is no iOS build), shareable journey URLs (sharing stays v2, §1).
+
+### 15.2 Build
+`react-native-web` via `expo export -p web` produces a static site. Each native-only module gets a sibling `.web.ts(x)` file behind the same interface; native code is not touched.
+
+| Native | Web | Seam |
+|---|---|---|
+| `react-native-webview` reader | Sandboxed `<iframe srcdoc>` (§15.4) | `ReaderScreen` article view |
+| `expo-sqlite` journey DB | `sql.js` in memory, snapshot in IndexedDB (§15.5) | `SqlDatabase` (`openJourneyDatabase.web.ts`) |
+| `expo-sqlite/kv-store` | `localStorage` | `KeyValueStore` (`keyValueStorage.web.ts`) |
+| `posthog-react-native` | `posthog-js` (§15.7) | `createAnalytics.web.ts` |
+| `expo-haptics` | No-op | — |
+
+### 15.3 Input and navigation
+- **Gestures:** the same pans as native (§4.1). The column area sets `touch-action: pan-y`; `body` sets `overscroll-behavior-x: none` so the browser leaves horizontal drags to the app. Drags starting within 20 px of either screen edge are ignored, to stay clear of the iOS edge-swipe and Android back gesture.
+- **Keyboard:** `←` goes back one column, `→` hops from the card most in view, `Enter` reads it. Explore on the peek card and the breadcrumb stay as tap targets.
+- **Browser history:** every landed hop pushes a history entry (`/?depth=n`). The browser's Back (button, or an edge swipe that gets through) runs the same back as a right swipe and records `return` with `route: system_back`. A breadcrumb jump goes back the matching number of entries. The URL is not meant to be shared; reloading restores the journey from storage as on native.
+- Reader, Logbook, Finds, Settings and Expedition are Expo Router routes, so Back already works there. Reader URLs (`/reader?title=…&pageId=…`) can be linked.
+
+### 15.4 Reader
+The app fetches `page/mobile-html` as on native, then renders it in `<iframe sandbox="allow-scripts" srcdoc=…>` — no `allow-same-origin`, so the page gets an opaque origin and cannot reach the app's storage or DOM.
+- **Document fixes:** rewrite Wikipedia's protocol-relative `<base href="//en.wikipedia.org/wiki/">` to `https:` (it otherwise takes the app's scheme). Every stylesheet and PCS's script are protocol-relative too and resolve through it. Inject the bridge as the first child of `<head>` — the tag has attributes (`<head prefix=…>`), so match `<head[^>]*>`.
+- **Bridge:** the same capture-phase link listener as native (`LINK_CAPTURE_SCRIPT`), with the transport swapped to `parent.postMessage`. The app accepts a message only when `event.source` is that iframe's window, then validates it with `parseReaderMessage` as today. Anchor scrolls go the other way as a `{ type: 'scrollTo', id }` message instead of `injectJavaScript`.
+- **Verified in the spike (Chromium + WebKit):** PCS loads and styles the page under the opaque origin, collapsible tables work, images lazy-load, article and footnote taps reach the app, scroll messages work.
+
+### 15.5 Storage
+- **Journeys:** `sql.js` (browser build, `sql-wasm.wasm` served from `public/`) behind `SqlDatabase`. On open, load the snapshot from IndexedDB (`tangent` / `databases` / `journeys.db`), then run the same migrations (§9). Writes schedule a snapshot save, debounced 500 ms, flushed on `pagehide`.
+- **Key-value:** `localStorage` behind `KeyValueStore`, same keys as §9.
+- **Why not `expo-sqlite`'s web build:** it needs `Cross-Origin-Embedder-Policy: require-corp`, which blocks Wikimedia images and the reader's scripts and styles.
+- **Two tabs:** each holds its own copy; the last snapshot written wins. Accepted for v1.
+- If storage is unavailable (private mode, blocked site data), the app still runs for the session and reports `app_error` with `scope: storage`.
+
+### 15.6 Hosting and deploy
+- **Vercel**, static output from `expo export -p web`. `vercel.json`: rewrite every path to `index.html`; `Cache-Control: public, max-age=31536000, immutable` on `/_expo/static/*` and `/assets/*`. Git deploys off; CI deploys.
+- **CI:** a `web` job after `checks` — export, Playwright E2E (§15.8), then deploy: PRs get a preview URL, `main` goes to production. `EXPO_PUBLIC_*` values come from repository secrets.
+- **Installable:** a web manifest (name, existing icon set, paper/night theme colours, `display: standalone`, portrait). No service worker.
+- **Domain:** decided at launch; `*.vercel.app` until then.
+
+### 15.7 Analytics
+Same PostHog project, events and privacy rule as §11, sent with `posthog-js`. Every event carries `platform: 'web'`. Persistence `localStorage` (no cookies); autocapture and session replay off; screen views sent by hand as route patterns, as on native. The Share usage data switch (§11) works the same.
+
+### 15.8 Testing
+- **Unit (Jest, `jest-expo/web` project):** `SqlDatabase` on sql.js passes the same journey repository tests as `memoryDatabase`; snapshot save/load and debounce; `localStorage` kv adapter; iframe message routing (source check, validation, scroll message); document fixes (base rewrite, head with attributes); history push/pop ↔ back; keyboard map; analytics `platform` property.
+- **E2E (Playwright, Pixel 7 Chromium + iPhone WebKit), Wikipedia stubbed with recorded fixtures:** onboarding → Home; touch swipe ×2 → 3 crumbs; browser Back returns one column; tap → reader → inline link → peek → Take a tangent; keep a find; reload → find and expedition still there.
+- **Manual:** real iPhone Safari and Android Chrome — swipe feel, edge swipes, add to home screen.
+
+### 15.9 Performance
+- **Budget:** first card in < 3 s on a mid-range Android over 4G (Lighthouse mobile); hop targets as §7.
+- **Spike measurement:** the JS bundle is 9.4 MB (1.9 MB gzip), far over budget. Likely cause: the `phosphor-react-native` barrel import pulls in every icon. Fix before anything else: per-icon imports (or Metro tree shaking), then lazy-load `sql.js` and the reader.
+- Fonts: serve the `@expo-google-fonts` weights actually used, not every variant the packages export.
+
+### 15.10 Known web issues (from the spike)
+| Issue | Status |
+|---|---|
+| Landed column thrown back offscreen | Fixed in shared code: hop `progress` was reset on landing, which on web reached the landed column's reaction before it let go of `entry`. It is now reset when the next hop is prepared. |
+| Card extract trim leaves an orphan "c…" line | Open — trimming measures differently on web |
+| Mouse drag hop | Untested since the fix above (touch works). Must work for desktop visitors. |
+
+### 15.11 Success (read 4 weeks after launch, PostHog split by `platform`)
+1. **Reach:** web is ≥ 30 % of first sessions.
+2. **Core loop holds:** web hops per session and hop→read rate are ≥ 80 % of native. If not, browser gestures are the suspect.
+3. **Quality:** §15.9 budget met; no reader bridge or storage `app_error`s in a week of production.
