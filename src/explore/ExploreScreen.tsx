@@ -107,15 +107,19 @@ export function ExploreScreen(props: ExploreScreenProps) {
   const committed = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
-  const hop: HopController = useMemo(() => ({ progress, from, tiltDeg, prepare, committed, landed: land }), [progress, from, tiltDeg, prepare, committed, land]);
+  // Rearm progress as the next hop is prepared, not on landing: by then the landed column has stopped following
+  // progress. Resetting on landing races its reaction on web and throws the column back offscreen.
+  const prepareSwipe = useCallback(
+    (card: Card) => {
+      progress.set(0);
+      prepare(card);
+    },
+    [progress, prepare],
+  );
+  const hop: HopController = useMemo(() => ({ progress, from, tiltDeg, prepare: prepareSwipe, committed, landed: land }), [progress, from, tiltDeg, prepareSwipe, committed, land]);
 
   useIncomingTangent({ tangent: incomingTangent, onStarted: onTangentStarted, prepare: prepareTangent, hop, startRect: peekCardRect(screenWidth, screenHeight) });
   useIncomingResume(incomingResume, onResumed, resume);
-
-  // Once the landed column is in the stack (and no longer follows progress), rearm for the next hop.
-  useEffect(() => {
-    if (!stack.prepared) progress.set(0);
-  }, [stack.prepared, progress]);
 
   useEffect(() => {
     if (!isFocused) return undefined;
