@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Check } from 'phosphor-react-native';
+import { Check } from '../theme/icons';
 import { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';

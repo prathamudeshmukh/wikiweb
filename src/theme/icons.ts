@@ -1,0 +1,38 @@
+// One file per icon: importing the package root bundles all ~3,000 icons (5.7 MB of source; SPEC.md §15.9).
+// Add an icon here before using it; ESLint blocks importing the package root anywhere else.
+export type { Icon } from 'phosphor-react-native';
+export { ArrowRight } from 'phosphor-react-native/src/icons/ArrowRight';
+export { Atom } from 'phosphor-react-native/src/icons/Atom';
+export { Bank } from 'phosphor-react-native/src/icons/Bank';
+export { BookOpen } from 'phosphor-react-native/src/icons/BookOpen';
+export { Brain } from 'phosphor-react-native/src/icons/Brain';
+export { Buildings } from 'phosphor-react-native/src/icons/Buildings';
+export { CaretDown } from 'phosphor-react-native/src/icons/CaretDown';
+export { CaretLeft } from 'phosphor-react-native/src/icons/CaretLeft';
+export { CaretRight } from 'phosphor-react-native/src/icons/CaretRight';
+export { ChartLineUp } from 'phosphor-react-native/src/icons/ChartLineUp';
+export { ChatCircleDots } from 'phosphor-react-native/src/icons/ChatCircleDots';
+export { Check } from 'phosphor-react-native/src/icons/Check';
+export { CloudSlash } from 'phosphor-react-native/src/icons/CloudSlash';
+export { Compass } from 'phosphor-react-native/src/icons/Compass';
+export { Cpu } from 'phosphor-react-native/src/icons/Cpu';
+export { Crane } from 'phosphor-react-native/src/icons/Crane';
+export { FilmSlate } from 'phosphor-react-native/src/icons/FilmSlate';
+export { FirstAidKit } from 'phosphor-react-native/src/icons/FirstAidKit';
+export { ForkKnife } from 'phosphor-react-native/src/icons/ForkKnife';
+export { GameController } from 'phosphor-react-native/src/icons/GameController';
+export { GearSix } from 'phosphor-react-native/src/icons/GearSix';
+export { MapPin } from 'phosphor-react-native/src/icons/MapPin';
+export { MathOperations } from 'phosphor-react-native/src/icons/MathOperations';
+export { Mountains } from 'phosphor-react-native/src/icons/Mountains';
+export { MusicNotes } from 'phosphor-react-native/src/icons/MusicNotes';
+export { PaintBrush } from 'phosphor-react-native/src/icons/PaintBrush';
+export { PawPrint } from 'phosphor-react-native/src/icons/PawPrint';
+export { Planet } from 'phosphor-react-native/src/icons/Planet';
+export { SoccerBall } from 'phosphor-react-native/src/icons/SoccerBall';
+export { Sword } from 'phosphor-react-native/src/icons/Sword';
+export { Train } from 'phosphor-react-native/src/icons/Train';
+export { TreeStructure } from 'phosphor-react-native/src/icons/TreeStructure';
+export { UsersThree } from 'phosphor-react-native/src/icons/UsersThree';
+export { Warning } from 'phosphor-react-native/src/icons/Warning';
+export { X } from 'phosphor-react-native/src/icons/X';

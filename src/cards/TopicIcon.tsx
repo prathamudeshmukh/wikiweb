@@ -24,7 +24,7 @@ import {
   Sword,
   Train,
   UsersThree,
-} from 'phosphor-react-native';
+} from '../theme/icons';
 
 // DESIGN.md §9 topic icon map.
 export const TOPIC_ICONS: Readonly<Record<string, Icon>> = {

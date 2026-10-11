@@ -1,4 +1,4 @@
-import { CaretRight } from 'phosphor-react-native';
+import { CaretRight } from '../theme/icons';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import type { UsageSharing } from '../analytics/useUsageSharing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

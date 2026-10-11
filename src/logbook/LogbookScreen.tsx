@@ -1,4 +1,4 @@
-import { GearSix } from 'phosphor-react-native';
+import { GearSix } from '../theme/icons';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

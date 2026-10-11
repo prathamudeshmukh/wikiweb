@@ -1,4 +1,4 @@
-import { Check } from 'phosphor-react-native';
+import { Check } from '../../theme/icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { InterestSubfield } from '../../config/interestTree';
 import { FONT } from '../../theme/fonts';

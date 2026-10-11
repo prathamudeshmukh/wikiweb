@@ -1,4 +1,4 @@
-import { ArrowRight } from 'phosphor-react-native';
+import { ArrowRight } from '../theme/icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -1,4 +1,4 @@
-import { ArrowRight } from 'phosphor-react-native';
+import { ArrowRight } from '../theme/icons';
 import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

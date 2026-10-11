@@ -1,4 +1,4 @@
-import { ArrowRight } from 'phosphor-react-native';
+import { ArrowRight } from '../theme/icons';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { FONT } from '../theme/fonts';
 import { useTheme } from '../theme/useTheme';

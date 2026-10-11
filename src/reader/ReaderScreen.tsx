@@ -1,5 +1,5 @@
 import * as WebBrowser from 'expo-web-browser';
-import { CaretDown, CloudSlash } from 'phosphor-react-native';
+import { CaretDown, CloudSlash } from '../theme/icons';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

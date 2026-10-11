@@ -1,4 +1,4 @@
-import { CaretLeft } from 'phosphor-react-native';
+import { CaretLeft } from '../theme/icons';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { FONT } from '../theme/fonts';

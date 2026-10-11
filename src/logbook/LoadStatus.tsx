@@ -1,4 +1,4 @@
-import { Warning } from 'phosphor-react-native';
+import { Warning } from '../theme/icons';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { FONT } from '../theme/fonts';
 import { TYPE } from '../theme/layout';

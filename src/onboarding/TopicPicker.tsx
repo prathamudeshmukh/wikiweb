@@ -1,4 +1,4 @@
-import { Check, TreeStructure } from 'phosphor-react-native';
+import { Check, TreeStructure } from '../theme/icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TopicIcon } from '../cards/TopicIcon';
 import { TOPIC_TILES, type TopicTile } from '../config/topicTiles';

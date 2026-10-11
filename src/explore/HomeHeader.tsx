@@ -1,4 +1,4 @@
-import { BookOpen } from 'phosphor-react-native';
+import { BookOpen } from '../theme/icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { TANGENT_GLYPH } from '../brand/tangentGlyph';

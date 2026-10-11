@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { ArrowRight, X } from 'phosphor-react-native';
+import { ArrowRight, X } from '../theme/icons';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

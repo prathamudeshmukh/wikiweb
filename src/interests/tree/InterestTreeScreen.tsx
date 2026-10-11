@@ -1,4 +1,4 @@
-import { Check } from 'phosphor-react-native';
+import { Check } from '../../theme/icons';
 import { useState } from 'react';
 import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { TopicIcon } from '../../cards/TopicIcon';

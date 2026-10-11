@@ -1,4 +1,4 @@
-import { CloudSlash, Compass } from 'phosphor-react-native';
+import { CloudSlash, Compass } from '../theme/icons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { FeedStatus } from '../feeds/useFeed';
 import { FONT } from '../theme/fonts';
