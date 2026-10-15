@@ -1,4 +1,4 @@
-import { createWikiHttp, WikiApiError } from './http';
+import { createWikiHttp, type WikiHttpConfig, WikiApiError } from './http';
 import { createLane, LaneCancelledError, type Lane, type RequestBudget } from './requestBudget';
 
 type FakeResponse = { ok: boolean; status: number; json: () => Promise<unknown>; text?: () => Promise<string>; headers?: { get(name: string): string | null } };
@@ -13,7 +13,7 @@ const fail = (status: number, retryAfter?: string) => ({
 });
 
 // Responses are thunks so rejected promises are only created when the client actually makes the request.
-function setup(responses: (() => ReturnType<FetchFn>)[]) {
+function setup(responses: (() => ReturnType<FetchFn>)[], overrides: Partial<WikiHttpConfig> = {}) {
   const calls: { url: string; headers?: Record<string, string> }[] = [];
   const delays: number[] = [];
   const queue = [...responses];
@@ -32,6 +32,7 @@ function setup(responses: (() => ReturnType<FetchFn>)[]) {
     sleep: async (ms) => {
       delays.push(ms);
     },
+    ...overrides,
   });
   return { http, calls, delays, signals };
 }
@@ -46,8 +47,15 @@ describe('createWikiHttp', () => {
     expect(Object.fromEntries(url.searchParams)).toEqual({
       action: 'query', format: 'json', formatversion: '2', origin: '*', titles: 'Octopus', prop: 'description',
     });
-    // Native apps can set the real User-Agent (Wikimedia policy); Api-User-Agent covers browser builds where it is locked.
     expect(calls[0].headers).toEqual({ 'User-Agent': 'Tangent/test (contact@example.org)', 'Api-User-Agent': 'Tangent/test (contact@example.org)' });
+  });
+
+  it('identifies itself with Api-User-Agent alone in a browser, which refuses a request that sets User-Agent', async () => {
+    const { http, calls } = setup([() => Promise.resolve(ok({ query: {} }))], { runtime: 'browser' });
+
+    await http.query({ titles: 'Octopus' });
+
+    expect(calls[0].headers).toEqual({ 'Api-User-Agent': 'Tangent/test (contact@example.org)' });
   });
 
   it('fetches REST paths under the REST base URL', async () => {

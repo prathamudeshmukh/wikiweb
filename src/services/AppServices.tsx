@@ -1,5 +1,6 @@
 import { PostHog } from 'posthog-react-native';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
+import { Platform } from 'react-native';
 import type { Analytics } from '../analytics/analytics';
 import { type AnalyticsConsent, createAnalyticsConsent } from '../analytics/analyticsConsent';
 import { type ColumnVisits, createColumnVisits } from '../analytics/columnVisits';
@@ -25,11 +26,13 @@ import { createNudgeStore } from '../nudges/nudgeStore';
 import { newId } from '../journeys/newId';
 import { openJourneyDatabase } from '../journeys/openJourneyDatabase';
 import { createWikiApi } from '../wiki-api/client';
-import { createWikiHttp } from '../wiki-api/http';
+import { createWikiHttp, type WikiRuntime } from '../wiki-api/http';
 import { createRequestBudget, type Lane } from '../wiki-api/requestBudget';
 import type { WikiApi } from '../wiki-api/types';
 import { keyValueStorage } from '../storage/keyValueStorage';
 import { reportError, setErrorSink } from './reportError';
+
+const WIKI_RUNTIME: WikiRuntime = Platform.OS === 'web' ? 'browser' : 'native';
 
 export interface AppServices {
   api: WikiApi;
@@ -72,7 +75,7 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
     return { ok: false, problem: 'Set EXPO_PUBLIC_WIKI_API_CONTACT (a URL or email) — Wikipedia requires contact details from every app.' };
   }
   const budget = createRequestBudget({ ...REQUEST_BUDGET, now: Date.now, sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)) });
-  const apiOn = (lane?: Lane) => createWikiApi(createWikiHttp({ fetchFn: fetch, userAgent: buildUserAgent(contact), budget, lane }));
+  const apiOn = (lane?: Lane) => createWikiApi(createWikiHttp({ fetchFn: fetch, userAgent: buildUserAgent(contact), budget, lane, runtime: WIKI_RUNTIME }));
   const api = apiOn();
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry, lane) => columnFeedFor(apiOn(lane), entry) });
   const { analytics, client } = createAnalytics({ key: config.posthogKey, host: config.posthogHost, isDev: config.isDev }, clientFor);

@@ -687,7 +687,7 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js`. E
 | Landed column thrown back offscreen | Fixed in shared code: hop `progress` was reset on landing, which on web reached the landed column's reaction before it let go of `entry`. It is now reset when the next hop is prepared. |
 | Card extract trim leaves an orphan "c…" line | Open — trimming measures differently on web |
 | Mouse drag hop | Untested since the fix above (touch works). Must work for desktop visitors. |
-| WebKit blocks Wikipedia requests | Open. `http.ts` sends `User-Agent` as well as `Api-User-Agent`; Chromium drops the forbidden header, WebKit puts it in the CORS preflight and Wikimedia refuses it. Web must send `Api-User-Agent` only. |
+| WebKit blocks Wikipedia requests | Fixed: `http.ts` sent `User-Agent` as well as `Api-User-Agent`; Chromium drops the forbidden header, WebKit names it in the CORS preflight and Wikimedia refuses it. In a browser (`runtime: 'browser'`) only `Api-User-Agent` is sent. |
 
 ### 15.11 Success (read 4 weeks after launch, PostHog split by `platform`)
 1. **Reach:** web is ≥ 30 % of first sessions.

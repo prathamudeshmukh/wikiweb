@@ -29,6 +29,19 @@ export interface WikiHttpConfig {
   budget?: RequestBudget;
   /** Whose requests these are; defaults to on-screen. */
   lane?: Lane;
+  /** Where the app runs, which decides how it may identify itself; defaults to native. */
+  runtime?: WikiRuntime;
+}
+
+export type WikiRuntime = 'native' | 'browser';
+
+/**
+ * Wikimedia asks every client to identify itself. Native apps can set the real User-Agent. Browsers forbid it, and
+ * WebKit names it in the CORS preflight, which Wikimedia refuses; there Api-User-Agent must go alone (SPEC.md §15.10).
+ */
+function identityHeaders(userAgent: string, runtime: WikiRuntime): Record<string, string> {
+  if (runtime === 'browser') return { 'Api-User-Agent': userAgent };
+  return { 'User-Agent': userAgent, 'Api-User-Agent': userAgent };
 }
 
 const UNLIMITED: RequestBudget = { acquire: async () => undefined };
@@ -117,9 +130,8 @@ async function readText(response: FetchResponse): Promise<string> {
 type BodyReader<T> = (response: FetchResponse) => Promise<T>;
 
 export function createWikiHttp(config: WikiHttpConfig): WikiHttp {
-  const { fetchFn, userAgent, sleep = defaultSleep, timeoutMs = HTTP_RETRY.timeoutMs, budget = UNLIMITED, lane = createLane('foreground') } = config;
-  // Native apps can set the real User-Agent (Wikimedia policy); Api-User-Agent covers browser builds where it is locked.
-  const headers = { 'User-Agent': userAgent, 'Api-User-Agent': userAgent };
+  const { fetchFn, userAgent, sleep = defaultSleep, timeoutMs = HTTP_RETRY.timeoutMs, budget = UNLIMITED, lane = createLane('foreground'), runtime = 'native' } = config;
+  const headers = identityHeaders(userAgent, runtime);
 
   async function attempt<T>(url: string, read: BodyReader<T>): Promise<T> {
     await budget.acquire(lane);
