@@ -3,7 +3,6 @@ import { CaretDown, CloudSlash } from '../theme/icons';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView, type WebViewMessageEvent, type WebViewNavigation } from 'react-native-webview';
 import { FindButton } from '../finds/FindButton';
 import { FindToast } from '../finds/FindToast';
 import type { FindPage } from '../finds/findTypes';
@@ -13,7 +12,9 @@ import { LAYOUT, TYPE } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import type { Article } from '../wiki-api/types';
 import { PeekCard } from './PeekCard';
-import { LINK_CAPTURE_SCRIPT, parseReaderMessage, scrollToAnchorScript } from './readerBridge';
+import { ArticleView } from './ArticleView';
+import type { ArticleViewHandle } from './articleViewTypes';
+import { anchorId } from './readerBridge';
 import { classifyReaderLink } from './readerLinks';
 import { useArticleDocument } from './useArticleDocument';
 
@@ -26,10 +27,7 @@ interface ReaderScreenProps {
   onClose: () => void;
 }
 
-// mobile-html uses relative links (./Ink) and protocol-relative scripts; this base resolves both.
 const READER_STAR_SIZE = 20;
-
-const ARTICLE_BASE_URL = 'https://en.wikipedia.org/api/rest_v1/page/mobile-html/';
 
 function ReaderStatus({ status, onRetry }: { status: 'loading' | 'error'; onRetry: () => void }) {
   const palette = useTheme();
@@ -50,16 +48,16 @@ export function ReaderScreen({ initialPage, onTangent, onReadLink, onClose }: Re
   const { title } = page;
   const [peekTitle, setPeekTitle] = useState<string | null>(null);
   const { document, retry } = useArticleDocument(title);
-  const webView = useRef<WebView>(null);
+  const articleView = useRef<ArticleViewHandle>(null);
 
-  /** Acts on a link; returns whether the WebView itself should follow it. */
+  /** Acts on a link; returns whether the article view itself should follow it. */
   const followLink = useCallback(
     (url: string): boolean => {
       const link = classifyReaderLink(url, title);
       if (link.kind === 'document') return true;
       if (link.kind === 'anchor') {
-        const scroll = scrollToAnchorScript(url);
-        if (scroll) webView.current?.injectJavaScript(scroll);
+        const id = anchorId(url);
+        if (id) articleView.current?.scrollTo(id);
       }
       if (link.kind === 'article') setPeekTitle(link.title);
       if (link.kind === 'external') WebBrowser.openBrowserAsync(link.url).catch((error: unknown) => reportError('reader.external', error));
@@ -67,13 +65,6 @@ export function ReaderScreen({ initialPage, onTangent, onReadLink, onClose }: Re
     },
     [title],
   );
-
-  // Link taps arrive as messages (see readerBridge); real navigations are only the document itself.
-  const onMessage = useCallback((event: WebViewMessageEvent) => {
-    const message = parseReaderMessage(event.nativeEvent.data);
-    if (message) followLink(message.href);
-  }, [followLink]);
-  const onNavigate = useCallback((request: WebViewNavigation) => followLink(request.url), [followLink]);
 
   const read = useCallback(
     (article: Article) => {
@@ -95,18 +86,7 @@ export function ReaderScreen({ initialPage, onTangent, onReadLink, onClose }: Re
         <FindButton page={page} from="reader" size={READER_STAR_SIZE} />
       </View>
       {document.status === 'ready' ? (
-        <WebView
-          key={title}
-          ref={webView}
-          source={{ html: document.html, baseUrl: ARTICLE_BASE_URL }}
-          originWhitelist={['*']}
-          injectedJavaScriptBeforeContentLoaded={LINK_CAPTURE_SCRIPT}
-          onMessage={onMessage}
-          onShouldStartLoadWithRequest={onNavigate}
-          setSupportMultipleWindows={false}
-          style={{ backgroundColor: palette.paper }}
-          testID="reader-webview"
-        />
+        <ArticleView key={title} ref={articleView} html={document.html} background={palette.paper} onLink={followLink} />
       ) : (
         <ReaderStatus status={document.status} onRetry={retry} />
       )}
