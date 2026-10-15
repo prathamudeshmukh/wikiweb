@@ -1,4 +1,3 @@
-import Storage from 'expo-sqlite/kv-store';
 import { PostHog } from 'posthog-react-native';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
 import type { Analytics } from '../analytics/analytics';
@@ -29,6 +28,7 @@ import { createWikiApi } from '../wiki-api/client';
 import { createWikiHttp } from '../wiki-api/http';
 import { createRequestBudget, type Lane } from '../wiki-api/requestBudget';
 import type { WikiApi } from '../wiki-api/types';
+import { keyValueStorage } from '../storage/keyValueStorage';
 import { reportError, setErrorSink } from './reportError';
 
 export interface AppServices {
@@ -81,7 +81,7 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
   // One connection for every table in the on-device database.
   const openDatabase = openOnce(openJourneyDatabase);
   const completedNodes = createCompletedNodes(openDatabase);
-  const nudges = createNudges({ store: createNudgeStore(Storage), completedNodes, analytics, now: Date.now });
+  const nudges = createNudges({ store: createNudgeStore(keyValueStorage), completedNodes, analytics, now: Date.now });
   const journeys = createJourneySession({
     repo: createJourneyRepository(openDatabase),
     now: Date.now,
@@ -113,17 +113,17 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
     ok: true,
     services: {
       api,
-      interests: createInterestsStore(Storage),
+      interests: createInterestsStore(keyValueStorage),
       homeSnapshots: createHomeSnapshotStore(openDatabase),
       completedNodes,
       nudges,
-      hints: createHintStore(Storage),
+      hints: createHintStore(keyValueStorage),
       journeys,
       finds,
       prefetcher,
       analytics,
       analyticsClient: client,
-      analyticsConsent: createAnalyticsConsent(Storage, analytics),
+      analyticsConsent: createAnalyticsConsent(keyValueStorage, analytics),
       columnVisits: createColumnVisits({ analytics, now: Date.now }),
       expeditions,
     },

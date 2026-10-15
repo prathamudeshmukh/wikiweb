@@ -656,11 +656,11 @@ The app fetches `page/mobile-html` as on native, then renders it in `<iframe san
 - **Verified in the spike (Chromium + WebKit):** PCS loads and styles the page under the opaque origin, collapsible tables work, images lazy-load, article and footnote taps reach the app, scroll messages work.
 
 ### 15.5 Storage
-- **Journeys:** `sql.js` (browser build, `sql-wasm.wasm` served from `public/`) behind `SqlDatabase`. On open, load the snapshot from IndexedDB (`tangent` / `databases` / `journeys.db`), then run the same migrations (§9). Writes schedule a snapshot save, debounced 500 ms, flushed on `pagehide`.
-- **Key-value:** `localStorage` behind `KeyValueStore`, same keys as §9.
+- **Journeys:** `sql.js` behind `SqlDatabase` (`sqlJsDatabase.ts`). Metro picks its browser build through the package's `browser` export; `sql-wasm.wasm` is copied into `public/` by `postinstall`, so it always matches the installed version (not committed). On open, load the snapshot from IndexedDB (`tangent` / `databases` / `journeys.db`), then run the same migrations (§9). Writes schedule a snapshot save, debounced 500 ms, flushed on `pagehide` and when the page goes hidden (phones often kill a background tab without a `pagehide`).
+- **Key-value:** `localStorage` behind `KeyValueStore`, same keys as §9. Every write is also kept in memory, so the session sees its own writes even when saving fails.
 - **Why not `expo-sqlite`'s web build:** it needs `Cross-Origin-Embedder-Policy: require-corp`, which blocks Wikimedia images and the reader's scripts and styles.
 - **Two tabs:** each holds its own copy; the last snapshot written wins. Accepted for v1.
-- If storage is unavailable (private mode, blocked site data), the app still runs for the session and reports `app_error` with `scope: storage`.
+- If storage is unavailable (private mode, blocked site data, full), the app still runs for the session and reports `app_error` once, with scope `storage.journeys` or `storage.keyValue`. A snapshot that can't be read is never overwritten: that session runs in memory only.
 
 ### 15.6 Hosting and deploy
 - **Vercel**, static output from `expo export -p web`. `vercel.json`: rewrite every path to `index.html`; `Cache-Control: public, max-age=31536000, immutable` on `/_expo/static/*` and `/assets/*`. Git deploys off; CI deploys.
@@ -672,13 +672,13 @@ The app fetches `page/mobile-html` as on native, then renders it in `<iframe san
 Same PostHog project, events and privacy rule as §11, sent with `posthog-js`. Every event carries `platform: 'web'`. Persistence `localStorage` (no cookies); autocapture and session replay off; screen views sent by hand as route patterns, as on native. The Share usage data switch (§11) works the same.
 
 ### 15.8 Testing
-- **Unit (Jest, `jest-expo/web` project):** `SqlDatabase` on sql.js passes the same journey repository tests as `memoryDatabase`; snapshot save/load and debounce; `localStorage` kv adapter; iframe message routing (source check, validation, scroll message); document fixes (base rewrite, head with attributes); history push/pop ↔ back; keyboard map; analytics `platform` property.
+- **Unit (Jest, the existing project):** web adapters keep their logic in platform-neutral modules with the browser API injected; the `.web.ts` files only wire them up and are covered by E2E. No separate `jest-expo/web` project. `SqlDatabase` on sql.js passes the same journey repository tests as `memoryDatabase`; snapshot save/load and debounce; `localStorage` kv adapter; iframe message routing (source check, validation, scroll message); document fixes (base rewrite, head with attributes); history push/pop ↔ back; keyboard map; analytics `platform` property.
 - **E2E (Playwright, Pixel 7 Chromium + iPhone WebKit), Wikipedia stubbed with recorded fixtures:** onboarding → Home; touch swipe ×2 → 3 crumbs; browser Back returns one column; tap → reader → inline link → peek → Take a tangent; keep a find; reload → find and expedition still there.
 - **Manual:** real iPhone Safari and Android Chrome — swipe feel, edge swipes, add to home screen.
 
 ### 15.9 Performance
 - **Budget:** first card in < 3 s on a mid-range Android over 4G (Lighthouse mobile); hop targets as §7.
-- **Spike measurement:** the JS bundle is 9.4 MB (1.9 MB gzip), far over budget. Likely cause: the `phosphor-react-native` barrel import pulls in every icon. Fix before anything else: per-icon imports (or Metro tree shaking), then lazy-load `sql.js` and the reader.
+- **Spike measurement:** the JS bundle is 9.4 MB (1.9 MB gzip), far over budget. Likely cause: the `phosphor-react-native` barrel import pulls in every icon. Fixed: icons are imported one file each (`src/theme/icons.ts`, lint-enforced) — 3,027 icon modules down to 72; the web bundle is 3.8 MB raw. Next: lazy-load `sql.js` and the reader.
 - Fonts: serve the `@expo-google-fonts` weights actually used, not every variant the packages export.
 
 ### 15.10 Known web issues (from the spike)
@@ -687,6 +687,7 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js`. E
 | Landed column thrown back offscreen | Fixed in shared code: hop `progress` was reset on landing, which on web reached the landed column's reaction before it let go of `entry`. It is now reset when the next hop is prepared. |
 | Card extract trim leaves an orphan "c…" line | Open — trimming measures differently on web |
 | Mouse drag hop | Untested since the fix above (touch works). Must work for desktop visitors. |
+| WebKit blocks Wikipedia requests | Open. `http.ts` sends `User-Agent` as well as `Api-User-Agent`; Chromium drops the forbidden header, WebKit puts it in the CORS preflight and Wikimedia refuses it. Web must send `Api-User-Agent` only. |
 
 ### 15.11 Success (read 4 weeks after launch, PostHog split by `platform`)
 1. **Reach:** web is ≥ 30 % of first sessions.

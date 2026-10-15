@@ -1,118 +1,127 @@
 import { makeJourney, makeNode, T0 } from './__testing__/journeyFactories';
 import { memoryDatabase } from './__testing__/memoryDatabase';
+import { sqlJsMemoryDatabase } from './__testing__/sqlJsMemoryDatabase';
 import { migrate, type SqlDatabase } from './journeyDatabase';
 import { createJourneyRepository } from './journeyRepository';
 
-async function openRepository() {
-  const db = memoryDatabase();
-  await migrate(db);
-  return { db, repo: createJourneyRepository(async () => db) };
-}
+// Native's driver stand-in and the web's sql.js must behave the same behind SqlDatabase (SPEC.md §15.8).
+const DRIVERS: readonly [string, () => Promise<SqlDatabase>][] = [
+  ['node:sqlite', async () => memoryDatabase()],
+  ['sql.js', sqlJsMemoryDatabase],
+];
 
-describe('migrate', () => {
-  it('creates the schema once and is safe to run again', async () => {
-    const db = memoryDatabase();
-
+describe.each(DRIVERS)('on %s', (_driver, openDatabase) => {
+  async function openRepository() {
+    const db = await openDatabase();
     await migrate(db);
-    await migrate(db);
+    return { db, repo: createJourneyRepository(async () => db) };
+  }
 
-    const [{ user_version: version }] = await db.getAllAsync<{ user_version: number }>('PRAGMA user_version', []);
-    expect(version).toBe(4);
-  });
-});
+  describe('migrate', () => {
+    it('creates the schema once and is safe to run again', async () => {
+      const db = await openDatabase();
 
-describe('journey repository', () => {
-  it('saves a journey with its nodes in order and remembers the latest node', async () => {
-    const { repo } = await openRepository();
-    await repo.createJourney(makeJourney('j1'));
+      await migrate(db);
+      await migrate(db);
 
-    await repo.addNode(makeNode('n1', 'Octopus'));
-    await repo.addNode(makeNode('n2', 'Squid', { parentNodeId: 'n1', createdAt: T0 + 1000 }));
-
-    const saved = await repo.expedition('j1');
-    expect(saved?.nodes.map((node) => node.title)).toEqual(['Octopus', 'Squid']);
-    expect(saved?.journey).toMatchObject({ lastNodeId: 'n2', updatedAt: T0 + 1000 });
+      const [{ user_version: version }] = await db.getAllAsync<{ user_version: number }>('PRAGMA user_version', []);
+      expect(version).toBe(4);
+    });
   });
 
-  it('knows whether any node has ever been saved', async () => {
-    const { repo } = await openRepository();
-    await expect(repo.hasNodes()).resolves.toBe(false);
-    await repo.createJourney(makeJourney('j1'));
+  describe('journey repository', () => {
+    it('saves a journey with its nodes in order and remembers the latest node', async () => {
+      const { repo } = await openRepository();
+      await repo.createJourney(makeJourney('j1'));
 
-    await repo.addNode(makeNode('n1', 'Octopus'));
+      await repo.addNode(makeNode('n1', 'Octopus'));
+      await repo.addNode(makeNode('n2', 'Squid', { parentNodeId: 'n1', createdAt: T0 + 1000 }));
 
-    await expect(repo.hasNodes()).resolves.toBe(true);
-  });
+      const saved = await repo.expedition('j1');
+      expect(saved?.nodes.map((node) => node.title)).toEqual(['Octopus', 'Squid']);
+      expect(saved?.journey).toMatchObject({ lastNodeId: 'n2', updatedAt: T0 + 1000 });
+    });
 
-  it('lists expeditions with the most recently active first', async () => {
-    const { repo } = await openRepository();
-    await repo.createJourney(makeJourney('old'));
-    await repo.createJourney(makeJourney('new'));
-    await repo.addNode(makeNode('n1', 'Octopus', { journeyId: 'old', createdAt: T0 + 5000 }));
+    it('knows whether any node has ever been saved', async () => {
+      const { repo } = await openRepository();
+      await expect(repo.hasNodes()).resolves.toBe(false);
+      await repo.createJourney(makeJourney('j1'));
 
-    const expeditions = await repo.expeditions();
+      await repo.addNode(makeNode('n1', 'Octopus'));
 
-    expect(expeditions.map((e) => e.journey.id)).toEqual(['old', 'new']);
-    expect(expeditions[1].nodes).toEqual([]);
-  });
+      await expect(repo.hasNodes()).resolves.toBe(true);
+    });
 
-  it('keeps reads in the history and against the expedition they happened on', async () => {
-    const { repo } = await openRepository();
-    await repo.createJourney(makeJourney('j1'));
+    it('lists expeditions with the most recently active first', async () => {
+      const { repo } = await openRepository();
+      await repo.createJourney(makeJourney('old'));
+      await repo.createJourney(makeJourney('new'));
+      await repo.addNode(makeNode('n1', 'Octopus', { journeyId: 'old', createdAt: T0 + 5000 }));
 
-    await repo.recordRead({ pageId: 7, at: T0, journeyId: 'j1' });
-    await repo.recordRead({ pageId: 7, at: T0 + 1, journeyId: 'j1' });
-    await repo.recordRead({ pageId: 8, at: T0, journeyId: null });
+      const expeditions = await repo.expeditions();
 
-    expect((await repo.readPageIds()).sort()).toEqual([7, 8]);
-    expect([...((await repo.expedition('j1'))?.readIds ?? [])]).toEqual([7]);
-  });
+      expect(expeditions.map((e) => e.journey.id)).toEqual(['old', 'new']);
+      expect(expeditions[1].nodes).toEqual([]);
+    });
 
-  it('awards each topic’s stamp only once', async () => {
-    const { repo } = await openRepository();
+    it('keeps reads in the history and against the expedition they happened on', async () => {
+      const { repo } = await openRepository();
+      await repo.createJourney(makeJourney('j1'));
 
-    const first = await repo.awardStamp({ tileId: 'maths', pageId: 1, earnedAt: T0 });
-    const again = await repo.awardStamp({ tileId: 'maths', pageId: 2, earnedAt: T0 + 1 });
+      await repo.recordRead({ pageId: 7, at: T0, journeyId: 'j1' });
+      await repo.recordRead({ pageId: 7, at: T0 + 1, journeyId: 'j1' });
+      await repo.recordRead({ pageId: 8, at: T0, journeyId: null });
 
-    expect([first, again]).toEqual([true, false]);
-    expect(await repo.stamps()).toEqual([{ tileId: 'maths', pageId: 1, earnedAt: T0 }]);
-  });
+      expect((await repo.readPageIds()).sort()).toEqual([7, 8]);
+      expect([...((await repo.expedition('j1'))?.readIds ?? [])]).toEqual([7]);
+    });
 
-  it('returns null for an expedition that does not exist', async () => {
-    const { repo } = await openRepository();
+    it('awards each topic’s stamp only once', async () => {
+      const { repo } = await openRepository();
 
-    expect(await repo.expedition('missing')).toBeNull();
-  });
+      const first = await repo.awardStamp({ tileId: 'maths', pageId: 1, earnedAt: T0 });
+      const again = await repo.awardStamp({ tileId: 'maths', pageId: 2, earnedAt: T0 + 1 });
 
-  it('treats topics it no longer knows as untagged', async () => {
-    const { db, repo } = await openRepository();
-    await repo.createJourney(makeJourney('j1'));
-    await repo.addNode(makeNode('n1', 'Octopus', { tileId: 'animals', territory: 'life' }));
-    await db.runAsync("UPDATE journey_nodes SET tile_id = 'retired', territory = 'atlantis'", []);
-    await db.runAsync("INSERT INTO stamps VALUES ('retired', 1, 1)", []);
+      expect([first, again]).toEqual([true, false]);
+      expect(await repo.stamps()).toEqual([{ tileId: 'maths', pageId: 1, earnedAt: T0 }]);
+    });
 
-    const [node] = (await repo.expedition('j1'))?.nodes ?? [];
+    it('returns null for an expedition that does not exist', async () => {
+      const { repo } = await openRepository();
 
-    expect(node).toMatchObject({ tileId: null, territory: null });
-    expect(await repo.stamps()).toEqual([]);
-  });
+      expect(await repo.expedition('missing')).toBeNull();
+    });
 
-  it('refuses a node for a journey that was never saved', async () => {
-    const { repo } = await openRepository();
+    it('treats topics it no longer knows as untagged', async () => {
+      const { db, repo } = await openRepository();
+      await repo.createJourney(makeJourney('j1'));
+      await repo.addNode(makeNode('n1', 'Octopus', { tileId: 'animals', territory: 'life' }));
+      await db.runAsync("UPDATE journey_nodes SET tile_id = 'retired', territory = 'atlantis'", []);
+      await db.runAsync("INSERT INTO stamps VALUES ('retired', 1, 1)", []);
 
-    await expect(repo.addNode(makeNode('n1', 'Octopus', { journeyId: 'ghost' }))).rejects.toThrow(/FOREIGN KEY/);
-  });
+      const [node] = (await repo.expedition('j1'))?.nodes ?? [];
 
-  it('waits for the database to open before any call', async () => {
-    let resolveOpen: (db: SqlDatabase) => void = () => undefined;
-    const repo = createJourneyRepository(() => new Promise((resolve) => (resolveOpen = resolve)));
-    const pending = repo.readPageIds();
-    const db = memoryDatabase();
-    await migrate(db);
+      expect(node).toMatchObject({ tileId: null, territory: null });
+      expect(await repo.stamps()).toEqual([]);
+    });
 
-    resolveOpen(db);
+    it('refuses a node for a journey that was never saved', async () => {
+      const { repo } = await openRepository();
 
-    expect(await pending).toEqual([]);
+      await expect(repo.addNode(makeNode('n1', 'Octopus', { journeyId: 'ghost' }))).rejects.toThrow(/FOREIGN KEY/);
+    });
+
+    it('waits for the database to open before any call', async () => {
+      let resolveOpen: (db: SqlDatabase) => void = () => undefined;
+      const repo = createJourneyRepository(() => new Promise((resolve) => (resolveOpen = resolve)));
+      const pending = repo.readPageIds();
+      const db = await openDatabase();
+      await migrate(db);
+
+      resolveOpen(db);
+
+      expect(await pending).toEqual([]);
+    });
   });
 });
 

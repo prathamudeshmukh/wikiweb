@@ -42,3 +42,6 @@ yarn-error.*
 
 # test coverage output
 coverage/
+
+# Copied from sql.js on npm install (package.json postinstall)
+public/sql-wasm.wasm
