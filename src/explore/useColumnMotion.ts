@@ -12,7 +12,7 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { LAYOUT } from '../theme/layout';
-import { GESTURE } from './hopController';
+import { GESTURE, isAtScreenEdge } from './hopController';
 
 interface ColumnMotionOptions {
   isHome: boolean;
@@ -53,6 +53,9 @@ export function useColumnMotion({ isHome, isTop, screenWidth, entry, onBack }: C
         .activeOffsetX([-GESTURE.unreachable, GESTURE.lockSlop])
         .failOffsetX([-GESTURE.lockSlop, GESTURE.unreachable])
         .failOffsetY([-GESTURE.lockSlop, GESTURE.lockSlop])
+        .onTouchesDown((e, state) => {
+          if (isAtScreenEdge(e.allTouches[0].absoluteX, screenWidth, GESTURE.edgeGuard)) state.fail();
+        })
         .onUpdate((e) => {
           const dx = Math.max(0, e.translationX);
           x.set(isHome ? LAYOUT.homeRubberBandMax * (1 - Math.exp(-dx / LAYOUT.homeRubberBandFalloff)) : dx);

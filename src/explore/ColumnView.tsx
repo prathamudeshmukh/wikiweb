@@ -23,7 +23,7 @@ import { type ColumnItem, columnItems } from './columnItems';
 import { type ColumnEntry, isSeeded, type SeededEntry } from './columnStack';
 import { useDwellPrefetch } from './dwellPrefetch';
 import { HomeHeader } from './HomeHeader';
-import type { HopController } from './hopController';
+import { GESTURE, type HopController } from './hopController';
 import { SwipeCard } from './SwipeCard';
 import { useColumnFeed } from './useColumnFeed';
 import { useColumnMotion } from './useColumnMotion';
@@ -202,7 +202,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   );
 
   return (
-    <GestureDetector gesture={backPan}>
+    <GestureDetector gesture={backPan} touchAction={GESTURE.webTouchAction}>
       <Animated.View style={[styles.column, { backgroundColor: palette.paper, paddingTop: insets.top }, !isHome && styles.pushed, columnStyle]}>
         <ColumnHeader entry={entry} entryProgress={entryProgress} onJump={onJump} onOpenLogbook={onOpenLogbook} />
         <Animated.View

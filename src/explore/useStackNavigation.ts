@@ -92,11 +92,12 @@ export function useStackNavigation(journeys: JourneySession, listener: Navigatio
     return true;
   }, []);
 
-  const jump = useCallback((columnIndex: number) => {
+  /** Back to a column further down: a breadcrumb tap, or a browser Back that skips several entries. */
+  const jump = useCallback((columnIndex: number, route: Exclude<ReturnRoute, 'swipe'> = 'crumb') => {
     const before = stackRef.current;
     const next = jumpTo(before, columnIndex);
     const columnsPopped = before.columns.length - next.columns.length;
-    if (columnsPopped > 0) listenerRef.current.returned({ from: topOf(before), route: 'crumb', columnsPopped });
+    if (columnsPopped > 0) listenerRef.current.returned({ from: topOf(before), route, columnsPopped });
     setPreparedCard(null);
     setStack(next);
   }, []);

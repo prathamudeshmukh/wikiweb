@@ -14,12 +14,14 @@ import { AppServicesProvider, createAppServices } from '../services/AppServices'
 import { reportError } from '../services/reportError';
 import { TangentProvider } from '../tangent/TangentContext';
 import { FONT_SOURCES } from '../theme/fonts';
+import { prepareDocument } from '../theme/prepareDocument';
 import { useTheme } from '../theme/useTheme';
 
 // Declaring screen options below would otherwise make the first declared screen the initial route.
 export const unstable_settings = { initialRouteName: 'index' };
 
 SplashScreen.preventAutoHideAsync().catch((error: unknown) => reportError('splash', error));
+prepareDocument();
 
 /** Shown instead of the app when required configuration is missing — a developer error, so be specific. */
 function ConfigProblem({ problem }: { problem: string }) {

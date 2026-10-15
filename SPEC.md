@@ -644,9 +644,14 @@ Tangent also runs in a phone browser, from the same codebase. Web is how iPhone 
 | `expo-haptics` | No-op | — |
 
 ### 15.3 Input and navigation
-- **Gestures:** the same pans as native (§4.1). The column area sets `touch-action: pan-y`; `body` sets `overscroll-behavior-x: none` so the browser leaves horizontal drags to the app. Drags starting within 20 px of either screen edge are ignored, to stay clear of the iOS edge-swipe and Android back gesture.
+- **Gestures:** the same pans as native (§4.1). Both pans' `GestureDetector`s set `touchAction="pan-y"` (gesture-handler's web default is `none`, which stopped a vertical drag on a card from scrolling the column); `html` and `body` set `overscroll-behavior-x: none` so the browser leaves horizontal drags to the app. Drags starting within 20 px of either screen edge are ignored (`GESTURE.edgeGuard`, 0 on native), to stay clear of the iOS edge-swipe and Android back gesture. `dragstart` is cancelled on images, or a mouse drag starting on a card's picture becomes a native image drag.
 - **Keyboard:** `←` goes back one column, `→` hops from the card most in view, `Enter` reads it. Explore on the peek card and the breadcrumb stay as tap targets.
-- **Browser history:** every landed hop pushes a history entry (`/?depth=n`). The browser's Back (button, or an edge swipe that gets through) runs the same back as a right swipe and records `return` with `route: system_back`. A breadcrumb jump goes back the matching number of entries. The URL is not meant to be shared; reloading restores the journey from storage as on native.
+- **Browser history:** every column has a history entry (`historySync.ts`). The browser's Back (button, or an edge swipe that gets through) runs the same back as a right swipe and records `return` with `route: system_back`; going back several entries at once jumps, also as `system_back`. The app's own backs and breadcrumb jumps go back the matching number of entries, and Forward onto a column already left returns to where the app is. Reloading starts on Home, as a cold start does on native.
+- **Living with Expo Router**, which owns `window.history` too and finds its entries by `state.id`:
+  - A hop entry keeps the URL and the router's state and adds `tangentDepth`. A `?depth=n` URL would make the router treat Back as a deep link.
+  - The router rewrites the current entry's state to `{ id }` on every navigation state change; `keepDepthThroughReplaces` keeps `tangentDepth` when it rewrites the same entry.
+  - `popstate` is handled in the capture phase and, between explore's own entries, hidden from the router (it would reset its root).
+  - Only the focused explore screen handles `popstate`: the router can keep a second one mounted beneath (see §15.10), and while the reader or Logbook is open, Back is the router's.
 - Reader, Logbook, Finds, Settings and Expedition are Expo Router routes, so Back already works there. Reader URLs (`/reader?title=…&pageId=…`) can be linked.
 
 ### 15.4 Reader
@@ -688,7 +693,8 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js`. E
 |---|---|
 | Landed column thrown back offscreen | Fixed in shared code: hop `progress` was reset on landing, which on web reached the landed column's reaction before it let go of `entry`. It is now reset when the next hop is prepared. |
 | Card extract trim leaves an orphan "c…" line | Open — trimming measures differently on web |
-| Mouse drag hop | Untested since the fix above (touch works). Must work for desktop visitors. |
+| Mouse drag hop | Fixed: a drag starting on a card's picture became a native image drag. Hops and Back verified with a mouse in Chromium and WebKit. |
+| Second explore screen | Open. After onboarding's Skip (`router.replace('/')`) a second, unfocused `ExploreScreen` appears to stay mounted beneath the first (it kept its own history sync until popstate was limited to the focused one). Check on native: it would load Home twice. |
 | WebKit blocks Wikipedia requests | Fixed: `http.ts` sent `User-Agent` as well as `Api-User-Agent`; Chromium drops the forbidden header, WebKit names it in the CORS preflight and Wikimedia refuses it. In a browser (`runtime: 'browser'`) only `Api-User-Agent` is sent. |
 
 ### 15.11 Success (read 4 weeks after launch, PostHog split by `platform`)

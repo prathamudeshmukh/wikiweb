@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import type { SharedValue } from 'react-native-reanimated';
 import type { Card } from '../content/card';
 
@@ -35,4 +36,17 @@ export const GESTURE = {
   spring: { damping: 18, stiffness: 180 },
   /** Offsets far outside any real drag, used to make a pan one-directional. */
   unreachable: 100000,
+  /**
+   * Web: drags starting this close to a screen edge are the browser's (iOS edge swipe, Android back gesture), so the
+   * app ignores them (SPEC.md §15.3). Native: the OS keeps its own edges.
+   */
+  edgeGuard: Platform.OS === 'web' ? 20 : 0,
+  /** Web: the browser keeps vertical drags (native scrolling); the app gets the horizontal ones. */
+  webTouchAction: 'pan-y',
 } as const;
+
+/** Whether a drag starting at `x` belongs to the browser's edge gestures rather than the app. */
+export function isAtScreenEdge(x: number, screenWidth: number, guard: number): boolean {
+  'worklet';
+  return x < guard || x > screenWidth - guard;
+}

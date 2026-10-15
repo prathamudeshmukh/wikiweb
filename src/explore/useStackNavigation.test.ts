@@ -54,6 +54,16 @@ describe('useStackNavigation — listener', () => {
     expect(listener.returned).toHaveBeenCalledWith(expect.objectContaining({ route: 'crumb', columnsPopped: 2 }));
   });
 
+  it('reports a jump made by the browser’s Back as a system back', async () => {
+    const { result, listener, hopTo } = await renderNavigation();
+    await hopTo(octopus);
+    await hopTo(squid);
+
+    await act(() => result.current.jump(0, 'system_back'));
+
+    expect(listener.returned).toHaveBeenCalledWith(expect.objectContaining({ route: 'system_back', columnsPopped: 2 }));
+  });
+
   it('reports nothing for back or a jump that stays on Home', async () => {
     const { result, listener } = await renderNavigation();
 

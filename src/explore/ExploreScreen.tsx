@@ -16,6 +16,7 @@ import { GESTURE, type HopController, type Rect } from './hopController';
 import { FindToast } from '../finds/FindToast';
 import { HopOverlay } from './HopOverlay';
 import { useHomeStopwatch, useNavigationAnalytics, useRunWhile } from './useExploreAnalytics';
+import { useBrowserHistory } from './useBrowserHistory';
 import { useStackNavigation } from './useStackNavigation';
 
 const EMPTY_RECT: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -128,6 +129,9 @@ export function ExploreScreen(props: ExploreScreenProps) {
   }, [back, isFocused]);
 
   const depth = stack.columns.length - 1;
+  const browserBack = useCallback(() => void back('system_back'), [back]);
+  const browserJump = useCallback((columnIndex: number) => jump(columnIndex, 'system_back'), [jump]);
+  useBrowserHistory({ depth, back: browserBack, jumpTo: browserJump, isFocused });
   useRunWhile(homeTime, depth === 0 && isFocused && appActive);
   // The prepared column renders as the next item of the same keyed list, so landing never remounts it.
   const columns = stack.prepared ? [...stack.columns, stack.prepared] : stack.columns;

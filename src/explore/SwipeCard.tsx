@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { type AccessibilityActionEvent, StyleSheet, Text } from 'react-native';
+import { type AccessibilityActionEvent, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -31,7 +31,7 @@ import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { territoryColor } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
-import { GESTURE, type HopController } from './hopController';
+import { GESTURE, type HopController, isAtScreenEdge } from './hopController';
 
 interface SwipeCardProps {
   card: Card;
@@ -68,6 +68,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
   const releaseHint = useSharedValue(0);
   const wrapperRef = useAnimatedRef<Animated.View>();
   const commitDistance = width * GESTURE.commitRatio;
+  const { width: screenWidth } = useWindowDimensions();
 
   useEffect(() => {
     if (pulseToken) pulse.value = withSequence(withTiming(PULSE_SCALE, { duration: PULSE_UP_MS }), withSpring(1, GESTURE.spring));
@@ -94,6 +95,9 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
         .activeOffsetX([-GESTURE.lockSlop, GESTURE.unreachable])
         .failOffsetX([-GESTURE.unreachable, GESTURE.lockSlop])
         .failOffsetY([-GESTURE.lockSlop, GESTURE.lockSlop])
+        .onTouchesDown((e, state) => {
+          if (isAtScreenEdge(e.allTouches[0].absoluteX, screenWidth, GESTURE.edgeGuard)) state.fail();
+        })
         .onStart(() => {
           cancelAnimation(tx);
           scheduleOnRN(hop.prepare, card);
@@ -122,7 +126,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
           );
           scheduleOnRN(hop.committed);
         }),
-    [enabled, card, width, hop, tx, wrapperRef],
+    [enabled, card, width, screenWidth, hop, tx, wrapperRef],
   );
 
   // A tap reads the article; any movement past the lock slop hands the touch to the swipe or the scroll instead.
@@ -163,7 +167,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
         <Text style={[styles.label, { color: territoryColor(palette, card.topic.territory) }]}>TAKE A TANGENT →</Text>
         <Animated.Text style={[styles.release, { color: palette.ink }, releaseStyle]}>RELEASE TO GO DEEPER</Animated.Text>
       </Animated.View>
-      <GestureDetector gesture={gesture}>
+      <GestureDetector gesture={gesture} touchAction={GESTURE.webTouchAction}>
         <Animated.View
           style={[styles.card, cardStyle]}
           accessibilityRole="button"
