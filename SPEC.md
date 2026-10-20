@@ -629,6 +629,7 @@ Tangent also runs in a phone browser, from the same codebase. Web is how iPhone 
 
 ### 15.1 Scope
 - **Audience:** phone browsers first. On a wide screen the app sits in a centred phone-width column (max 480 px) on the paper background. A real multi-column desktop layout is later.
+  - **Frame:** `appFrame.ts` gives the app's frame: the window on a phone, and on native always, or a centred 480 px column on a wider window. The root layout draws the app in that frame and clips it, since columns fly in from its edge. Everything sized against the screen uses `useAppFrame()` instead of the window. Page coordinates (a card's measured `pageX`, a touch's `absoluteX` for the edge guard, the keyboard's DOM rect) subtract the frame's `left`.
 - **Features:** full parity with native — onboarding, Home, columns, reader + peek card, Finds, Logbook + atlas, expeditions, Settings. Haptics are a no-op. External links open in a new tab.
 - **Not on web:** offline use, a "get the app" banner (Android is a sideloaded APK; there is no iOS build), shareable journey URLs (sharing stays v2, §1).
 
@@ -674,6 +675,8 @@ The app fetches `page/mobile-html` as on native, then renders it in `<iframe san
 - **Vercel**, static output from `expo export -p web`. `vercel.json`: rewrite every path to `index.html`; `Cache-Control: public, max-age=31536000, immutable` on `/_expo/static/*` and `/assets/*`. Git deploys off; CI deploys.
 - **CI:** a `web` job after `checks` — export, Playwright E2E (§15.8), then deploy: PRs get a preview URL, `main` goes to production. `EXPO_PUBLIC_*` values come from repository secrets.
 - **Installable:** a web manifest (name, existing icon set, paper/night theme colours, `display: standalone`, portrait). No service worker.
+  - `public/manifest.webmanifest`; icons in `public/icons/` resized from `assets/icon.png`: 192 and 512, a 180 `apple-touch-icon`, and a 512 maskable copy with the art shrunk onto paper. The ring sits at about 70 % of the width, inside the 80 % safe zone.
+  - `public/index.html` (from `npx expo customize`) links them and sets `theme-color` per colour scheme. It also paints `html` paper or night, so nothing white shows before the app draws or beside its column.
 - **Domain:** decided at launch; `*.vercel.app` until then.
 
 ### 15.7 Analytics
