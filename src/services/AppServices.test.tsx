@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react-native';
 import type { PostHog } from 'posthog-react-native';
+import { connectPostHogNative } from '../analytics/posthogNative';
 import { createAppServices, type AppConfig, useAppServices } from './AppServices';
 import { reportError, setErrorSink } from './reportError';
 
@@ -30,18 +31,18 @@ describe('createAppServices', () => {
   });
 
   it('runs without analytics when no PostHog key is set', () => {
-    const clientFor = jest.fn();
+    const connect = jest.fn();
 
-    const result = createAppServices(CONFIG, clientFor);
+    const result = createAppServices(CONFIG, connect);
 
     expect(result.ok && result.services.analyticsClient).toBeNull();
-    expect(clientFor).not.toHaveBeenCalled();
+    expect(connect).not.toHaveBeenCalled();
   });
 
   it('sends reported errors to PostHog as a title-free app_error', () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const client = { capture: jest.fn() };
-    createAppServices({ ...CONFIG, posthogKey: 'phc_key' }, () => client as unknown as PostHog);
+    createAppServices({ ...CONFIG, posthogKey: 'phc_key' }, connectPostHogNative(() => client as unknown as PostHog));
 
     reportError('homeRefresh', new RangeError('Octopus'));
 

@@ -1,15 +1,10 @@
 import { useSegments } from 'expo-router';
-import { PostHogProvider } from 'posthog-react-native';
 import { type ReactNode, useEffect } from 'react';
-import { StyleSheet } from 'react-native';
 import { useAppForeground } from './useAppForeground';
 import { useAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
 import { screenRoute } from './screenRoute';
-
-// Touches only: screens are sent by route pattern below, since automatic capture would include params.
-// Every view showing an article title carries `ph-no-capture`, so taps on it send nothing (SPEC.md §11).
-const AUTOCAPTURE = { captureTouches: true, captureScreens: false } as const;
+import { TouchAutocapture } from './TouchAutocapture';
 
 /** Screen views by route pattern; segments, unlike the pathname, keep `[id]` instead of the id. */
 function useScreenViews() {
@@ -40,13 +35,5 @@ export function AnalyticsRoot({ children }: { children: ReactNode }) {
   useScreenViews();
   useAnalyticsLifecycle();
   if (!analyticsClient) return children;
-  return (
-    <PostHogProvider client={analyticsClient} autocapture={AUTOCAPTURE} style={styles.root}>
-      {children}
-    </PostHogProvider>
-  );
+  return <TouchAutocapture client={analyticsClient}>{children}</TouchAutocapture>;
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-});

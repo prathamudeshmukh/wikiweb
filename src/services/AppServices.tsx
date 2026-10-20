@@ -1,10 +1,11 @@
-import { PostHog } from 'posthog-react-native';
+import type { PostHog } from 'posthog-react-native';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
 import { Platform } from 'react-native';
 import type { Analytics } from '../analytics/analytics';
 import { type AnalyticsConsent, createAnalyticsConsent } from '../analytics/analyticsConsent';
 import { type ColumnVisits, createColumnVisits } from '../analytics/columnVisits';
-import { createAnalytics, type PostHogFactory } from '../analytics/createAnalytics';
+import { connectPostHog } from '../analytics/connectPostHog';
+import { type AnalyticsConnector, createAnalytics } from '../analytics/createAnalytics';
 import { errorReason } from '../analytics/errorReason';
 import { createExpeditionReporter, type ExpeditionReporter } from '../analytics/expeditionReport';
 import { findEvents } from '../analytics/findEvents';
@@ -66,10 +67,8 @@ export interface AppConfig {
   isDev: boolean;
 }
 
-const newPostHog: PostHogFactory = (key, options) => new PostHog(key, options);
-
 /** Builds the app's services from configuration, failing fast with a readable reason. */
-export function createAppServices(config: AppConfig, clientFor: PostHogFactory = newPostHog): ServicesResult {
+export function createAppServices(config: AppConfig, connect: AnalyticsConnector = connectPostHog): ServicesResult {
   const contact = config.wikiContact;
   if (!contact?.trim()) {
     return { ok: false, problem: 'Set EXPO_PUBLIC_WIKI_API_CONTACT (a URL or email) — Wikipedia requires contact details from every app.' };
@@ -78,7 +77,7 @@ export function createAppServices(config: AppConfig, clientFor: PostHogFactory =
   const apiOn = (lane?: Lane) => createWikiApi(createWikiHttp({ fetchFn: fetch, userAgent: buildUserAgent(contact), budget, lane, runtime: WIKI_RUNTIME }));
   const api = apiOn();
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry, lane) => columnFeedFor(apiOn(lane), entry) });
-  const { analytics, client } = createAnalytics({ key: config.posthogKey, host: config.posthogHost, isDev: config.isDev }, clientFor);
+  const { analytics, client } = createAnalytics({ key: config.posthogKey, host: config.posthogHost, isDev: config.isDev }, connect);
   setErrorSink((scope, error) => analytics.track({ name: 'app_error', properties: { scope, reason: errorReason(error) } }));
   const expeditions = createExpeditionReporter({ analytics, now: Date.now });
   // One connection for every table in the on-device database.

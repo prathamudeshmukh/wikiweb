@@ -676,7 +676,13 @@ The app fetches `page/mobile-html` as on native, then renders it in `<iframe san
 - **Domain:** decided at launch; `*.vercel.app` until then.
 
 ### 15.7 Analytics
-Same PostHog project, events and privacy rule as §11, sent with `posthog-js`. Every event carries `platform: 'web'`. Persistence `localStorage` (no cookies); autocapture and session replay off; screen views sent by hand as route patterns, as on native. The Share usage data switch (§11) works the same.
+Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`posthogWeb.ts`; `connectPostHog(.web).ts` picks the client per platform, `createAnalytics` keeps the dev/no-key choice for both).
+- **Every event** carries `platform: 'web'` and `$geoip_disable` (registered super properties). Native events don't set `platform`; split by it, or by `$os`.
+- **No page address:** posthog-js stamps the page URL on every event (`$current_url`, `$pathname`, their `$initial_` and `$session_entry_` copies), and a reader URL names the article (`/reader?title=…`). `before_send` drops every property ending `url` or `pathname`, and `title`; `$referrer` and `$host` stay.
+- **Off:** autocapture, page views and page leaves, rage/dead clicks, heatmaps, exceptions, performance, session replay, surveys, product tours, conversations, web experiments, feature flags, and loading PostHog's extra scripts. No touch autocapture either, so `TouchAutocapture.web.tsx` renders no provider and `posthog-react-native` stays out of the web bundle.
+- **Screens** are sent by hand as route patterns, as `$screen` with `$screen_name`, the event native PostHog sends, so they chart together.
+- **Persistence** `localStorage` (no cookies). **Opting out** (§11 switch) calls `opt_out_capturing`. posthog-js can't drop a batch already queued, so batching is off (`request_batching: false`) and nothing is left waiting.
+- **Bots:** posthog-js drops events from headless browsers (`navigator.webdriver`, a `HeadlessChrome` UA or brand). Playwright tests that check analytics must hide both.
 
 ### 15.8 Testing
 - **Unit (Jest, the existing project):** web adapters keep their logic in platform-neutral modules with the browser API injected; the `.web.ts` files only wire them up and are covered by E2E. No separate `jest-expo/web` project. `SqlDatabase` on sql.js passes the same journey repository tests as `memoryDatabase`; snapshot save/load and debounce; `localStorage` kv adapter; iframe message routing (source check, validation, scroll message); document fixes (base rewrite, head with attributes); history push/pop ↔ back; keyboard map; analytics `platform` property.
