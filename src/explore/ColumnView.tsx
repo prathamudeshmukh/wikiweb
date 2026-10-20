@@ -1,4 +1,4 @@
-import { memo, type ReactElement, useCallback, useMemo, useState } from 'react';
+import { memo, type ReactElement, type RefObject, useCallback, useEffect, useMemo, useState } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { FlatList, GestureDetector, RefreshControl } from 'react-native-gesture-handler';
 import Animated, { type SharedValue } from 'react-native-reanimated';
@@ -23,6 +23,7 @@ import { type ColumnItem, columnItems } from './columnItems';
 import { type ColumnEntry, isSeeded, type SeededEntry } from './columnStack';
 import { useDwellPrefetch } from './dwellPrefetch';
 import { HomeHeader } from './HomeHeader';
+import { keyboardTarget } from './keyboardNavigation';
 import { GESTURE, type HopController } from './hopController';
 import { SwipeCard } from './SwipeCard';
 import { useColumnFeed } from './useColumnFeed';
@@ -46,6 +47,8 @@ interface ColumnViewProps {
   onOpen: (card: Card) => void;
   onBack: () => void;
   onJump: (columnIndex: number) => void;
+  /** Where the column on top publishes the card the keyboard acts on (SPEC.md §15.3). */
+  topColumnTargetRef: RefObject<() => Card | null>;
   onOpenLogbook: () => void;
   /** Nothing (the reader, the Logbook) is over the explore screen. */
   isScreenFocused: boolean;
@@ -133,7 +136,7 @@ function ColumnViewImpl(props: ColumnViewProps) {
 }
 
 function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
-  const { entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, onOpenLogbook, isScreenFocused, feed, niche } = props;
+  const { entry, isTop, entryProgress, candidateCardId, pulse, hop, onOpen, onBack, onJump, topColumnTargetRef, onOpenLogbook, isScreenFocused, feed, niche } = props;
   const openTopic = useCallback((tileId: string) => niche.openTree({ tileId }, 'topic_label'), [niche]);
   const palette = useTheme();
   const marks = useJourneyMarks();
@@ -148,6 +151,9 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const dwell = useDwellPrefetch(entry, isTop, nudge?.onVisible);
   const items = useMemo(() => columnItems(view.cards, nudge?.index ?? null), [view.cards, nudge?.index]);
   useColumnVisit({ entry, isTop, status: view.status, dwelling: dwell.dwelling });
+  useEffect(() => {
+    if (isTop) topColumnTargetRef.current = () => keyboardTarget(dwell.dwelling(), view.cards);
+  }, [isTop, topColumnTargetRef, dwell, view.cards]);
   const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, entry: entryProgress, onBack });
 
   const cardWidth = screenWidth - LAYOUT.gutter * 2;

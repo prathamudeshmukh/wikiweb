@@ -1,3 +1,4 @@
+import type { Card } from '../content/card';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import type { RefreshControlProps } from 'react-native';
@@ -33,6 +34,7 @@ const hop: HopController = {
 
 const FEATURED_SPACE = 'articletopic:space incategory:Featured_articles';
 const HOME = initialStack().columns[0];
+const keyboardTargetRef: { current: () => Card | null } = { current: () => null };
 
 function columnView(column: ColumnEntry, entryProgress: ReturnType<typeof makeMutable<number>> | null = null, isScreenFocused = true) {
   return (
@@ -47,6 +49,7 @@ function columnView(column: ColumnEntry, entryProgress: ReturnType<typeof makeMu
       onOpen={jest.fn()}
       onBack={jest.fn()}
       onJump={jest.fn()}
+      topColumnTargetRef={keyboardTargetRef}
       onOpenLogbook={jest.fn()}
       isScreenFocused={isScreenFocused}
       niche={{ addPicks: jest.fn(async () => undefined), openTree: jest.fn() }}
@@ -96,6 +99,15 @@ describe('ColumnView', () => {
 
     expect(await screen.findByText('Squid')).toBeOnTheScreen();
     expect(screen.queryByLabelText('Exploring from Octopus')).toBeNull();
+  });
+
+  it('offers its first card to the keyboard while on top (SPEC.md §15.3)', async () => {
+    await renderColumn();
+    await layOutColumns();
+
+    await screen.findByText('Squid');
+
+    expect(keyboardTargetRef.current()?.title).toBe('Squid');
   });
 
   it('tells the user when the column has nothing more', async () => {

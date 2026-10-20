@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { BackHandler, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import { FindToast } from '../finds/FindToast';
 import { HopOverlay } from './HopOverlay';
 import { useHomeStopwatch, useNavigationAnalytics, useRunWhile } from './useExploreAnalytics';
 import { useBrowserHistory } from './useBrowserHistory';
+import { useKeyboardNavigation } from './useKeyboardNavigation';
 import { useStackNavigation } from './useStackNavigation';
 
 const EMPTY_RECT: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -47,22 +48,27 @@ interface IncomingTangent {
   startRect: Rect;
 }
 
-/** Runs the same flight as a swipe, started from the reader's peek card instead of a released drag. */
+/** Runs a swipe's flight without the drag: from the reader's peek card, or from a card on a key press. */
+function flyFrom(hop: HopController, from: Rect) {
+  hop.from.set(from);
+  hop.tiltDeg.set(0);
+  hop.progress.set(0);
+  hop.progress.set(
+    withSpring(1, { ...GESTURE.spring, overshootClamping: true }, (finished) => {
+      if (finished) scheduleOnRN(hop.landed);
+    }),
+  );
+  hop.committed();
+}
+
+/** A tangent taken from the reader's peek card flies up from there. */
 function useIncomingTangent({ tangent, onStarted, prepare, hop, startRect }: IncomingTangent) {
   const { x, y, width, height } = startRect;
   useEffect(() => {
     if (!tangent) return;
     onStarted();
     prepare(tangent);
-    hop.from.set({ x, y, width, height });
-    hop.tiltDeg.set(0);
-    hop.progress.set(0);
-    hop.progress.set(
-      withSpring(1, { ...GESTURE.spring, overshootClamping: true }, (finished) => {
-        if (finished) scheduleOnRN(hop.landed);
-      }),
-    );
-    hop.committed();
+    flyFrom(hop, { x, y, width, height });
   }, [tangent, onStarted, prepare, hop, x, y, width, height]);
 }
 
@@ -143,6 +149,15 @@ export function ExploreScreen(props: ExploreScreenProps) {
     },
     [columnVisits, onOpenArticle],
   );
+  const topColumnTargetRef = useRef<() => Card | null>(() => null);
+  const hopFrom = useCallback(
+    (card: Card, rect: Rect) => {
+      prepareSwipe(card);
+      flyFrom(hop, rect);
+    },
+    [prepareSwipe, hop],
+  );
+  useKeyboardNavigation({ enabled: isFocused && !stack.prepared, target: () => topColumnTargetRef.current(), back: browserBack, hopFrom, read: openArticle });
 
   return (
     <View style={[styles.root, { backgroundColor: palette.paper }]}>
@@ -162,6 +177,7 @@ export function ExploreScreen(props: ExploreScreenProps) {
               onOpen={openArticle}
               onBack={onBack}
               onJump={jump}
+              topColumnTargetRef={topColumnTargetRef}
               onOpenLogbook={onOpenLogbook}
               isScreenFocused={isFocused}
               niche={niche}
