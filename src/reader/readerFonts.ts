@@ -1,8 +1,7 @@
 import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
 import { Literata_400Regular } from '@expo-google-fonts/literata';
-import { Asset } from 'expo-asset';
-import { File } from 'expo-file-system';
 import { reportError } from '../services/reportError';
+import { fontFileBase64 } from './fontFileBase64';
 
 // The reader's WebView can't see fonts loaded into React Native, and calling a font CDN would leak
 // reading activity, so the two faces it needs are embedded as data URIs (~440 KB, built once).
@@ -14,9 +13,7 @@ const READER_FACES = [
 let cached: Promise<string> | null = null;
 
 async function fontFace({ family, weight, module }: (typeof READER_FACES)[number]): Promise<string> {
-  const asset = await Asset.fromModule(module).downloadAsync();
-  if (!asset.localUri) throw new Error(`Font ${family} has no local file.`);
-  const base64 = await new File(asset.localUri).base64();
+  const base64 = await fontFileBase64(module);
   return `@font-face { font-family: '${family}'; font-weight: ${weight}; font-display: swap; src: url(data:font/ttf;base64,${base64}) format('truetype'); }`;
 }
 
