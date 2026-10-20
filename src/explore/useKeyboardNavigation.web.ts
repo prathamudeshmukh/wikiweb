@@ -3,13 +3,14 @@ import type { Card } from '../content/card';
 import type { Rect } from './hopController';
 import { type KeyCommand, keyCommand } from './keyboardNavigation';
 import type { KeyboardNavigationOptions } from './useKeyboardNavigation';
+import { useAppFrame } from '../theme/appFrame';
 
-/** Where the card sits on screen. A parked column below can hold the same card, so only the one in front counts. */
-function cardRect(card: Card): Rect | null {
+/** Where the card sits in the app's frame. A parked column below can hold the same card, so only the one in front counts. */
+function cardRect(card: Card, frameLeft: number): Rect | null {
   for (const element of document.querySelectorAll(`[data-testid="card-${card.pageId}"]`)) {
     const { x, y, width, height } = element.getBoundingClientRect();
     const inFront = element.contains(document.elementFromPoint(x + width / 2, y + Math.min(height / 2, window.innerHeight / 2)));
-    if (inFront) return { x, y, width, height };
+    if (inFront) return { x: x - frameLeft, y, width, height };
   }
   return null;
 }
@@ -20,9 +21,10 @@ function isTyping(target: EventTarget | null): boolean {
 
 /** ←/→/Enter on the explore screen (SPEC.md §15.3). */
 export function useKeyboardNavigation(options: KeyboardNavigationOptions): void {
-  const latest = useRef(options);
+  const { left: frameLeft } = useAppFrame();
+  const latest = useRef({ ...options, frameLeft });
   useLayoutEffect(() => {
-    latest.current = options;
+    latest.current = { ...options, frameLeft };
   });
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions): void 
       },
       hop: () => {
         const card = latest.current.target();
-        const from = card && cardRect(card);
+        const from = card && cardRect(card, latest.current.frameLeft);
         if (!card || !from) return false;
         latest.current.hopFrom(card, from);
         return true;

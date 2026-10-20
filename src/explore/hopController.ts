@@ -45,8 +45,9 @@ export const GESTURE = {
   webTouchAction: 'pan-y',
 } as const;
 
-/** Whether a drag starting at `x` belongs to the browser's edge gestures rather than the app. */
-export function isAtScreenEdge(x: number, screenWidth: number, guard: number): boolean {
+/** Whether a drag starting at page `x` is at the edge of the app's frame: the browser's edge gestures on a phone. */
+export function isAtScreenEdge(x: number, frame: { width: number; left: number }, guard: number): boolean {
   'worklet';
-  return x < guard || x > screenWidth - guard;
+  const inFrame = x - frame.left;
+  return inFrame < guard || inFrame > frame.width - guard;
 }

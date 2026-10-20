@@ -1,6 +1,7 @@
+import { useAppFrame } from '../theme/appFrame';
 import { GearSix } from '../theme/icons';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TOPIC_TILES } from '../config/topicTiles';
 import { type FindActions, FindSheet } from '../finds/FindSheet';
@@ -49,7 +50,7 @@ const GEAR_ICON_SIZE = 22;
 
 function StampGrid({ collected }: { collected: ReadonlySet<string> }) {
   const palette = useTheme();
-  const { width } = useWindowDimensions();
+  const { width } = useAppFrame();
   const size = Math.floor(Math.min(MAX_STAMP, (width - LAYOUT.gutter * 2 - STAMP_GAP * (STAMPS_PER_ROW - 1)) / STAMPS_PER_ROW));
   return (
     <View style={styles.section}>

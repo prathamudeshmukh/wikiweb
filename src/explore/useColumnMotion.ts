@@ -18,6 +18,8 @@ interface ColumnMotionOptions {
   isHome: boolean;
   isTop: boolean;
   screenWidth: number;
+  /** Where the app's frame starts in the window (centred on a wide screen); page coordinates subtract it. */
+  screenLeft: number;
   /** Hop progress while this column is flying in; null once it is part of the stack. */
   entry: SharedValue<number> | null;
   onBack: () => void;
@@ -30,7 +32,7 @@ const RISE_RANGE = [0.15, 1];
  * A column's own movement: following the hop in, the right-swipe back gesture, and Home's rubber band.
  * The incoming spring is overshoot-clamped so the parent never shows at the right edge (M0 finding).
  */
-export function useColumnMotion({ isHome, isTop, screenWidth, entry, onBack }: ColumnMotionOptions) {
+export function useColumnMotion({ isHome, isTop, screenWidth, screenLeft, entry, onBack }: ColumnMotionOptions) {
   // A column mounted for a hop waits offscreen for the flight; one mounted already in the stack (Home, or the
   // columns of a resumed expedition) starts in place.
   const fliesIn = !isHome && entry !== null;
@@ -54,7 +56,7 @@ export function useColumnMotion({ isHome, isTop, screenWidth, entry, onBack }: C
         .failOffsetX([-GESTURE.lockSlop, GESTURE.unreachable])
         .failOffsetY([-GESTURE.lockSlop, GESTURE.lockSlop])
         .onTouchesDown((e, state) => {
-          if (isAtScreenEdge(e.allTouches[0].absoluteX, screenWidth, GESTURE.edgeGuard)) state.fail();
+          if (isAtScreenEdge(e.allTouches[0].absoluteX, { width: screenWidth, left: screenLeft }, GESTURE.edgeGuard)) state.fail();
         })
         .onUpdate((e) => {
           const dx = Math.max(0, e.translationX);
@@ -72,7 +74,7 @@ export function useColumnMotion({ isHome, isTop, screenWidth, entry, onBack }: C
             }),
           );
         }),
-    [isTop, isHome, screenWidth, onBack, x],
+    [isTop, isHome, screenWidth, screenLeft, onBack, x],
   );
 
   const columnStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));

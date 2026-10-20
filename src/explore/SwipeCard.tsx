@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { type AccessibilityActionEvent, StyleSheet, Text, useWindowDimensions } from 'react-native';
+import { type AccessibilityActionEvent, StyleSheet, Text } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -27,6 +27,7 @@ import { findActionLabel } from '../finds/useFinds';
 import { HintChip } from '../hints/HintChip';
 import { hasTree } from '../interests/interestPicks';
 import type { HintKind } from '../hints/hintRules';
+import { useAppFrame } from '../theme/appFrame';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { territoryColor } from '../theme/tokens';
@@ -68,7 +69,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
   const releaseHint = useSharedValue(0);
   const wrapperRef = useAnimatedRef<Animated.View>();
   const commitDistance = width * GESTURE.commitRatio;
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: frameWidth, left: frameLeft } = useAppFrame();
 
   useEffect(() => {
     if (pulseToken) pulse.value = withSequence(withTiming(PULSE_SCALE, { duration: PULSE_UP_MS }), withSpring(1, GESTURE.spring));
@@ -96,7 +97,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
         .failOffsetX([-GESTURE.unreachable, GESTURE.lockSlop])
         .failOffsetY([-GESTURE.lockSlop, GESTURE.lockSlop])
         .onTouchesDown((e, state) => {
-          if (isAtScreenEdge(e.allTouches[0].absoluteX, screenWidth, GESTURE.edgeGuard)) state.fail();
+          if (isAtScreenEdge(e.allTouches[0].absoluteX, { width: frameWidth, left: frameLeft }, GESTURE.edgeGuard)) state.fail();
         })
         .onStart(() => {
           cancelAnimation(tx);
@@ -116,7 +117,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
             return;
           }
           // Everything below runs in this UI frame — no React work before motion starts.
-          hop.from.set({ x: frame.pageX + tx.get(), y: frame.pageY, width: frame.width, height: frame.height });
+          hop.from.set({ x: frame.pageX - frameLeft + tx.get(), y: frame.pageY, width: frame.width, height: frame.height });
           hop.tiltDeg.set((tx.get() / width) * -GESTURE.maxTiltDeg);
           hop.progress.set(0);
           hop.progress.set(
@@ -126,7 +127,7 @@ function SwipeCardImpl({ card, seedTitle, width, height, enabled, candidate, hop
           );
           scheduleOnRN(hop.committed);
         }),
-    [enabled, card, width, screenWidth, hop, tx, wrapperRef],
+    [enabled, card, width, frameWidth, frameLeft, hop, tx, wrapperRef],
   );
 
   // A tap reads the article; any movement past the lock slop hands the touch to the swipe or the scroll instead.

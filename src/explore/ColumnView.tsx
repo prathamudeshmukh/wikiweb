@@ -1,5 +1,5 @@
 import { memo, type ReactElement, type RefObject, useCallback, useEffect, useMemo, useState } from 'react';
-import { type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps, StyleSheet, View } from 'react-native';
 import { FlatList, GestureDetector, RefreshControl } from 'react-native-gesture-handler';
 import Animated, { type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { NudgeCard } from '../nudges/NudgeCard';
 import { Toast } from '../nudges/Toast';
 import { type HomeNudgeView, type NicheActions, useHomeNudge } from '../nudges/useHomeNudge';
 import { useAppServices } from '../services/AppServices';
+import { useAppFrame } from '../theme/appFrame';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { Breadcrumb } from './Breadcrumb';
@@ -143,7 +144,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const foundIds = useFoundIds();
   const toggleFind = useFindToggle();
   const onToggleFind = useCallback((card: Card) => toggleFind(nodePageOf(card), 'card'), [toggleFind]);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, left: screenLeft } = useAppFrame();
   const insets = useSafeAreaInsets();
   const [listHeight, setListHeight] = useState(0);
   const isHome = entry.seed === null;
@@ -154,7 +155,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   useEffect(() => {
     if (isTop) topColumnTargetRef.current = () => keyboardTarget(dwell.dwelling(), view.cards);
   }, [isTop, topColumnTargetRef, dwell, view.cards]);
-  const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, entry: entryProgress, onBack });
+  const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, screenLeft, entry: entryProgress, onBack });
 
   const cardWidth = screenWidth - LAYOUT.gutter * 2;
   const cardHeight = listHeight - LAYOUT.listTopPadding - LAYOUT.cardGap - LAYOUT.peek;

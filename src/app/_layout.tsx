@@ -13,6 +13,7 @@ import { type InterestsSaved, InterestsProvider } from '../interests/InterestsCo
 import { AppServicesProvider, createAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
 import { TangentProvider } from '../tangent/TangentContext';
+import { useAppFrame } from '../theme/appFrame';
 import { FONT_SOURCES } from '../theme/fonts';
 import { prepareDocument } from '../theme/prepareDocument';
 import { useTheme } from '../theme/useTheme';
@@ -35,6 +36,7 @@ function ConfigProblem({ problem }: { problem: string }) {
 
 export default function RootLayout() {
   const palette = useTheme();
+  const frame = useAppFrame();
   const [fontsLoaded, fontError] = useFonts(FONT_SOURCES);
   const result = useMemo(
     () =>
@@ -71,35 +73,40 @@ export default function RootLayout() {
   return (
     // The root view shows through during screen transitions; paper here keeps them from flashing white.
     <GestureHandlerRootView style={[styles.root, { backgroundColor: palette.paper }]}>
-      <SafeAreaProvider>
-        <AppServicesProvider services={result.services}>
-          <AnalyticsRoot>
-            <InterestsProvider store={result.services.interests} onSaved={trackInterestsSaved}>
-              <HintsProvider store={result.services.hints} journeys={result.services.journeys}>
-                <TangentProvider>
-                  {/* Paper behind every screen, so dismissing the reader never flashes white. */}
-                  <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: palette.paper } }}>
-                    <Stack.Screen name="index" />
-                    {/* The reader slides up over the column it was opened from (SPEC.md §3.4). */}
-                    <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-                    <Stack.Screen name="logbook" options={{ animation: 'slide_from_right' }} />
-                    <Stack.Screen name="finds" options={{ animation: 'slide_from_right' }} />
-                    <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
-                    <Stack.Screen name="settings/index" options={{ animation: 'slide_from_right' }} />
-                    <Stack.Screen name="settings/interests" options={{ animation: 'slide_from_right' }} />
-                  </Stack>
-                  <StatusBar style="auto" />
-                </TangentProvider>
-              </HintsProvider>
-            </InterestsProvider>
-          </AnalyticsRoot>
-        </AppServicesProvider>
-      </SafeAreaProvider>
+      {/* A wide browser window shows the app as a centred phone-width column (SPEC.md §15.1). */}
+      <View style={[styles.frame, { width: frame.width }]}>
+        <SafeAreaProvider>
+          <AppServicesProvider services={result.services}>
+            <AnalyticsRoot>
+              <InterestsProvider store={result.services.interests} onSaved={trackInterestsSaved}>
+                <HintsProvider store={result.services.hints} journeys={result.services.journeys}>
+                  <TangentProvider>
+                    {/* Paper behind every screen, so dismissing the reader never flashes white. */}
+                    <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: palette.paper } }}>
+                      <Stack.Screen name="index" />
+                      {/* The reader slides up over the column it was opened from (SPEC.md §3.4). */}
+                      <Stack.Screen name="reader" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+                      <Stack.Screen name="logbook" options={{ animation: 'slide_from_right' }} />
+                      <Stack.Screen name="finds" options={{ animation: 'slide_from_right' }} />
+                      <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
+                      <Stack.Screen name="settings/index" options={{ animation: 'slide_from_right' }} />
+                      <Stack.Screen name="settings/interests" options={{ animation: 'slide_from_right' }} />
+                    </Stack>
+                    <StatusBar style="auto" />
+                  </TangentProvider>
+                </HintsProvider>
+              </InterestsProvider>
+            </AnalyticsRoot>
+          </AppServicesProvider>
+        </SafeAreaProvider>
+      </View>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  // Clips columns flying in from the side, as the screen edge does on a phone.
+  frame: { flex: 1, alignSelf: 'center', overflow: 'hidden' },
   problem: { flex: 1, justifyContent: 'center', padding: 24 },
 });

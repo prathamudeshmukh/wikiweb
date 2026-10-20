@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { BackHandler, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { BackHandler, StyleSheet, View } from 'react-native';
 import { useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -9,6 +9,7 @@ import { useAppActive } from '../hints/useAppActive';
 import { useAppServices } from '../services/AppServices';
 import type { NicheActions } from '../nudges/useHomeNudge';
 import type { ResumePoint, Tangent } from '../tangent/tangentQueue';
+import { useAppFrame } from '../theme/appFrame';
 import { LAYOUT } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
 import { ColumnView } from './ColumnView';
@@ -101,7 +102,7 @@ export function ExploreScreen(props: ExploreScreenProps) {
   const { interests, onOpenArticle, onOpenLogbook, isFocused, incomingTangent, onTangentStarted, incomingResume, onResumed, niche } = props;
   const palette = useTheme();
   const { journeys, columnVisits } = useAppServices();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useAppFrame();
   const insets = useSafeAreaInsets();
   const appActive = useAppActive();
   const homeTime = useHomeStopwatch();
