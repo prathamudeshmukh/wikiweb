@@ -14,6 +14,7 @@ concurrency:
 env:
   NODE_VERSION: 22
   JAVA_VERSION: 17
+  VERCEL_CLI_VERSION: 63.1.2
 
 jobs:
   checks:
@@ -45,6 +46,54 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 14
+
+  web:
+    name: Deploy web to Vercel
+    needs: checks
+    # Pull requests get a preview, main goes to production. A manual run is an APK release only.
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TARGET: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+    steps:
+      - name: Require the Vercel secrets
+        if: env.VERCEL_TOKEN == '' || env.VERCEL_ORG_ID == '' || env.VERCEL_PROJECT_ID == ''
+        run: |
+          echo "::error::Set the VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID repository secrets (vercel link writes the IDs to .vercel/project.json)."
+          exit 1
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm install -g vercel@${{ env.VERCEL_CLI_VERSION }}
+
+      - run: vercel pull --yes --environment="$VERCEL_TARGET" --token="$VERCEL_TOKEN"
+
+      # Runs vercel.json's npm ci and expo export; EXPO_PUBLIC_* values are baked into the bundle here.
+      - name: Build
+        env:
+          EXPO_PUBLIC_WIKI_API_CONTACT: ${{ secrets.EXPO_PUBLIC_WIKI_API_CONTACT }}
+          EXPO_PUBLIC_POSTHOG_KEY: ${{ secrets.EXPO_PUBLIC_POSTHOG_KEY }}
+          EXPO_PUBLIC_POSTHOG_HOST: ${{ secrets.EXPO_PUBLIC_POSTHOG_HOST }}
+        run: vercel build ${{ env.VERCEL_TARGET == 'production' && '--prod' || '' }} --token="$VERCEL_TOKEN"
+
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt ${{ env.VERCEL_TARGET == 'production' && '--prod' || '' }} --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $VERCEL_TARGET: $url" >> "$GITHUB_STEP_SUMMARY"
 
   android-apk:
     name: Build & release Android APK

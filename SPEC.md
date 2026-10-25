@@ -673,7 +673,8 @@ The app fetches `page/mobile-html` as on native, then renders it in `<iframe san
 
 ### 15.6 Hosting and deploy
 - **Vercel**, static output from `expo export -p web`. `vercel.json`: rewrite every path to `index.html`; `Cache-Control: public, max-age=31536000, immutable` on `/_expo/static/*` and `/assets/*`. Git deploys off; CI deploys.
-- **CI:** a `web` job after `checks` — export, Playwright E2E (§15.8), then deploy: PRs get a preview URL, `main` goes to production. `EXPO_PUBLIC_*` values come from repository secrets.
+- **CI:** a `web` job after `checks` — `vercel pull`, `vercel build` (runs `vercel.json`'s `npm ci` and export), then `vercel deploy --prebuilt`: PRs get a preview URL, a push to `main` goes to production, a manual run (the APK release) skips it. The URL shows on the run's GitHub environment (`preview` / `production`). The Playwright E2E gate (§15.8) goes between build and deploy once the suite exists.
+  - **Repository secrets:** `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (from `.vercel/project.json` after `vercel link`), and the `EXPO_PUBLIC_*` values: `EXPO_PUBLIC_WIKI_API_CONTACT`, `EXPO_PUBLIC_POSTHOG_KEY`, `EXPO_PUBLIC_POSTHOG_HOST`.
 - **Installable:** a web manifest (name, existing icon set, paper/night theme colours, `display: standalone`, portrait). No service worker.
   - `public/manifest.webmanifest`; icons in `public/icons/` resized from `assets/icon.png`: 192 and 512, a 180 `apple-touch-icon`, and a 512 maskable copy with the art shrunk onto paper. The ring sits at about 70 % of the width, inside the 80 % safe zone.
   - `public/index.html` (from `npx expo customize`) links them and sets `theme-color` per colour scheme. It also paints `html` paper or night, so nothing white shows before the app draws or beside its column.
