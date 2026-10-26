@@ -45,3 +45,6 @@ coverage/
 
 # Copied from sql.js on npm install (package.json postinstall)
 public/sql-wasm.wasm
+
+# Vercel CLI link (vercel pull / vercel link)
+.vercel/
