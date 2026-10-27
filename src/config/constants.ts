@@ -136,3 +136,9 @@ export function buildUserAgent(contact: string): string {
 export const ANALYTICS = {
   defaultHost: 'https://eu.i.posthog.com',
 } as const;
+
+/** A column's list on web (SPEC.md §15.3). */
+export const WEB_SCROLL = {
+  /** Browsers without `scrollend` take the list as settled once `scroll` events stop for this long. */
+  settleDebounceMs: 150,
+} as const;

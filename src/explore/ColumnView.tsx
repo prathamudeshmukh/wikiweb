@@ -26,12 +26,14 @@ import { useDwellPrefetch } from './dwellPrefetch';
 import { FEED_SNAP } from './feedSnap';
 import { HomeHeader } from './HomeHeader';
 import { keyboardTarget } from './keyboardNavigation';
+import { settledCardIndex } from './scrollSettle';
 import { GESTURE, type HopController } from './hopController';
 import { SwipeCard } from './SwipeCard';
 import { useColumnFeed } from './useColumnFeed';
 import { useColumnMotion } from './useColumnMotion';
 import { useColumnVisit } from './useExploreAnalytics';
 import { useHomeFeed } from './useHomeFeed';
+import { useScrollSettled } from './useScrollSettled';
 
 export interface PulseTarget {
   cardId: number;
@@ -166,11 +168,10 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const hint = useColumnHint({ isHome, isTop, isScreenFocused, listKey: feed.listKey, cardCount: view.cards.length });
   const { settled, touchStarted, touchEnded } = hint;
 
+  const settledAt = useCallback((offset: number) => settled(settledCardIndex(offset, interval)), [settled, interval]);
   // Momentum end is the usual signal; a drag released without momentum (iOS, at a snap point) only ends the drag.
-  const onScrollSettled = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => settled(Math.round(e.nativeEvent.contentOffset.y / interval)),
-    [settled, interval],
-  );
+  const onScrollSettled = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => settledAt(e.nativeEvent.contentOffset.y), [settledAt]);
+  const webScrollSettledRef = useScrollSettled(settledAt);
 
   const renderItem = useCallback(
     ({ item, index }: { item: ColumnItem; index: number }) =>
@@ -225,6 +226,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
           {cardHeight > 0 && (
             <FlatList
               key={feed.listKey}
+              ref={webScrollSettledRef}
               testID="column-list"
               data={items}
               keyExtractor={columnItemKey}
