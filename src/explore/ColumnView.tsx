@@ -23,6 +23,7 @@ import { Breadcrumb } from './Breadcrumb';
 import { type ColumnItem, columnItems } from './columnItems';
 import { type ColumnEntry, isSeeded, type SeededEntry } from './columnStack';
 import { useDwellPrefetch } from './dwellPrefetch';
+import { FEED_SNAP } from './feedSnap';
 import { HomeHeader } from './HomeHeader';
 import { keyboardTarget } from './keyboardNavigation';
 import { GESTURE, type HopController } from './hopController';
@@ -158,6 +159,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const { backPan, columnStyle, riseStyle } = useColumnMotion({ isHome, isTop, screenWidth, screenLeft, entry: entryProgress, onBack });
 
   const cardWidth = screenWidth - LAYOUT.gutter * 2;
+  const listBottomPadding = LAYOUT.peek + insets.bottom;
   const cardHeight = listHeight - LAYOUT.listTopPadding - LAYOUT.cardGap - LAYOUT.peek;
   const interval = cardHeight + LAYOUT.cardGap;
   const seedTitle = entry.seed?.title ?? null;
@@ -231,7 +233,9 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
               showsVerticalScrollIndicator={false}
               snapToInterval={interval}
               decelerationRate="fast"
-              contentContainerStyle={{ paddingTop: LAYOUT.listTopPadding, paddingBottom: LAYOUT.peek + insets.bottom }}
+              style={FEED_SNAP.list}
+              CellRendererComponent={FEED_SNAP.Cell}
+              contentContainerStyle={{ paddingTop: LAYOUT.listTopPadding, paddingBottom: listBottomPadding }}
               ItemSeparatorComponent={CardGap}
               getItemLayout={(_, index) => ({ length: interval, offset: LAYOUT.listTopPadding + interval * index, index })}
               initialNumToRender={2}
@@ -248,6 +252,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
               ListEmptyComponent={
                 view.status === 'loading' ? <CompassCard width={cardWidth} height={cardHeight} quote={entry.seedQuote} topic={entry.seedTopic} /> : null
               }
+              ListFooterComponentStyle={FEED_SNAP.footer(listBottomPadding)}
               ListFooterComponent={
                 view.cards.length === 0 && view.status === 'loading' ? null : <FeedStatusCard status={view.status} isHome={isHome} onRetry={view.retry} />
               }
