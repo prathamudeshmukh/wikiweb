@@ -59,4 +59,39 @@ describe('CardView', () => {
     expect(screen.queryByLabelText('Superorder of cephalopod molluscs')).toBeNull();
     expect(screen.getByText('Squid')).toBeOnTheScreen();
   });
+
+  describe('typographic title', () => {
+    const measureTitleArea = (height: number) =>
+      fireEvent(screen.getByTestId('card-block-title-area'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height } } });
+
+    it('starts at two lines, safe on the smallest phone, before the block is measured', async () => {
+      await render(<CardView card={card({ thumbnail: null })} seedTitle="Octopus" />);
+
+      expect(screen.getByText('Squid')).toHaveProp('numberOfLines', 2);
+    });
+
+    it('shows as many whole lines as fit above the icon', async () => {
+      await render(<CardView card={card({ thumbnail: null })} seedTitle="Octopus" />);
+
+      await measureTitleArea(42 * 3 + 10);
+
+      expect(screen.getByText('Squid')).toHaveProp('numberOfLines', 3);
+    });
+
+    it('never goes past four lines in a tall block', async () => {
+      await render(<CardView card={card({ thumbnail: null })} seedTitle="Octopus" />);
+
+      await measureTitleArea(42 * 9);
+
+      expect(screen.getByText('Squid')).toHaveProp('numberOfLines', 4);
+    });
+
+    it('keeps one line when the block has almost no room', async () => {
+      await render(<CardView card={card({ thumbnail: null })} seedTitle="Octopus" />);
+
+      await measureTitleArea(5);
+
+      expect(screen.getByText('Squid')).toHaveProp('numberOfLines', 1);
+    });
+  });
 });

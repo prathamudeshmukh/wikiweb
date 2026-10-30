@@ -26,12 +26,16 @@ export const LAYOUT = {
 } as const;
 
 export const TYPE = {
-  cardTitle: { fontSize: 28, lineHeight: 32 },
-  typographicTitle: { fontSize: 34, lineHeight: 38 },
+  // Display lines are ≈1.24× the size: Fraunces' glyphs span 1.233em, and a shorter line crops descenders when clamped.
+  cardTitle: { fontSize: 28, lineHeight: 35 },
+  typographicTitle: { fontSize: 34, lineHeight: 42 },
   body: { fontSize: 17, lineHeight: 27 },
   meta: { fontSize: 11, lineHeight: 16, letterSpacing: 0.9 },
   travelQuote: { fontSize: 22, lineHeight: 28 },
   crumb: { fontSize: 12, lineHeight: 16, letterSpacing: 0.7 },
   /** Extract lines shown before the card has measured its free space. */
   extractFallbackLines: 4,
+  /** Typographic-card title lines shown before the block is measured — what fits beside the icon on the smallest phone. */
+  typographicTitleFallbackLines: 2,
+  typographicTitleMaxLines: 4,
 } as const;
