@@ -619,7 +619,7 @@ Target ≥ 80 % coverage; TDD for `content/`, `wiki-api/`, `journeys/`.
 | Web: browser gestures feel worse than native | Edge guard + `touch-action`; judged by §15.11 point 2 |
 | Web: Safari evicts site data (7-day cap without interaction for non-installed sites) | Journeys could vanish for rare visitors. Installing to the home screen avoids the cap; say so if it shows up in `app_error`s |
 | Web: Wikimedia user-agent policy | Browsers can't set `User-Agent`; `Api-User-Agent` is sent instead (already in `http.ts`) |
-| Name "Tangent" | Check App Store / Play Store / domain availability. Do not use "Wikipedia" or Wikimedia marks in name or icon |
+| Name "Tangent" | Check App Store / Play Store availability. Do not use "Wikipedia" or Wikimedia marks in name or icon. Domain decided: `gotangent.app` (§15.6) |
 
 ---
 
@@ -679,7 +679,7 @@ The app fetches `page/mobile-html` as on native, then renders it in `<iframe san
 - **Installable:** a web manifest (name, existing icon set, paper/night theme colours, `display: standalone`, portrait). No service worker.
   - `public/manifest.webmanifest`; icons in `public/icons/` resized from `assets/icon.png`: 192 and 512, a 180 `apple-touch-icon`, and a 512 maskable copy with the art shrunk onto paper. The ring sits at about 70 % of the width, inside the 80 % safe zone.
   - `public/index.html` (from `npx expo customize`) links them and sets `theme-color` per colour scheme. It also paints `html` paper or night, so nothing white shows before the app draws or beside its column.
-- **Domain:** decided at launch; `*.vercel.app` until then.
+- **Domain:** `gotangent.app`, registered on Cloudflare. Both records are CNAMEs to the Vercel target, **DNS only**: Cloudflare's proxy hides visitors from Vercel's bot and DDoS protection and can cache `index.html` over a deploy. The apex is canonical; `www` redirects to it (308, set in Vercel's domain settings). Each host is its own origin with its own journeys and Finds (§15.5), so the app is served from one. The old `tangent-rose.vercel.app` stays live without a redirect. Nothing in the app names its own URL.
 
 ### 15.7 Analytics
 Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`posthogWeb.ts`; `connectPostHog(.web).ts` picks the client per platform, `createAnalytics` keeps the dev/no-key choice for both).
