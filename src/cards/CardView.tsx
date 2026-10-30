@@ -60,7 +60,7 @@ export function CardView({ card, seedTitle, topicButton, find }: CardViewProps) 
         </>
       ) : (
         <View style={[styles.block, { backgroundColor: accent }]}>
-          <Text style={[styles.blockTitle, { color: palette.onTerritory }]} numberOfLines={4}>{card.title}</Text>
+          <BlockTitle title={card.title} color={palette.onTerritory} />
           <View style={styles.blockIcon}>
             <TopicIcon tileId={card.topic.tileId} size={TYPOGRAPHIC_ICON_SIZE} color={palette.onTerritory} />
           </View>
@@ -99,6 +99,16 @@ function Extract({ text, color }: { text: string; color: string }) {
   );
 }
 
+/** The typographic card's title takes the block's height above the icon, in whole lines, up to the cap. */
+function BlockTitle({ title, color }: { title: string; color: string }) {
+  const { lines, onLayout } = useFittedLineCount(TYPE.typographicTitle.lineHeight, TYPE.typographicTitleFallbackLines);
+  return (
+    <View testID="card-block-title-area" style={styles.blockTitleArea} onLayout={onLayout}>
+      <Text style={[styles.blockTitle, { color }]} numberOfLines={Math.min(lines, TYPE.typographicTitleMaxLines)}>{title}</Text>
+    </View>
+  );
+}
+
 /** Visited ◌ (elsewhere on this expedition) and read ✓, never colour-coded (DESIGN.md §5.4). */
 function Badges({ visited, read, color }: { visited: boolean; read: boolean; color: string }) {
   if (!visited && !read) return null;
@@ -120,7 +130,8 @@ const styles = StyleSheet.create({
   card: { flex: 1, borderRadius: LAYOUT.cardRadius, padding: LAYOUT.cardPadding, gap: 12, overflow: 'hidden' },
   image: { width: '100%', aspectRatio: LAYOUT.imageAspect, borderRadius: LAYOUT.imageRadius, borderWidth: StyleSheet.hairlineWidth },
   title: { fontFamily: FONT.display, ...TYPE.cardTitle },
-  block: { aspectRatio: LAYOUT.imageAspect, borderRadius: LAYOUT.imageRadius, padding: 18, justifyContent: 'space-between' },
+  block: { aspectRatio: LAYOUT.imageAspect, borderRadius: LAYOUT.imageRadius, padding: 18 },
+  blockTitleArea: { flex: 1, overflow: 'hidden' },
   blockTitle: { fontFamily: FONT.display, ...TYPE.typographicTitle },
   blockIcon: { alignItems: 'flex-end' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
