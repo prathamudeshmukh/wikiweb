@@ -706,7 +706,7 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`
 | Landed column thrown back offscreen | Fixed in shared code: hop `progress` was reset on landing, which on web reached the landed column's reaction before it let go of `entry`. It is now reset when the next hop is prepared. |
 | Card extract trim leaves an orphan "c…" line | Open — trimming measures differently on web |
 | Mouse drag hop | Fixed: a drag starting on a card's picture became a native image drag. Hops and Back verified with a mouse in Chromium and WebKit. |
-| Second explore screen | Open. After onboarding's Skip (`router.replace('/')`) a second, unfocused `ExploreScreen` appears to stay mounted beneath the first (it kept its own history sync until popstate was limited to the focused one). Check on native: it would load Home twice. |
+| Second explore screen | Fixed (#8). Opening `/onboarding` directly (a reload mid-onboarding) builds the stack as `[index, onboarding]`, since the layout's `initialRouteName` puts Home beneath; once picks were saved that Home rendered, and `router.replace('/')` stacked a second one on top, so every Home request went out twice. Onboarding now finishes with `router.dismissTo('/')`, popping to the Home beneath when there is one (`onboardingRoute.test.tsx`). Opening `/` was never affected: its redirect replaces Home. |
 | WebKit blocks Wikipedia requests | Fixed: `http.ts` sent `User-Agent` as well as `Api-User-Agent`; Chromium drops the forbidden header, WebKit names it in the CORS preflight and Wikimedia refuses it. In a browser (`runtime: 'browser'`) only `Api-User-Agent` is sent. |
 
 ### 15.11 Success (read 4 weeks after launch, PostHog split by `platform`)
