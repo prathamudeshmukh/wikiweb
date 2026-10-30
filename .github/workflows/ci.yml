@@ -105,6 +105,9 @@ jobs:
     timeout-minutes: 90
     permissions:
       contents: write
+    outputs:
+      tag: ${{ steps.apk.outputs.tag }}
+      file: ${{ steps.apk.outputs.file }}
     steps:
       - name: Require the Expo token
         env:
@@ -161,3 +164,51 @@ jobs:
             --title "Tangent ${{ steps.apk.outputs.tag }}" \
             --generate-notes \
             --prerelease
+
+  notify-slack:
+    name: Post APK result to Slack
+    needs: [checks, android-apk]
+    # always() so a failed checks job (which skips the APK job) is still reported.
+    if: always() && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Soft-fails: the release is the source of truth, so a Slack problem is a warning, never a red run.
+      - name: Post to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          APK_RESULT: ${{ needs.android-apk.result }}
+          TAG: ${{ needs.android-apk.outputs.tag }}
+          FILE: ${{ needs.android-apk.outputs.file }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "::warning::SLACK_WEBHOOK_URL is not set, so no Slack message was posted."
+            exit 0
+          fi
+
+          commit="\`$BRANCH\` @ \`${SHA:0:7}\`"
+          if [ "$APK_RESULT" = success ]; then
+            text=$(printf '📦 *Tangent %s* is ready\n<%s|Download APK>\n<%s|Release notes> · %s' \
+              "$TAG" "$REPO_URL/releases/download/$TAG/$FILE" "$REPO_URL/releases/tag/$TAG" "$commit")
+          else
+            if [ "$CHECKS_RESULT" != success ]; then
+              stage=checks result=$CHECKS_RESULT
+            else
+              stage="APK build" result=$APK_RESULT
+            fi
+            outcome=$([ "$result" = cancelled ] && echo "was cancelled" || echo failed)
+            text=$(printf '❌ *Tangent APK build #%s %s* (at: %s)\n<%s|View run log>\n%s' \
+              "$RUN_NUMBER" "$outcome" "$stage" "$REPO_URL/actions/runs/$RUN_ID" "$commit")
+          fi
+
+          payload=$(jq -n --arg text "$text" '{text: $text}')
+          if ! curl --silent --show-error --fail-with-body --max-time 30 \
+            -H 'Content-Type: application/json' -d "$payload" "$SLACK_WEBHOOK_URL"; then
+            echo "::warning::Slack rejected the APK notification. The release itself is unaffected."
+          fi
