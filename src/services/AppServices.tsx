@@ -9,6 +9,8 @@ import { type AnalyticsConnector, createAnalytics } from '../analytics/createAna
 import { errorReason } from '../analytics/errorReason';
 import { createExpeditionReporter, type ExpeditionReporter } from '../analytics/expeditionReport';
 import { findEvents } from '../analytics/findEvents';
+import { createFeedbackPrompt, type FeedbackPrompt } from '../feedback/feedbackPrompt';
+import { createFeedbackStore } from '../feedback/feedbackStore';
 import { buildUserAgent, PREFETCH, REQUEST_BUDGET } from '../config/constants';
 import { topicOfPage } from '../content/topicResolution';
 import { columnFeedFor } from '../explore/columnFeedFor';
@@ -42,8 +44,10 @@ export interface AppServices {
   homeSnapshots: HomeSnapshotStore;
   /** Interest-tree nodes read in full (SPEC.md §3.9). */
   completedNodes: CompletedNodes;
-  /** Which prompt or exhaustion card Home shows (SPEC.md §3.9). */
+  /** Which prompt, exhaustion or feedback card Home shows (SPEC.md §3.9, §3.10). */
   nudges: Nudges;
+  /** The one-time feedback card's answers (SPEC.md §3.10). */
+  feedback: FeedbackPrompt;
   hints: HintStore;
   journeys: JourneySession;
   /** Articles kept with ✦ (SPEC.md §3.7). */
@@ -83,15 +87,24 @@ export function createAppServices(config: AppConfig, connect: AnalyticsConnector
   // One connection for every table in the on-device database.
   const openDatabase = openOnce(openJourneyDatabase);
   const completedNodes = createCompletedNodes(openDatabase);
-  const nudges = createNudges({ store: createNudgeStore(keyValueStorage), completedNodes, analytics, now: Date.now });
+  const journeyRepo = createJourneyRepository(openDatabase);
+  const analyticsConsent = createAnalyticsConsent(keyValueStorage, analytics);
+  const feedback = createFeedbackPrompt({
+    store: createFeedbackStore(keyValueStorage),
+    analytics,
+    expeditionCount: journeyRepo.expeditionCount,
+    isOptedOut: analyticsConsent.isOptedOut,
+  });
+  const nudges = createNudges({ store: createNudgeStore(keyValueStorage), completedNodes, feedback, analytics, now: Date.now });
   const journeys = createJourneySession({
-    repo: createJourneyRepository(openDatabase),
+    repo: journeyRepo,
     now: Date.now,
     newId,
     resolveTopic: (pageId) => topicOfPage(api, pageId),
     onError: reportError,
     events: {
       stampEarned: expeditions.stampEarned,
+      expeditionStarted: feedback.expeditionStarted,
       expeditionEnded: (expedition) => expeditions.ended(expedition, 'home'),
       articleRead: (topic) => void nudges.articleRead(topic),
     },
@@ -119,13 +132,14 @@ export function createAppServices(config: AppConfig, connect: AnalyticsConnector
       homeSnapshots: createHomeSnapshotStore(openDatabase),
       completedNodes,
       nudges,
+      feedback,
       hints: createHintStore(keyValueStorage),
       journeys,
       finds,
       prefetcher,
       analytics,
       analyticsClient: client,
-      analyticsConsent: createAnalyticsConsent(keyValueStorage, analytics),
+      analyticsConsent,
       columnVisits: createColumnVisits({ analytics, now: Date.now }),
       expeditions,
     },

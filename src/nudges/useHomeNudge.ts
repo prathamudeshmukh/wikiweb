@@ -5,7 +5,7 @@ import { addPick, tileOf } from '../interests/interestPicks';
 import type { TreeTarget } from '../interests/treeTarget';
 import { useAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
-import { type Chip, chipChoices, type Nudge } from './nudgeRules';
+import { type Chip, chipChoices, isNicheNudge, type NicheNudge, type Nudge } from './nudgeRules';
 
 /** What Home's nudge card can do outside Home (provided by the route). */
 export interface NicheActions {
@@ -41,6 +41,8 @@ export interface HomeNudgeView {
   onChip(chip: Chip): void;
   onOpenTree(): void;
   onDismiss(): void;
+  /** The feedback card was answered: it leaves Home without counting as dismissed. */
+  onAnswered(): void;
   onVisible(visible: boolean): void;
 }
 
@@ -49,7 +51,7 @@ const NO_CHIPS: ReadonlySet<string> = new Set();
 const toggled = (set: ReadonlySet<string>, path: string): ReadonlySet<string> =>
   set.has(path) ? new Set([...set].filter((p) => p !== path)) : new Set([...set, path]);
 
-const tileOfNudge = (nudge: Nudge) => (nudge.kind === 'prompt' ? nudge.tileId : tileOf(nudge.node.path));
+const tileOfNudge = (nudge: NicheNudge) => (nudge.kind === 'prompt' ? nudge.tileId : tileOf(nudge.node.path));
 
 /** Chips settle: every chip tapped is added in one save, NICHE.chipSettleMs after the last tap (SPEC.md §3.9). */
 function useChipSettle(attached: Attached | null, interests: readonly string[], niche: NicheActions) {
@@ -133,9 +135,14 @@ export function useHomeNudge({ interests, generation, cardCount, niche }: HomeNu
     setAttached({ ...current, status: 'removed' });
   }, [nudges]);
 
+  const onAnswered = useCallback(() => {
+    const current = live.current.attached;
+    if (current) setAttached({ ...current, status: 'removed' });
+  }, []);
+
   const onOpenTree = useCallback(() => {
     const current = live.current.attached;
-    if (current) niche.openTree({ tileId: tileOfNudge(current.nudge) }, 'prompt');
+    if (current && isNicheNudge(current.nudge)) niche.openTree({ tileId: tileOfNudge(current.nudge) }, 'prompt');
   }, [niche]);
 
   const showing = attached && attached.status !== 'removed' ? attached : null;
@@ -148,6 +155,7 @@ export function useHomeNudge({ interests, generation, cardCount, niche }: HomeNu
     onChip: settle.onChip,
     onOpenTree,
     onDismiss,
+    onAnswered,
     onVisible,
   };
 }

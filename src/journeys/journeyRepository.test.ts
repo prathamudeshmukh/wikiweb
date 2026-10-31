@@ -52,6 +52,15 @@ describe.each(DRIVERS)('on %s', (_driver, openDatabase) => {
       await expect(repo.hasNodes()).resolves.toBe(true);
     });
 
+    it('counts the expeditions on record', async () => {
+      const { repo } = await openRepository();
+      await repo.createJourney(makeJourney('j1'));
+
+      await repo.createJourney(makeJourney('j2'));
+
+      await expect(repo.expeditionCount()).resolves.toBe(2);
+    });
+
     it('lists expeditions with the most recently active first', async () => {
       const { repo } = await openRepository();
       await repo.createJourney(makeJourney('old'));
