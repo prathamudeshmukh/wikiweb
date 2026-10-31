@@ -296,6 +296,8 @@ One non-article card type for the prompt and exhaustion cards. It sits in the Ho
 - **Why-line.** `→ SWIPE RIGHT TO SKIP` with `SEE THE WHOLE TREE →` (`ink.primary`, tappable) at the right on the prompt card; a Phosphor `Check` then `COMPLETED · {TILE} › {PARENT}`, with `→ SKIP`, on the exhaustion card.
 - **Gestures.** Swipe right dismisses: the card slides off to the right (instead of the Home rubber band) and the column closes the gap. Left swipe does nothing. No first-hop hint chip. Tapping the card outside the chips opens the tile's tree.
 - **Toast** after chips settle: `Added {labels} · Home is rebuilding`, `ink.primary` pill, Plex Mono, bottom, 1.8 s.
+- **Feedback card** (SPEC.md §3.10): the same anatomy with an **ink** block (`bg.card` text), since it belongs to no territory (§2.4). Eyebrow `TWO EXPEDITIONS IN`, title *Enjoying Tangent?*, Phosphor `ChatCircleDots` bottom-right; meta `● TANGENT BETA` in ink, `{n} EXPEDITIONS` muted. In place of chips, two equal 52 pt buttons `👍 YES` / `👎 NOT YET` (`bg.paper`, 1 pt hairline, Plex Mono caps 12). Opted out: one ink `SEND FEEDBACK BY EMAIL →` button with the address in mono caps below. Why-line `→ SWIPE RIGHT TO SKIP`. No tap-to-open-tree. Mock: direction A in #13.
+- **Feedback note sheet:** bottom sheet like the find sheet (§5.11). `THANKS: NOTED 👍/👎` in mono, Fraunces 22 question, one-line input with a `{n}/280` counter, `SENT ANONYMOUSLY · DON'T INCLUDE PERSONAL DETAILS` in mono light, then `SKIP` (outline) and `SEND` (ink, 40 % opacity while empty).
 
 ### 5.15 Tappable topic label (M8)
 On cards whose tile has a tree, `● {TOPIC}` in the meta row is a button opening that tile's tree screen. No resting cue. Pressed: a `line.hairline` pill fills behind the label (120 ms in, 200 ms out), padding 4 × 8; hitSlop to a 44 pt target. The label's colour never changes. Elsewhere on the card, taps open the reader as before.
@@ -333,7 +335,7 @@ Full-height sheet over the column, grabber on top, header bar with close (left) 
 Back, title `LOGBOOK`, gear. Then the world atlas (M7, §5.12): eyebrow, title, stats, map, blind-spot bar, expedition chips. Then the stamps grid (5 per row, `6 / 24` count). Then `FINDS · {n}` (M6): a horizontal strip of the latest finds (thumbnail or territory swatch, title, solid ✦), newest first, with *See all →* to the `FINDS` list screen (title, `FOUND ON · FROM {first}…` / `FOUND ON HOME` caption). Tap a find → peek card (§5.8). Then `COMPLETED · {n}` (M8, hidden while empty): rows with a 40 pt territory swatch holding the tile icon, the node label in Fraunces 18, a caption `{TILE} › {PARENT} · {n} ARTICLES · {DATE}` in Plex Mono 10 `ink.muted`, and ✓ at the right; newest first, no cap. Tap → the tile's tree screen (§5.13) at the node's parent. Then the expeditions list: title, date, hop count, territory route strip. Tap → recap card.
 
 ### 6.6 Settings
-Interests (re-open tile picker; tree tiles open their tree screen, §5.13) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · About & attributions.
+Interests (re-open tile picker; tree tiles open their tree screen, §5.13) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · Send feedback (`feedback@gotangent.app` as its value, `ArrowUpRight`: it leaves the app) · About & attributions.
 
 ### 6.7 States
 | State | Visual |
@@ -412,6 +414,9 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Prompt card | You keep reading {Tile} / Narrow {Tile}? / Pick a corner and Home will lean into it. You can change this any time in Settings. / Swipe right to skip · See the whole tree → |
 | Exhaustion card | {Tile} › {Parent} / You've read all of {Node} / Every one of them. Home widens to {Parent} from here. Or try a neighbour: / Completed · {Tile} › {Parent} |
 | Chips toast | Added {labels} · Home is rebuilding |
+| Feedback card | Two expeditions in / Enjoying Tangent? / You've wandered a couple of times now. Tell us how it's going: it shapes what we build next. / 👍 Yes · 👎 Not yet |
+| Feedback card (opted out) | You're not sharing usage data, so nothing is sent from here. If you'd like to tell us how it's going, an email reaches us directly. / Send feedback by email → |
+| Feedback sheet | Thanks: noted 👍 / Anything to add? / What do you like most? — 👎: What would make it better? — Sent anonymously · don't include personal details |
 | Logbook Completed | Completed · {n} — {Tile} › {Parent} · {n} articles · {date} |
 
 ---

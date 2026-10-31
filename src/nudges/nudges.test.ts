@@ -1,5 +1,7 @@
 import { memoryCompletedNodes } from '../__testing__/renderWithServices';
 import { memoryAnalytics } from '../analytics/__testing__/memoryAnalytics';
+import { createFeedbackPrompt } from '../feedback/feedbackPrompt';
+import { createFeedbackStore } from '../feedback/feedbackStore';
 import { createNudges } from './nudges';
 import { createNudgeStore } from './nudgeStore';
 
@@ -17,14 +19,17 @@ function memoryKv(initial: Record<string, string> = {}) {
 const PHILOSOPHY = { tileId: 'philosophy', territory: 'mind' as const };
 const STOICISM = { path: 'philosophy/ethics/stoicism', articleCount: 37 };
 
-async function setup(kvData: Record<string, string> = {}) {
+async function setup(kvData: Record<string, string> = {}, expeditions = 0) {
   const kv = memoryKv(kvData);
   const analytics = memoryAnalytics();
   const completedNodes = memoryCompletedNodes();
-  const nudges = createNudges({ store: createNudgeStore(kv), completedNodes, analytics, now: () => 1000 });
+  const feedback = createFeedbackPrompt({ store: createFeedbackStore(kv), analytics, expeditionCount: async () => expeditions, isOptedOut: () => false });
+  const nudges = createNudges({ store: createNudgeStore(kv), completedNodes, feedback, analytics, now: () => 1000 });
   await nudges.load();
   return { nudges, analytics, completedNodes, kv };
 }
+
+const FEEDBACK_NUDGE = { kind: 'feedback', expeditions: 2, channel: 'analytics' } as const;
 
 async function readPhilosophy(nudges: Awaited<ReturnType<typeof setup>>['nudges'], times: number) {
   for (let i = 0; i < times; i += 1) await nudges.articleRead(PHILOSOPHY);
@@ -120,5 +125,55 @@ describe('nudges', () => {
     await readPhilosophy(nudges, 3);
 
     expect(nudges.next(['philosophy'])).toEqual({ kind: 'prompt', tileId: 'philosophy', reads: 3 });
+  });
+
+  it('keeps its saved progress when the feedback card fails to load', async () => {
+    const kv = memoryKv({ nicheReads: JSON.stringify({ philosophy: 3 }) });
+    const analytics = memoryAnalytics();
+    const feedback = createFeedbackPrompt({
+      store: createFeedbackStore(kv),
+      analytics,
+      expeditionCount: async () => Promise.reject(new Error('database')),
+      isOptedOut: () => false,
+    });
+    const nudges = createNudges({ store: createNudgeStore(kv), completedNodes: memoryCompletedNodes(), feedback, analytics, now: () => 1000 });
+
+    await nudges.load();
+
+    expect(nudges.next(['philosophy'])).toEqual({ kind: 'prompt', tileId: 'philosophy', reads: 3 });
+  });
+
+  describe('feedback card', () => {
+    it('comes ahead of a niche prompt', async () => {
+      const { nudges } = await setup({ nicheReads: JSON.stringify({ philosophy: 3 }) }, 2);
+
+      expect(nudges.next(['philosophy'])).toEqual(FEEDBACK_NUDGE);
+    });
+
+    it('waits behind an exhaustion card', async () => {
+      const { nudges } = await setup({}, 2);
+
+      await nudges.nodeExhausted(STOICISM);
+
+      expect(nudges.next(['philosophy'])).toEqual({ kind: 'exhausted', node: STOICISM });
+    });
+
+    it('shares the once-per-session limit with the prompt', async () => {
+      const { nudges } = await setup({ nicheReads: JSON.stringify({ philosophy: 3 }) }, 2);
+
+      nudges.shown(FEEDBACK_NUDGE);
+
+      expect(nudges.next(['philosophy'])).toBeNull();
+    });
+
+    it('reports it shown and dismissed', async () => {
+      const { nudges, analytics } = await setup({}, 2);
+
+      nudges.shown(FEEDBACK_NUDGE);
+      nudges.dismissed(FEEDBACK_NUDGE, 'swipe');
+
+      expect(analytics.named('feedback_shown')).toEqual([{ impression: 1, expeditions: 2 }]);
+      expect(analytics.named('feedback_dismissed')).toEqual([{ how: 'swipe', impression: 1 }]);
+    });
   });
 });

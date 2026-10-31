@@ -114,4 +114,42 @@ describe('useHomeNudge', () => {
     expect(result.current.nudge?.kind).toBe('exhausted');
     expect(result.current.index).toBe(12);
   });
+
+  describe('feedback card', () => {
+    async function setupFeedback() {
+      const services = testServices(fakeWikiApi({}).api);
+      await services.analyticsConsent.load();
+      await services.feedback.load();
+      services.feedback.expeditionStarted();
+      services.feedback.expeditionStarted();
+      const niche: NicheActions = { addPicks: jest.fn(async () => undefined), openTree: jest.fn() };
+      const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
+      const hook = await renderHook(() => useHomeNudge({ interests: ['philosophy'], niche, generation: 0, cardCount: 10 }), { wrapper });
+      return { ...hook, services, niche };
+    }
+
+    it('places the feedback card once two expeditions are on record', async () => {
+      const { result } = await setupFeedback();
+
+      expect(result.current.nudge).toEqual({ kind: 'feedback', expeditions: 2, channel: 'analytics' });
+    });
+
+    it('takes the card out once answered, without counting it as dismissed', async () => {
+      const { result, services } = await setupFeedback();
+      await act(() => result.current.onVisible(true));
+
+      await act(() => result.current.onAnswered());
+
+      expect(result.current.index).toBeNull();
+      expect(services.analytics.named('feedback_dismissed')).toEqual([]);
+    });
+
+    it('opens no tree from the feedback card', async () => {
+      const { result, niche } = await setupFeedback();
+
+      await act(() => result.current.onOpenTree());
+
+      expect(niche.openTree).not.toHaveBeenCalled();
+    });
+  });
 });

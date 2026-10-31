@@ -2,6 +2,7 @@
 // Add an icon here before using it; ESLint blocks importing the package root anywhere else.
 export type { Icon } from 'phosphor-react-native';
 export { ArrowRight } from 'phosphor-react-native/src/icons/ArrowRight';
+export { ArrowUpRight } from 'phosphor-react-native/src/icons/ArrowUpRight';
 export { Atom } from 'phosphor-react-native/src/icons/Atom';
 export { Bank } from 'phosphor-react-native/src/icons/Bank';
 export { BookOpen } from 'phosphor-react-native/src/icons/BookOpen';

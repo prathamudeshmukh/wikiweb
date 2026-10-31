@@ -1,6 +1,8 @@
-import { CaretRight } from '../theme/icons';
+import { ArrowUpRight, CaretRight } from '../theme/icons';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import type { UsageSharing } from '../analytics/useUsageSharing';
+import { FEEDBACK } from '../config/constants';
+import { openFeedbackMail } from '../feedback/feedbackMail';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { interestsSummary } from '../onboarding/interestSelection';
 import { FONT } from '../theme/fonts';
@@ -40,6 +42,25 @@ function UsageSharingRow({ usage }: { usage: UsageSharing }) {
   );
 }
 
+/** The fallback feedback channel (SPEC.md §3.10); the address shows for when no mail app opens. */
+function SendFeedbackRow() {
+  const palette = useTheme();
+  return (
+    <Pressable
+      onPress={() => void openFeedbackMail()}
+      accessibilityRole="button"
+      accessibilityLabel={`Send feedback. ${FEEDBACK.email}`}
+      style={({ pressed }) => [styles.row, { backgroundColor: palette.card, borderColor: palette.line }, pressed && styles.pressed]}
+    >
+      <View style={styles.rowText}>
+        <Text style={[styles.rowTitle, { color: palette.ink }]}>Send feedback</Text>
+        <Text selectable style={[styles.rowValue, { color: palette.muted }]}>{FEEDBACK.email}</Text>
+      </View>
+      <ArrowUpRight size={18} color={palette.muted} />
+    </Pressable>
+  );
+}
+
 /** Settings, reached from the Logbook gear (DESIGN.md §6.6). */
 export function SettingsScreen({ interests, onBack, onOpenInterests, usage }: SettingsScreenProps) {
   const palette = useTheme();
@@ -62,6 +83,7 @@ export function SettingsScreen({ interests, onBack, onOpenInterests, usage }: Se
           <CaretRight size={18} color={palette.muted} />
         </Pressable>
         <UsageSharingRow usage={usage} />
+        <SendFeedbackRow />
       </View>
     </View>
   );

@@ -12,7 +12,9 @@ import { useFoundIds, useFindToggle } from '../finds/useFinds';
 import { useColumnHint } from '../hints/useColumnHint';
 import { type JourneyMarks, useJourneyMarks } from '../journeys/useJourney';
 import { nodePageOf } from '../journeys/nodePages';
-import { NudgeCard } from '../nudges/NudgeCard';
+import { FeedbackSheet } from '../feedback/FeedbackSheet';
+import { type FeedbackAnswer, useFeedbackAnswer } from '../feedback/useFeedbackAnswer';
+import { HomeNudgeSlot } from '../nudges/HomeNudgeSlot';
 import { Toast } from '../nudges/Toast';
 import { type HomeNudgeView, type NicheActions, useHomeNudge } from '../nudges/useHomeNudge';
 import { useAppServices } from '../services/AppServices';
@@ -66,8 +68,9 @@ interface ColumnFeed {
   listKey?: string;
   refreshControl?: ReactElement<RefreshControlProps>;
   onUserScroll?: () => void;
-  /** Home's prompt or exhaustion card, if one is due. */
+  /** Home's prompt, exhaustion or feedback card, if one is due. */
   nudge?: HomeNudgeView;
+  feedback?: FeedbackAnswer;
 }
 
 // FlatList measures this in screen-heights; one card fills a screen, so this is ~5 cards from the end (SPEC.md §7).
@@ -105,6 +108,7 @@ function HomeColumn(props: ColumnViewProps) {
   const palette = useTheme();
   const home = useHomeFeed(interests, isTop);
   const nudge = useHomeNudge({ interests, generation: home.generation, cardCount: home.cards.length, niche });
+  const feedback = useFeedbackAnswer(nudge.onAnswered);
   const { columnVisits } = useAppServices();
   const { touched, refresh } = home;
   const pullToRefresh = useCallback(() => {
@@ -123,8 +127,9 @@ function HomeColumn(props: ColumnViewProps) {
   );
   return (
     <>
-      <ColumnBody {...props} onOpen={openFromHome} feed={{ view: home, listKey: String(home.generation), refreshControl, onUserScroll: touched, nudge }} />
+      <ColumnBody {...props} onOpen={openFromHome} feed={{ view: home, listKey: String(home.generation), refreshControl, onUserScroll: touched, nudge, feedback }} />
       {nudge.toast && <Toast message={nudge.toast} />}
+      {feedback.rating && <FeedbackSheet rating={feedback.rating} onSend={feedback.send} onClose={feedback.close} />}
     </>
   );
 }
@@ -151,7 +156,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const insets = useSafeAreaInsets();
   const [listHeight, setListHeight] = useState(0);
   const isHome = entry.seed === null;
-  const { view, nudge } = feed;
+  const { view, nudge, feedback } = feed;
   const dwell = useDwellPrefetch(entry, isTop, nudge?.onVisible);
   const items = useMemo(() => columnItems(view.cards, nudge?.index ?? null), [view.cards, nudge?.index]);
   useColumnVisit({ entry, isTop, status: view.status, dwelling: dwell.dwelling });
@@ -176,19 +181,8 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
   const renderItem = useCallback(
     ({ item, index }: { item: ColumnItem; index: number }) =>
       item.kind === 'nudge' ? (
-        nudge?.nudge ? (
-          <NudgeCard
-            nudge={nudge.nudge}
-            chips={nudge.chips}
-            pickedChips={nudge.pickedChips}
-            width={cardWidth}
-            height={cardHeight}
-            enabled={isTop}
-            onChip={nudge.onChip}
-            onOpenTree={nudge.onOpenTree}
-            onDismiss={nudge.onDismiss}
-            columnPan={backPan}
-          />
+        nudge && feedback ? (
+          <HomeNudgeSlot nudge={nudge} feedback={feedback} width={cardWidth} height={cardHeight} enabled={isTop} columnPan={backPan} />
         ) : null
       ) : (
         <SwipeCard
@@ -208,7 +202,7 @@ function ColumnBody(props: ColumnViewProps & { feed: ColumnFeed }) {
         onToggleFind={onToggleFind}
       />
       ),
-    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken, nudge, backPan, openTopic, foundIds, onToggleFind],
+    [seedTitle, cardWidth, cardHeight, isTop, candidateCardId, hop, onOpen, pulse, marks, hint.cardIndex, hint.kind, hint.peelToken, nudge, feedback, backPan, openTopic, foundIds, onToggleFind],
   );
 
   return (

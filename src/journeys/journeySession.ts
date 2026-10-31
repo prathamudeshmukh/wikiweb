@@ -55,12 +55,13 @@ export interface JourneySession {
 /** Moments outside the session care about (analytics). */
 export interface JourneyEvents {
   stampEarned(topic: CardTopic, expeditionId: string | null): void;
+  expeditionStarted(): void;
   expeditionEnded(expedition: Expedition): void;
   /** Every read, once its topic is known (niche prompts count reads per tile, SPEC.md §3.9). */
   articleRead(topic: CardTopic): void;
 }
 
-const NO_EVENTS: JourneyEvents = { stampEarned: () => undefined, expeditionEnded: () => undefined, articleRead: () => undefined };
+const NO_EVENTS: JourneyEvents = { stampEarned: () => undefined, expeditionStarted: () => undefined, expeditionEnded: () => undefined, articleRead: () => undefined };
 
 export interface JourneySessionDeps {
   repo: JourneyRepository;
@@ -105,6 +106,7 @@ export function createJourneySession({ repo, now, newId, resolveTopic, onError, 
     const at = now();
     const journey = { id: newId(), title: journeyTitle(firstTitle), createdAt: at, updatedAt: at, lastNodeId: null };
     persist('journeys.create', () => repo.createJourney(journey));
+    events.expeditionStarted();
     return { journey, nodes: [], readIds: new Set() };
   }
 

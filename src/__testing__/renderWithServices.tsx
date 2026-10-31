@@ -17,6 +17,8 @@ import { memoryHintStore } from '../hints/__testing__/memoryHintStore';
 import { HintsProvider } from '../hints/HintsContext';
 import { createColumnPrefetcher } from '../explore/columnPrefetch';
 import { memoryJourneySession } from '../journeys/__testing__/memoryJourneySession';
+import { createFeedbackPrompt } from '../feedback/feedbackPrompt';
+import { createFeedbackStore } from '../feedback/feedbackStore';
 import { createNudges } from '../nudges/nudges';
 import { createNudgeStore } from '../nudges/nudgeStore';
 import type { JourneySession } from '../journeys/journeySession';
@@ -74,19 +76,22 @@ export function testServices(api: WikiApi, journeys: JourneySession = memoryJour
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry) => columnFeedFor(api, entry) });
   const analytics = memoryAnalytics();
   const completedNodes = memoryCompletedNodes();
+  const analyticsConsent = createAnalyticsConsent(memoryKv(), analytics);
+  const feedback = createFeedbackPrompt({ store: createFeedbackStore(memoryKv()), analytics, expeditionCount: async () => 0, isOptedOut: analyticsConsent.isOptedOut });
   return {
     api,
     interests: memoryInterestsStore(),
     homeSnapshots: memoryHomeSnapshotStore(),
     completedNodes,
-    nudges: createNudges({ store: createNudgeStore(memoryKv()), completedNodes, analytics, now: Date.now }),
+    nudges: createNudges({ store: createNudgeStore(memoryKv()), completedNodes, feedback, analytics, now: Date.now }),
+    feedback,
     hints: memoryHintStore(),
     journeys,
     finds: memoryFindsStore(journeys, findEvents(analytics)),
     prefetcher,
     analytics,
     analyticsClient: null,
-    analyticsConsent: createAnalyticsConsent(memoryKv(), analytics),
+    analyticsConsent,
     columnVisits: createColumnVisits({ analytics, now: Date.now }),
     expeditions: createExpeditionReporter({ analytics, now: Date.now }),
   };
