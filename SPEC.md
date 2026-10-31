@@ -700,19 +700,24 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`
   - first screen (onboarding or Home) on a cold load: < 3 s;
   - Set off / Skip → first card: < 3 s;
   - returning visitor → first card: < 3 s.
-- **Measured** 2026-10-30, three runs each, medians. Lighthouse alone never reaches a card (a fresh visitor lands on onboarding), so first-card times come from a scripted run under the same throttling with 5 s spent on onboarding.
+- **Measured** 2026-10-31, medians of three or more runs. Lighthouse alone never reaches a card (a fresh visitor lands on onboarding), so first-card times come from a scripted run under the same throttling with 5 s spent on onboarding. "Before" is production; the other columns are local production builds (gzip, no CDN), which run ~0.4 s slower on the first screen than production's brotli.
 
-  | | Before (`main`, production) | After (#9) | Budget |
-  |---|---|---|---|
-  | First screen, cold | 8.5 s | 5.4 s | ❌ |
-  | Skip → first card | 9.1 s | 2.7 s | ✅ |
-  | Returning → first card | 0.7 s (saved Home, §3.2) | ~1 s (local build) | ✅ |
+  | | Before (`main`) | First-card fixes (#26) | First-screen fixes | Budget |
+  |---|---|---|---|---|
+  | First screen, cold | 8.5 s | 5.2 s | 3.0 s (expected ~2.6 s on production) | ✅ to confirm |
+  | Skip → first card | 9.1 s | ~3.05 s, 2.5–3.9 s | ~3.1 s, 3.0–3.3 s | borderline |
+  | Returning → first card | 0.7 s (saved Home, §3.2) | ~1.0 s | ~1.0 s | ✅ |
 
-  Lighthouse mobile on production before: performance 82–89, FCP/LCP 0.8–1.1 s (the onboarding heading), TBT 460–630 ms, CLS 0.01, TTI ~8.2 s.
-- **Fixed (#9):** Home asked each source's first page one after another, ~8 searches in a row before the first card; the first batch's sources are now primed together (`Stream.prime`, `homeFeed.ts`). On web the app no longer waits for its seven font faces (~470 KB): they load with `font-display: swap` (`fontLoading.web.ts`); native still waits.
-- **Still over — first screen:** ~1.7 MB arrives before onboarding: the 853 KB entry bundle (~4.3 s on its own at this bandwidth), fonts and `sql-wasm.wasm` (324 KB). Next: lazy-load `sql.js` and code-split the reader and other non-Home screens.
+  Lighthouse mobile on production before: performance 82–89, FCP/LCP 0.8–1.1 s (the onboarding heading), TBT 460–630 ms, CLS 0.01, TTI ~8.2 s. Re-run against production once deployed.
+- **Fixed — Skip → first card:** Home asked each source's first page one after another, ~8 searches in a row before the first card; the first batch's sources are now primed together (`Stream.prime`, `homeFeed.ts`). What is left is Wikipedia's own time — the searches (~0.9 s) and one hydrate (~1.5 s) — plus a second batch whenever the first leaves the page short of 20 usable cards. Next: show the first cards before a full page.
+- **Fixed — first screen:** the entry bundle went from 664 KB to 348 KB brotli. Before onboarding draws, the browser now waits only for that bundle:
+  - fonts load with `font-display: swap`, as WOFF2 (`fontLoading.web.ts`, `scripts/build-web-fonts.py`); native still waits for its TTFs;
+  - every screen but onboarding is one chunk fetched after the first screen (`src/routes/screens.ts`, `deferredScreen.web.tsx`), preloaded while the visitor reads onboarding; it carries reanimated and gesture-handler, whose root is a plain view on web until then (`AppRoot.web.tsx`). Home's interest check stays in `src/app/index.tsx` so a new visitor reaches onboarding without Home's code;
+  - `posthog-js` is imported on demand (`connectPostHog.web.ts`); events made meanwhile wait in order;
+  - zod's ~50 message locales are swapped for an empty module (`metro.config.js`).
+  `sql-wasm.wasm` (316 KB) is not on the first screen's path; it loads alongside the screens chunk, both finishing within the 5 s on onboarding.
 - **Spike measurement:** the JS bundle is 9.4 MB (1.9 MB gzip), far over budget. Likely cause: the `phosphor-react-native` barrel import pulls in every icon. Fixed: icons are imported one file each (`src/theme/icons.ts`, lint-enforced) — 3,027 icon modules down to 72; the web bundle is 3.8 MB raw.
-- Fonts: serve the `@expo-google-fonts` weights actually used, not every variant the packages export. Done: the seven faces loaded are the ones DESIGN.md §3 uses.
+- Fonts: serve the `@expo-google-fonts` weights actually used, not every variant the packages export. Done: each weight is imported from its own entry point, so only the seven DESIGN.md §3 faces are exported.
 
 ### 15.10 Known web issues (from the spike)
 | Issue | Status |

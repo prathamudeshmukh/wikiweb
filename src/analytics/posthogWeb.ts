@@ -1,9 +1,11 @@
 import type { CaptureResult, PostHog, PostHogConfig, Properties } from 'posthog-js';
+import { reportError } from '../services/reportError';
 import type { Analytics } from './analytics';
 import type { AnalyticsConnector } from './createAnalytics';
 
 export type PostHogJsClient = Pick<PostHog, 'capture' | 'register' | 'opt_out_capturing' | 'opt_in_capturing'>;
-export type PostHogJsFactory = (key: string, config: Partial<PostHogConfig>) => PostHogJsClient;
+/** Loads and starts `posthog-js`; async so its ~330 KB stay out of the first screen's bundle (SPEC.md §15.9). */
+export type PostHogJsFactory = (key: string, config: Partial<PostHogConfig>) => Promise<PostHogJsClient>;
 
 // posthog-js stamps the page's address on every event (current, first and session-entry), and a reader URL names an article.
 const PAGE_ADDRESS = /(url|pathname)$/;
@@ -60,11 +62,28 @@ function posthogJsAnalytics(client: PostHogJsClient): Analytics {
   };
 }
 
+const DROPPING_ANALYTICS: Analytics = { track: () => undefined, screen: () => undefined, setOptedOut: () => undefined };
+
+/** Calls made while PostHog loads wait on it, in the order they were made; if it never loads they are dropped. */
+function whenLoaded(loading: Promise<Analytics>): Analytics {
+  const ready = loading.catch((error: unknown) => {
+    reportError('analytics.load', error);
+    return DROPPING_ANALYTICS;
+  });
+  return {
+    track: (event) => void ready.then((analytics) => analytics.track(event)),
+    screen: (route) => void ready.then((analytics) => analytics.screen(route)),
+    setOptedOut: (optedOut) => void ready.then((analytics) => analytics.setOptedOut(optedOut)),
+  };
+}
+
 /** `posthog-js` in the browser (SPEC.md §15.7). No touch autocapture, so no client for the provider. */
 export function connectPostHogWeb(clientFor: PostHogJsFactory): AnalyticsConnector {
   return ({ key, host }) => {
-    const client = clientFor(key, { ...POSTHOG_JS_CONFIG, api_host: host });
-    client.register(SUPER_PROPERTIES);
-    return { analytics: posthogJsAnalytics(client), client: null };
+    const loading = clientFor(key, { ...POSTHOG_JS_CONFIG, api_host: host }).then((client) => {
+      client.register(SUPER_PROPERTIES);
+      return posthogJsAnalytics(client);
+    });
+    return { analytics: whenLoaded(loading), client: null };
   };
 }

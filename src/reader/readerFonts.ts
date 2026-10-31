@@ -1,5 +1,5 @@
-import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
-import { Literata_400Regular } from '@expo-google-fonts/literata';
+import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
+import { Literata_400Regular } from '@expo-google-fonts/literata/400Regular';
 import { reportError } from '../services/reportError';
 import { fontFileBase64 } from './fontFileBase64';
 
