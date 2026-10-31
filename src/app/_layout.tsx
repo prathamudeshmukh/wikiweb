@@ -14,7 +14,7 @@ import { AppServicesProvider, createAppServices } from '../services/AppServices'
 import { reportError } from '../services/reportError';
 import { TangentProvider } from '../tangent/TangentContext';
 import { useAppFrame } from '../theme/appFrame';
-import { FONT_SOURCES } from '../theme/fonts';
+import { LOADED_FONTS, WAITS_FOR_FONTS } from '../theme/fontLoading';
 import { prepareDocument } from '../theme/prepareDocument';
 import { useTheme } from '../theme/useTheme';
 
@@ -37,7 +37,7 @@ function ConfigProblem({ problem }: { problem: string }) {
 export default function RootLayout() {
   const palette = useTheme();
   const frame = useAppFrame();
-  const [fontsLoaded, fontError] = useFonts(FONT_SOURCES);
+  const [fontsLoaded, fontError] = useFonts(LOADED_FONTS);
   const result = useMemo(
     () =>
       createAppServices({
@@ -48,7 +48,7 @@ export default function RootLayout() {
       }),
     [],
   );
-  const ready = fontsLoaded || fontError !== null;
+  const ready = !WAITS_FOR_FONTS || fontsLoaded || fontError !== null;
   const trackInterestsSaved = useCallback(
     (saved: InterestsSaved) => {
       if (result.ok) result.services.analytics.track({ name: 'interests_saved', properties: interestsSavedProperties(saved) });

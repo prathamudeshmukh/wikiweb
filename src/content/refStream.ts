@@ -3,6 +3,15 @@ import type { Paged } from '../wiki-api/types';
 /** Pulls items one at a time from a lazily loaded source. Returns null once exhausted. */
 export interface Stream<T> {
   next(): Promise<T | null>;
+  /** Starts loading what the next `count` items need, so sources wanted together load together (SPEC.md §15.9). */
+  prime?(count: number): void;
+}
+
+/** Primes the streams `count` round-robin draws will reach, starting from the one whose turn it is. */
+export function primeInTurn<T>(streams: readonly Stream<T>[], turn: number, count: number): void {
+  for (let draw = 0; draw < Math.min(count, streams.length); draw += 1) {
+    streams[(turn + draw) % streams.length].prime?.(Math.ceil((count - draw) / streams.length));
+  }
 }
 
 // Guards against a remote list that keeps returning empty pages with a cursor.
@@ -16,11 +25,19 @@ export function pagedStream<T>(load: (cursor: string | null) => Promise<Paged<T>
   let buffer: readonly T[] = [];
   let cursor: string | null = null;
   let exhausted = false;
+  // A page `prime` started, held — failed or not — for the `next` that wants it, so it is never sent twice.
+  let loading: Promise<Paged<T>> | null = null;
+
+  async function takePage(): Promise<Paged<T>> {
+    const page = loading ?? load(cursor);
+    loading = null;
+    return page;
+  }
 
   return {
     async next() {
       for (let empty = 0; buffer.length === 0 && !exhausted && empty < maxEmptyPages; empty += 1) {
-        const page = await load(cursor);
+        const page = await takePage();
         buffer = page.items;
         cursor = page.next;
         exhausted = page.next === null;
@@ -28,6 +45,12 @@ export function pagedStream<T>(load: (cursor: string | null) => Promise<Paged<T>
       const [head, ...rest] = buffer;
       buffer = rest;
       return head ?? null;
+    },
+    prime(count) {
+      // A failure surfaces from the `next` that awaits this page; caught here so it isn't reported as unhandled.
+      if (count <= 0 || loading || buffer.length > 0 || exhausted) return;
+      loading = load(cursor);
+      loading.catch(() => undefined);
     },
   };
 }
@@ -72,6 +95,9 @@ export function optionalStream<T>(stream: Stream<T>, onError: (error: unknown) =
         return null;
       }
     },
+    prime(count) {
+      if (!failed) stream.prime?.(count);
+    },
   };
 }
 
@@ -90,5 +116,6 @@ export function alternateStreams<T>(streams: readonly Stream<T>[]): Stream<T> {
       }
       return null;
     },
+    prime: (count) => primeInTurn(streams, turn, count),
   };
 }
