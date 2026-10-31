@@ -1,5 +1,22 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+## Project links
+
+Tangent (repo: `wikiweb`). Keep this list current; add new links here, not in chat.
+
+| What | Where |
+|------|-------|
+| Production (web) | https://gotangent.app (`www` 308s to apex; old `tangent-rose.vercel.app` still live) |
+| Kanban board | https://github.com/users/prathamudeshmukh/projects/2 |
+| Repo | https://github.com/prathamudeshmukh/wikiweb |
+| Vercel project | `tangent` (`.vercel/project.json`); CI deploys, Git deploys off |
+| EAS project | owner `prathamudeshmukh`, id `cb3128fc-3c20-4bbe-b34a-cb9610fab9c4` |
+| Android package | `com.prathamudeshmukh.tangent` |
+| Analytics | PostHog EU (`eu.i.posthog.com`) |
+| DNS | Cloudflare, DNS-only CNAMEs to Vercel |
+| Spec | `SPEC.md` (source of truth for product decisions) |
+| Design system | `DESIGN.md` |
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
