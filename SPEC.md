@@ -696,9 +696,23 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`
 - **Manual:** real iPhone Safari and Android Chrome — swipe feel, edge swipes, add to home screen.
 
 ### 15.9 Performance
-- **Budget:** first card in < 3 s on a mid-range Android over 4G (Lighthouse mobile); hop targets as §7.
-- **Spike measurement:** the JS bundle is 9.4 MB (1.9 MB gzip), far over budget. Likely cause: the `phosphor-react-native` barrel import pulls in every icon. Fixed: icons are imported one file each (`src/theme/icons.ts`, lint-enforced) — 3,027 icon modules down to 72; the web bundle is 3.8 MB raw. Next: lazy-load `sql.js` and the reader.
-- Fonts: serve the `@expo-google-fonts` weights actually used, not every variant the packages export.
+- **Budget** (mid-range Android over 4G, Lighthouse mobile throttling: 150 ms RTT, 1.6 Mbps, 4× CPU); hop targets as §7. A new visitor sees onboarding before any card, so the budget has three parts:
+  - first screen (onboarding or Home) on a cold load: < 3 s;
+  - Set off / Skip → first card: < 3 s;
+  - returning visitor → first card: < 3 s.
+- **Measured** 2026-10-30, three runs each, medians. Lighthouse alone never reaches a card (a fresh visitor lands on onboarding), so first-card times come from a scripted run under the same throttling with 5 s spent on onboarding.
+
+  | | Before (`main`, production) | After (#9) | Budget |
+  |---|---|---|---|
+  | First screen, cold | 8.5 s | 5.4 s | ❌ |
+  | Skip → first card | 9.1 s | 2.7 s | ✅ |
+  | Returning → first card | 0.7 s (saved Home, §3.2) | ~1 s (local build) | ✅ |
+
+  Lighthouse mobile on production before: performance 82–89, FCP/LCP 0.8–1.1 s (the onboarding heading), TBT 460–630 ms, CLS 0.01, TTI ~8.2 s.
+- **Fixed (#9):** Home asked each source's first page one after another, ~8 searches in a row before the first card; the first batch's sources are now primed together (`Stream.prime`, `homeFeed.ts`). On web the app no longer waits for its seven font faces (~470 KB): they load with `font-display: swap` (`fontLoading.web.ts`); native still waits.
+- **Still over — first screen:** ~1.7 MB arrives before onboarding: the 853 KB entry bundle (~4.3 s on its own at this bandwidth), fonts and `sql-wasm.wasm` (324 KB). Next: lazy-load `sql.js` and code-split the reader and other non-Home screens.
+- **Spike measurement:** the JS bundle is 9.4 MB (1.9 MB gzip), far over budget. Likely cause: the `phosphor-react-native` barrel import pulls in every icon. Fixed: icons are imported one file each (`src/theme/icons.ts`, lint-enforced) — 3,027 icon modules down to 72; the web bundle is 3.8 MB raw.
+- Fonts: serve the `@expo-google-fonts` weights actually used, not every variant the packages export. Done: the seven faces loaded are the ones DESIGN.md §3 uses.
 
 ### 15.10 Known web issues (from the spike)
 | Issue | Status |
