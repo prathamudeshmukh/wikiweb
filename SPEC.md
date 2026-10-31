@@ -186,6 +186,14 @@ Broad tiles are too coarse for someone into *Stoicism* or *Logic*: ORES `article
 
 **Tree edits.** Picks are stored as **path ids** (`philosophy/logic/paradoxes`). A saved pick whose node no longer exists resolves to its nearest existing ancestor and reports a warning (`reportError`, reason code only). The first segment is always a tile id, so a pick never resolves below tile level and the tiles-touched minimum can't break. Existing saved tile ids are valid path ids — no migration.
 
+### 3.10 Feedback card (beta)
+A one-time *Enjoying Tangent?* card for qualitative beta feedback (#13). Decided 2026-10-31.
+- **When.** On any fresh Home once **≥ `FEEDBACK.minExpeditions` (2)** expeditions are on record (`journeys` rows at launch, plus any set off after that), until it is answered or swiped away. It shares Home's single nudge slot (§3.9): **exhausted > feedback > prompt**, and it counts towards the one-per-session limit the prompt card has.
+- **Spent.** A thumb tap sends the rating at once and spends the card; a swipe right spends it too. Scrolling past only uses up an impression: after **`FEEDBACK.maxImpressions` (3)** impressions it stops coming back.
+- **Note.** A thumb opens a bottom sheet with an optional one-line note (≤ 280 characters, sent anonymously), its prompt depending on the thumb. Closing it loses nothing.
+- **Opted out** (§11 switch): the card offers only *Send feedback by email →*, which opens the same email as Settings. Tapping it or swiping spends the card. Which version to show is decided when the fresh Home is built; the card isn't offered until both its saved progress and the saved choice have loaded. Turning sharing off while a thumbs card is up sends nothing and doesn't spend it: the next fresh Home asks by email.
+- **Settings.** A *Send feedback* row (last) opens `mailto:feedback@gotangent.app`, subject *Tangent feedback*, signed `— Tangent {version} · {platform}` and nothing else. The address shows on the row for when no mail app opens.
+
 ---
 
 ## 4. Interaction spec
@@ -495,7 +503,7 @@ CREATE TABLE completed_leaves (
 
 **Journey rules (M4):** a swipe or *Take a tangent* from Home starts an expedition; every hop adds a node under the node of the column it left. *Read* on a peek card adds a `peek_read` node under the column (or previous in-place read) the reader was opened from; a tangent from the reader then leaves from that node. Reading a card from a column marks it read but adds no node. *Continue expedition* reopens the column ancestors of the most recent node (in-place reads reopen the column they were read from). Visited = the article is a node of the active expedition; read = in read history.
 
-Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]` (path ids, §3.9; plain tile ids are valid), `nichePromptsSeen: string[]` (tile ids whose prompt card was shown), `nicheReads: Record<string, number>` (reads per tree tile towards its prompt, counted from every read once its topic is known), `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`), `analyticsOptOut: boolean` (Settings switch, §11).
+Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]` (path ids, §3.9; plain tile ids are valid), `nichePromptsSeen: string[]` (tile ids whose prompt card was shown), `nicheReads: Record<string, number>` (reads per tree tile towards its prompt, counted from every read once its topic is known), `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`), `analyticsOptOut: boolean` (Settings switch, §11), `feedbackImpressions: number` (times the feedback card dwelt on screen, §3.10), `feedbackDone: boolean` (answered or swiped away).
 
 All repository functions return new objects; no in-place mutation of domain state.
 
@@ -556,6 +564,10 @@ Analytics exists mainly to judge **feed quality**: which columns and Home picks 
 | `find_removed` | ✦ removes a find | `from` |
 | `find_restored` | Undo on the removed toast | — |
 | `atlas_set_off` | Set off from the atlas (§3.8), before the column lands | `from` (`place`/`territory_sheet`/`blind_spot`/`zoom`), `territory`, `charted`, `place_count` (in that territory). Title-free. |
+| `feedback_shown` | The feedback card dwells on screen (§3.10) | `impression` (1–3), `expeditions` |
+| `feedback_given` | A thumb on the feedback card | `rating` (`up`/`down`), `expeditions`, `impression` |
+| `feedback_note` | *Send* in the note sheet, with a non-empty note | `rating`, `note` (trimmed, ≤ 280; the only free-text property — the sheet asks for no personal details) |
+| `feedback_dismissed` | The feedback card swiped away or scrolled past | `how` (`swipe`/`scrolled_past`), `impression` |
 | `app_error` | Anything passed to `reportError` | `scope`, `reason` (`http_429`, `api_<code>`, `network`, `parse`, `cancelled`, or the error class — never the message) |
 
 A column **visit** runs from the column becoming the one on top to it stopping (a hop covering it counts as leaving, with `outcome: hop`); time with the reader, Logbook or Settings over it counts towards the visit. Only the app going to the background ends a visit or reports an expedition — iOS *inactive* (Control Centre, alerts) doesn't. Cards already dwelt on when a column comes on top count as seen, and a feed that ended before then still sets `feed_end`. Opting out also drops events not yet sent, and `Application Opened` is sent without its launch URL (a deep link can name an article). Skip rate is `card_seen` without a matching `hop` or `read_open`; a flat column is a `column_left` with no hop out and no reads.
