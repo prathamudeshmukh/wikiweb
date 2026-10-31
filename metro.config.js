@@ -8,6 +8,9 @@ const config = getDefaultConfig(__dirname);
 const ZOD_LOCALES_INDEX = /[\\/]node_modules[\\/]zod[\\/]v4[\\/]locales[\\/]index\.js$/;
 const NO_ZOD_LOCALES = path.join(__dirname, 'metro', 'zodLocales.js');
 
+// The web build loads WOFF2 faces (`src/theme/fontLoading.web.ts`).
+config.resolver.assetExts = [...config.resolver.assetExts, 'woff2'];
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   const resolution = context.resolveRequest(context, moduleName, platform);
   if (resolution.type === 'sourceFile' && ZOD_LOCALES_INDEX.test(resolution.filePath)) {
