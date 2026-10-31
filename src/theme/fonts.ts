@@ -1,6 +1,11 @@
-import { Fraunces_600SemiBold, Fraunces_600SemiBold_Italic, Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
-import { Literata_400Regular, Literata_600SemiBold } from '@expo-google-fonts/literata';
+// One entry point per weight: the package roots register every weight they ship (~100 faces) with the bundler.
+import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
+import { Fraunces_600SemiBold_Italic } from '@expo-google-fonts/fraunces/600SemiBold_Italic';
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
+import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono/400Regular';
+import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Medium';
+import { Literata_400Regular } from '@expo-google-fonts/literata/400Regular';
+import { Literata_600SemiBold } from '@expo-google-fonts/literata/600SemiBold';
 
 // SDK 57 can't select faces from variable fonts on iOS/Android (variable support lands in SDK 58),
 // so each weight DESIGN.md §3 uses is loaded as its own static file. Fraunces' SOFT/WONK axes wait for SDK 58.
