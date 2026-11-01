@@ -13,7 +13,7 @@ async function setup({ reads = 3, cardCount = 10 } = {}) {
   for (let i = 0; i < reads; i += 1) await services.nudges.articleRead(PHILOSOPHY);
   const niche: NicheActions = { addPicks: jest.fn(async () => undefined), openTree: jest.fn() };
   const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
-  const hook = await renderHook((props: { generation: number; cardCount: number }) => useHomeNudge({ interests: ['philosophy', 'space', 'art'], niche, ...props }), {
+  const hook = await renderHook((props: { generation: number; cardCount: number }) => useHomeNudge({ interests: ['philosophy', 'space', 'art'], niche, isTop: true, ...props }), {
     wrapper,
     initialProps: { generation: 0, cardCount },
   });
@@ -116,17 +116,26 @@ describe('useHomeNudge', () => {
   });
 
   describe('feedback card', () => {
-    async function setupFeedback() {
+    async function setupFeedback({ expeditions = 2, isTop = true } = {}) {
       const services = testServices(fakeWikiApi({}).api);
       await services.analyticsConsent.load();
-      await services.feedback.load();
-      services.feedback.expeditionStarted();
-      services.feedback.expeditionStarted();
+      await services.nudges.load();
+      for (let i = 0; i < expeditions; i += 1) services.nudges.expeditionStarted();
       const niche: NicheActions = { addPicks: jest.fn(async () => undefined), openTree: jest.fn() };
       const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
-      const hook = await renderHook(() => useHomeNudge({ interests: ['philosophy'], niche, generation: 0, cardCount: 10 }), { wrapper });
+      const hook = await renderHook(() => useHomeNudge({ interests: ['philosophy'], niche, generation: 0, cardCount: 10, isTop }), { wrapper });
       return { ...hook, services, niche };
     }
+
+    it('offers it on the Home built while away when the hop that makes it due lands after that Home was built', async () => {
+      const { result, services } = await setupFeedback({ expeditions: 1, isTop: false });
+      expect(result.current.nudge).toBeNull();
+
+      await act(() => services.nudges.expeditionStarted());
+
+      expect(result.current.nudge?.kind).toBe('feedback');
+      expect(result.current.index).toBe(NICHE.minIndex);
+    });
 
     it('places the feedback card once two expeditions are on record', async () => {
       const { result } = await setupFeedback();

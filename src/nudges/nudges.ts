@@ -16,6 +16,11 @@ export interface Nudges {
   load(): Promise<void>;
   /** An article was read; its topic counts towards its tile's prompt. */
   articleRead(topic: CardTopic | null): Promise<void>;
+  /**
+   * An expedition set off. Home's next version is often built before the hop lands, so subscribers hear of it and can
+   * offer the feedback card it just made due.
+   */
+  expeditionStarted(): void;
   /** Home found every article of a node read. */
   nodeExhausted(node: ExhaustedNode): Promise<void>;
   /** The nudge Home should show next, if any. */
@@ -60,6 +65,10 @@ export function createNudges({ store, completedNodes, feedback, analytics, now }
     async articleRead(topic) {
       const readsByTile = countRead(progress.readsByTile, topic?.tileId ?? null);
       if (readsByTile !== progress.readsByTile) await persist({ ...progress, readsByTile });
+    },
+    expeditionStarted() {
+      feedback.expeditionStarted();
+      notify();
     },
     async nodeExhausted(node) {
       const isNew = await completedNodes.record({ nodePath: node.path, completedAt: now(), articleCount: node.articleCount });

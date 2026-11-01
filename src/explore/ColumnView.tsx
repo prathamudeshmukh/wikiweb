@@ -107,7 +107,7 @@ function HomeColumn(props: ColumnViewProps) {
   const { interests, isTop, onOpen, niche } = props;
   const palette = useTheme();
   const home = useHomeFeed(interests, isTop);
-  const nudge = useHomeNudge({ interests, generation: home.generation, cardCount: home.cards.length, niche });
+  const nudge = useHomeNudge({ interests, generation: home.generation, cardCount: home.cards.length, isTop, niche });
   const feedback = useFeedbackAnswer(nudge.onAnswered);
   const { columnVisits } = useAppServices();
   const { touched, refresh } = home;

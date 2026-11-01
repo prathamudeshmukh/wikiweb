@@ -144,6 +144,17 @@ describe('nudges', () => {
   });
 
   describe('feedback card', () => {
+    it('counts an expedition set off and tells subscribers, so a Home built moments earlier can still offer it', async () => {
+      const { nudges } = await setup({}, 1);
+      const listener = jest.fn();
+      nudges.subscribe(listener);
+
+      nudges.expeditionStarted();
+
+      expect(listener).toHaveBeenCalled();
+      expect(nudges.next([])).toEqual(FEEDBACK_NUDGE);
+    });
+
     it('comes ahead of a niche prompt', async () => {
       const { nudges } = await setup({ nicheReads: JSON.stringify({ philosophy: 3 }) }, 2);
 

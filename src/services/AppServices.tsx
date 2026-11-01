@@ -104,7 +104,7 @@ export function createAppServices(config: AppConfig, connect: AnalyticsConnector
     onError: reportError,
     events: {
       stampEarned: expeditions.stampEarned,
-      expeditionStarted: feedback.expeditionStarted,
+      expeditionStarted: () => nudges.expeditionStarted(),
       expeditionEnded: (expedition) => expeditions.ended(expedition, 'home'),
       articleRead: (topic) => void nudges.articleRead(topic),
     },
