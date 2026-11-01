@@ -53,7 +53,7 @@ Tangent is a phone app (iOS + Android, plus phone browsers — §15) for explori
 
 ### 3.1 Onboarding (first launch only)
 1. Screen shows 24 typographic tiles (territory colour, topic icon, name).
-2. User selects ≥ 3. **Continue** disabled until 3 are picked. **Skip** uses defaults (`Science`, `History`, `Culture`).
+2. User selects ≥ 3. **Continue** disabled until 3 are picked. **Skip** uses defaults (`Science`, `History`, `Art`), saved as **not chosen**: until the user saves interests of their own (Settings, a prompt or exhaustion chip, the tree), Home's interest cards say `★ STARTING WITH {TOPIC}` instead of `★ YOU LIKE {TOPIC}`, so the app never claims a liking the user didn't state. Decided 2026-11-01.
 3. Selections persisted; user lands on Home.
 
 Interests are editable later from Settings (Logbook gear → Interests): the same tile picker, starting from the saved picks, with **Save** enabled only when the picks changed and still touch ≥ 3 tiles. Saving returns straight to Home, which rebuilds from the new picks. Tiles with an interest tree can be narrowed to subfields and leaves here (§3.9); onboarding itself never shows the tree.
@@ -503,7 +503,7 @@ CREATE TABLE completed_leaves (
 
 **Journey rules (M4):** a swipe or *Take a tangent* from Home starts an expedition; every hop adds a node under the node of the column it left. *Read* on a peek card adds a `peek_read` node under the column (or previous in-place read) the reader was opened from; a tangent from the reader then leaves from that node. Reading a card from a column marks it read but adds no node. *Continue expedition* reopens the column ancestors of the most recent node (in-place reads reopen the column they were read from). Visited = the article is a node of the active expedition; read = in read history.
 
-Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]` (path ids, §3.9; plain tile ids are valid), `nichePromptsSeen: string[]` (tile ids whose prompt card was shown), `nicheReads: Record<string, number>` (reads per tree tile towards its prompt, counted from every read once its topic is known), `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`), `analyticsOptOut: boolean` (Settings switch, §11), `feedbackImpressions: number` (times the feedback card dwelt on screen, §3.10), `feedbackDone: boolean` (answered or swiped away).
+Key-value storage: `theme: 'system'|'paper'|'night'`, `reduceMotion: 'system'|'on'`, `interests: string[]` (path ids, §3.9; plain tile ids are valid), `interestsChosen: boolean` (false only while they are the defaults a skipped onboarding saved, §3.1; missing counts as true), `nichePromptsSeen: string[]` (tile ids whose prompt card was shown), `nicheReads: Record<string, number>` (reads per tree tile towards its prompt, counted from every read once its topic is known), `onboardingDone: boolean`, `swipeHintShown: boolean`, `backHintShown: boolean`, `hintPeelsSeen: number` (peels played before the first hop, for `first_hop`), `analyticsOptOut: boolean` (Settings switch, §11), `feedbackImpressions: number` (times the feedback card dwelt on screen, §3.10), `feedbackDone: boolean` (answered or swiped away).
 
 All repository functions return new objects; no in-place mutation of domain state.
 
@@ -555,7 +555,7 @@ Analytics exists mainly to judge **feed quality**: which columns and Home picks 
 | `stamp_earned` | A new stamp | `topic`, `territory` |
 | `first_hop` | Once per install | `route`, `peels_seen`, `seconds_on_home` (Home time this launch, while Home is on top and the app foregrounded) |
 | `first_return` | Once per install | `route` |
-| `interests_saved` | Picks saved (§3.9) | `from` (`onboarding`/`settings`/`prompt`/`exhaustion`), `tiles`, `subfields`, `leaves` (counts after the save), `added` (path ids). Title-free. |
+| `interests_saved` | Picks saved (§3.9) | `from` (`onboarding`/`skip`/`settings`/`prompt`/`exhaustion`; `skip` = onboarding skipped, defaults saved), `tiles`, `subfields`, `leaves` (counts after the save), `added` (path ids). Title-free. |
 | `interest_tree_opened` | A tree screen opens | `tile`, `from` (`settings`/`prompt`/`topic_label`/`completed`) |
 | `niche_prompt_shown` | A prompt card dwells | `tile` |
 | `niche_prompt_dismissed` | A prompt card is swiped away or scrolled past without a chip | `tile`, `how` (`swipe`/`scrolled_past`) |

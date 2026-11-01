@@ -21,9 +21,12 @@ export interface InterestsSaved {
 export type InterestsSavedListener = (saved: InterestsSaved) => void;
 
 const InterestsContext = createContext<InterestsValue | null>(null);
+// True outside a provider and until loaded: only a skipped onboarding makes the picks not the user's own.
+const InterestsChosenContext = createContext(true);
 
 export function InterestsProvider({ store, onSaved, children }: { store: InterestsStore; onSaved?: InterestsSavedListener; children: ReactNode }) {
   const [interests, setInterests] = useState<InterestsState>(undefined);
+  const [chosen, setChosen] = useState(true);
   // The picks a save replaces, read without making saveInterests change on every save.
   const latest = useRef<InterestsState>(undefined);
   useEffect(() => {
@@ -31,6 +34,7 @@ export function InterestsProvider({ store, onSaved, children }: { store: Interes
   }, [interests]);
 
   useEffect(() => {
+    store.isChosen().then(setChosen, (error: unknown) => reportError('interests.load', error));
     store
       .load()
       .then(setInterests)
@@ -44,16 +48,27 @@ export function InterestsProvider({ store, onSaved, children }: { store: Interes
   const saveInterests = useCallback(
     async (picks: readonly string[], from: InterestsSavedFrom) => {
       const before = latest.current ?? [];
-      await store.save(picks);
+      const nowChosen = from !== 'skip';
+      await store.save(picks, { chosen: nowChosen });
       latest.current = [...picks];
       setInterests([...picks]);
+      setChosen(nowChosen);
       onSaved?.({ before, after: picks, from });
     },
     [store, onSaved],
   );
 
   const value = useMemo(() => ({ interests, saveInterests }), [interests, saveInterests]);
-  return <InterestsContext.Provider value={value}>{children}</InterestsContext.Provider>;
+  return (
+    <InterestsContext.Provider value={value}>
+      <InterestsChosenContext.Provider value={chosen}>{children}</InterestsChosenContext.Provider>
+    </InterestsContext.Provider>
+  );
+}
+
+/** Whether the saved picks are the user's own rather than the defaults a skipped onboarding saved (SPEC.md §3.1). */
+export function useInterestsChosen(): boolean {
+  return useContext(InterestsChosenContext);
 }
 
 export function useInterests(): InterestsValue {

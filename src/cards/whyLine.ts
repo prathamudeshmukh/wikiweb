@@ -10,7 +10,14 @@ export function topicLabel(card: Card): string | null {
 }
 
 // DESIGN.md §5.3
-const COPY: Readonly<Record<CardSource, (seedTitle: string, card: Card) => string>> = {
+interface WhyLineContext {
+  /** False while Home is built from the defaults a skipped onboarding saved (SPEC.md §3.1). */
+  interestsChosen: boolean;
+}
+
+const CHOSEN: WhyLineContext = { interestsChosen: true };
+
+const COPY: Readonly<Record<CardSource, (seedTitle: string, card: Card, context: WhyLineContext) => string>> = {
   link: (seed) => `↳ LINKED FROM ${seed}`,
   backlink: (seed) => `↰ LINKS TO ${seed}`,
   sideways: (seed, card) => {
@@ -18,17 +25,19 @@ const COPY: Readonly<Record<CardSource, (seedTitle: string, card: Card) => strin
     return label ? `⤳ DETOUR INTO ${label} · LINKS TO ${seed}` : `⤳ DETOUR · LINKS TO ${seed}`;
   },
   morelike: (seed) => `≈ SIMILAR TO ${seed}`,
-  home_interest: (_seed, card) => {
+  home_interest: (_seed, card, { interestsChosen }) => {
     // A subfield/leaf pick names its node; colour and topic label still come from the article (SPEC.md §3.9).
     const node = card.interestNode ? resolvePick(card.interestNode)?.pick : null;
     const label = node ? nodeLabel(node) : topicLabel(card);
-    return label ? `★ YOU LIKE ${label}` : '★ PICKED FOR YOU';
+    if (!label) return '★ PICKED FOR YOU';
+    // Never claim a liking the user didn't state.
+    return interestsChosen ? `★ YOU LIKE ${label}` : `★ STARTING WITH ${label}`;
   },
   home_today: () => '☀ TODAY ON WIKIPEDIA',
   home_wildcard: () => '↯ WILDCARD',
 };
 
 /** Why a card is in its column. `seedTitle` is null on Home. */
-export function whyLine(card: Card, seedTitle: string | null): string {
-  return COPY[card.source](seedTitle ?? '', card).toUpperCase();
+export function whyLine(card: Card, seedTitle: string | null, context: WhyLineContext = CHOSEN): string {
+  return COPY[card.source](seedTitle ?? '', card, context).toUpperCase();
 }

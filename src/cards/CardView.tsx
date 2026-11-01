@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { GestureType } from 'react-native-gesture-handler';
 import type { Card } from '../content/card';
 import { CardFindButton, type CardFind } from '../finds/CardFindButton';
+import { useInterestsChosen } from '../interests/InterestsContext';
 import { FONT } from '../theme/fonts';
 import { LAYOUT, TYPE } from '../theme/layout';
 import { type Palette, territoryColor } from '../theme/tokens';
@@ -34,6 +35,7 @@ const TYPOGRAPHIC_ICON_SIZE = 48;
 /** A card's face (DESIGN.md §5.1 / §5.2). Layout only — gestures live in SwipeCard. */
 export function CardView({ card, seedTitle, topicButton, find }: CardViewProps) {
   const palette = useTheme();
+  const interestsChosen = useInterestsChosen();
   const accent = territoryColor(palette, card.topic.territory);
   const label = topicLabel(card);
 
@@ -84,7 +86,7 @@ export function CardView({ card, seedTitle, topicButton, find }: CardViewProps) 
         {find && <CardFindButton find={find} color={accent} />}
       </View>
       {card.extract ? <Extract text={card.extract} color={palette.ink} /> : null}
-      <Text style={[styles.why, { color: palette.muted }]} numberOfLines={1}>{whyLine(card, seedTitle)}</Text>
+      <Text style={[styles.why, { color: palette.muted }]} numberOfLines={1}>{whyLine(card, seedTitle, { interestsChosen })}</Text>
     </View>
   );
 }

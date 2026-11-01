@@ -61,4 +61,27 @@ describe('interestsStore', () => {
     await expect(createInterestsStore(kv).load()).resolves.toEqual(['space', 'philosophy/ethics']);
     expect(reportError).toHaveBeenCalledWith('interests.load', expect.objectContaining({ name: 'InterestNodeMissing' }));
   });
+
+  it('remembers that the user skipped choosing and was given the defaults', async () => {
+    const store = createInterestsStore(memoryKv());
+
+    await store.save(['science', 'history', 'art'], { chosen: false });
+
+    await expect(store.isChosen()).resolves.toBe(false);
+  });
+
+  it('counts picks saved before this was recorded as chosen', async () => {
+    const store = createInterestsStore(memoryKv({ interests: JSON.stringify(['space', 'history', 'art']) }));
+
+    await expect(store.isChosen()).resolves.toBe(true);
+  });
+
+  it('counts any later save as chosen', async () => {
+    const store = createInterestsStore(memoryKv());
+    await store.save(['science', 'history', 'art'], { chosen: false });
+
+    await store.save(['science', 'history', 'space']);
+
+    await expect(store.isChosen()).resolves.toBe(true);
+  });
 });

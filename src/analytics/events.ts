@@ -53,7 +53,8 @@ export interface ExpeditionSummary {
 }
 
 /** Where interest picks were saved from (SPEC.md §11). */
-export type InterestsSavedFrom = 'onboarding' | 'settings' | 'prompt' | 'exhaustion';
+/** `skip`: onboarding skipped, so the defaults were saved without the user choosing them. */
+export type InterestsSavedFrom = 'onboarding' | 'skip' | 'settings' | 'prompt' | 'exhaustion';
 /** Where an interest tree was opened from. */
 export type TreeOpenedFrom = 'settings' | 'prompt' | 'topic_label' | 'completed';
 

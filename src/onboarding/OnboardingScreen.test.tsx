@@ -7,12 +7,13 @@ const SAFE_AREA = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { to
 
 async function renderScreen() {
   const onDone = jest.fn();
+  const onSkip = jest.fn();
   await render(
     <SafeAreaProvider initialMetrics={SAFE_AREA}>
-      <OnboardingScreen onDone={onDone} />
+      <OnboardingScreen onDone={onDone} onSkip={onSkip} />
     </SafeAreaProvider>,
   );
-  return { onDone, setOff: () => screen.getByRole('button', { name: 'Set off' }) };
+  return { onDone, onSkip, setOff: () => screen.getByRole('button', { name: 'Set off' }) };
 }
 
 describe('OnboardingScreen', () => {
@@ -45,11 +46,12 @@ describe('OnboardingScreen', () => {
     expect(screen.getByRole('checkbox', { name: 'Space' })).not.toBeChecked();
   });
 
-  it('skips with the default topics', async () => {
-    const { onDone } = await renderScreen();
+  it('skips without picking anything', async () => {
+    const { onDone, onSkip } = await renderScreen();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
 
-    expect(onDone).toHaveBeenCalledWith(DEFAULT_INTERESTS);
+    expect(onSkip).toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
   });
 });

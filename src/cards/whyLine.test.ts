@@ -38,6 +38,10 @@ describe('whyLine', () => {
     expect(whyLine(card('home_interest', 'animals'), null)).toBe('★ YOU LIKE ANIMALS');
   });
 
+  it('calls an interest card a starting point when the user skipped choosing', () => {
+    expect(whyLine(card('home_interest', 'science'), null, { interestsChosen: false })).toBe('★ STARTING WITH SCIENCE');
+  });
+
   it('names the subfield or leaf pick a Home card came from (SPEC.md §3.9)', () => {
     const fromStoicism = { ...card('home_interest', 'philosophy'), interestNode: 'philosophy/ethics/stoicism' };
 

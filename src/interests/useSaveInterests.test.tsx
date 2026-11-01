@@ -40,7 +40,7 @@ describe('useSaveInterests', () => {
   it('tells the user and stays put when saving fails', async () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const report = jest.spyOn(errors, 'reportError').mockImplementation(() => undefined);
-    const broken: InterestsStore = { load: async () => ['music'], save: () => Promise.reject(new Error('disk')) };
+    const broken: InterestsStore = { load: async () => ['music'], save: () => Promise.reject(new Error('disk')), isChosen: async () => true };
     const { result, onSaved } = await renderSave(broken);
 
     await act(() => result.current.save(PICKS));

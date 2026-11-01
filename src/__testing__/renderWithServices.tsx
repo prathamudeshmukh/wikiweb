@@ -29,11 +29,14 @@ const SAFE_AREA = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { to
 
 export function memoryInterestsStore(initial: string[] | null = null): InterestsStore {
   let saved = initial;
+  let chosen = true;
   return {
     load: async () => saved,
-    save: async (ids) => {
+    save: async (ids, options) => {
       saved = [...ids];
+      chosen = options?.chosen ?? true;
     },
+    isChosen: async () => chosen,
   };
 }
 

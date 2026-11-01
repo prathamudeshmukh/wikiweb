@@ -136,7 +136,7 @@ Same layout; image slot replaced by a territory-colour block (16:10) containing 
 | Sideways (detour out of the seed's territory) | `⤳ DETOUR INTO {TOPIC} · LINKS TO {SEED}` — `⤳ DETOUR · LINKS TO {SEED}` when the card has no topic label |
 | Backlink (seed has no territory) | `↰ LINKS TO {SEED}` |
 | morelike | `≈ SIMILAR TO {SEED}` |
-| Home – interest | `★ YOU LIKE {TOPIC}` — from a subfield/leaf pick (SPEC §3.9), `{TOPIC}` is that node's label: `★ YOU LIKE STOICISM` |
+| Home – interest | `★ YOU LIKE {TOPIC}` — from a subfield/leaf pick (SPEC §3.9), `{TOPIC}` is that node's label: `★ YOU LIKE STOICISM`. While the interests are the defaults a skipped onboarding saved (SPEC §3.1): `★ STARTING WITH {TOPIC}` |
 | Home – today | `☀ TODAY ON WIKIPEDIA` |
 | Home – wildcard | `↯ WILDCARD` (was `✦` until M6 — ✦ now means Find) |
 
