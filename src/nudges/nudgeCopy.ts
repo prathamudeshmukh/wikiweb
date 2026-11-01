@@ -1,5 +1,5 @@
 import { nodeLabel, parentPath, resolvePick, trailAbove } from '../interests/interestPicks';
-import type { Nudge } from './nudgeRules';
+import type { NicheNudge } from './nudgeRules';
 
 /** The words on a nudge card (DESIGN.md §5.14, §8). Upper-casing is the card's job. */
 export interface NudgeCopy {
@@ -31,7 +31,7 @@ function exhaustedCopy(path: string, articleCount: number): NudgeCopy {
   };
 }
 
-export function nudgeCopy(nudge: Nudge): NudgeCopy {
+export function nudgeCopy(nudge: NicheNudge): NudgeCopy {
   if (nudge.kind === 'exhausted') return exhaustedCopy(nudge.node.path, nudge.node.articleCount);
   const tile = labelOf(nudge.tileId);
   return {

@@ -20,7 +20,7 @@ async function renderGate(store: InterestsStore) {
 
 describe('RequireInterests', () => {
   it('renders nothing until interests have loaded', async () => {
-    const pending: InterestsStore = { load: () => new Promise(() => undefined), save: async () => undefined };
+    const pending: InterestsStore = { load: () => new Promise(() => undefined), save: async () => undefined, isChosen: async () => true };
 
     await renderGate(pending);
 

@@ -45,4 +45,19 @@ describe('analytics consent', () => {
 
     expect(optedOut).toBe(false);
   });
+
+  it('does not know the choice until it has loaded', () => {
+    const consent = createAnalyticsConsent(memoryKv(), memoryAnalytics());
+
+    expect(consent.isOptedOut()).toBeNull();
+  });
+
+  it('knows the latest choice once loaded or changed', async () => {
+    const consent = createAnalyticsConsent(memoryKv({ analyticsOptOut: 'true' }), memoryAnalytics());
+    await consent.load();
+
+    await consent.setOptedOut(false);
+
+    expect(consent.isOptedOut()).toBe(false);
+  });
 });

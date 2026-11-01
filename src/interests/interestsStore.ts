@@ -11,10 +11,14 @@ export interface KeyValueStore {
 export interface InterestsStore {
   /** The user's picks as path ids (SPEC.md §3.9), or null if they have not finished onboarding. */
   load(): Promise<string[] | null>;
-  save(picks: readonly string[]): Promise<void>;
+  /** `chosen: false` when onboarding was skipped and these are the defaults; any other save is the user's choice. */
+  save(picks: readonly string[], options?: { chosen: boolean }): Promise<void>;
+  /** Whether the saved picks are the user's own; picks saved before this was recorded count as chosen. */
+  isChosen(): Promise<boolean>;
 }
 
 const STORAGE_KEY = 'interests';
+const CHOSEN_KEY = 'interestsChosen';
 const storedSchema = z.array(z.string());
 
 function parseStored(raw: string): string[] | null {
@@ -43,10 +47,13 @@ export function createInterestsStore(kv: KeyValueStore): InterestsStore {
       if (fellBack.length > 0) reportError('interests.load', new InterestNodeMissingError());
       return picks.length > 0 ? picks : null;
     },
-    async save(picks) {
+    async save(picks, { chosen } = { chosen: true }) {
       const unknown = picks.find((path) => !isExactPick(path));
       if (unknown) throw new Error(`Unknown interest "${unknown}".`);
-      await kv.setItem(STORAGE_KEY, JSON.stringify(picks));
+      await Promise.all([kv.setItem(STORAGE_KEY, JSON.stringify(picks)), kv.setItem(CHOSEN_KEY, String(chosen))]);
+    },
+    async isChosen() {
+      return (await kv.getItem(CHOSEN_KEY)) !== 'false';
     },
   };
 }

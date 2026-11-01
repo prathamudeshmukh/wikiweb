@@ -217,7 +217,17 @@ describe('journey session — storage', () => {
 });
 
 describe('journey session — events', () => {
-  const eventsSpy = () => ({ stampEarned: jest.fn(), expeditionEnded: jest.fn(), articleRead: jest.fn() });
+  const eventsSpy = () => ({ stampEarned: jest.fn(), expeditionStarted: jest.fn(), expeditionEnded: jest.fn(), articleRead: jest.fn() });
+
+  it('tells its listener when a hop from Home sets off on a new expedition, not on every hop', async () => {
+    const events = eventsSpy();
+    const { session } = await setUp({ events });
+
+    const octopus = session.hop({ fromNodeId: null, page: page('Octopus'), via: 'swipe' });
+    session.hop({ fromNodeId: octopus.id, page: page('Squid'), via: 'swipe' });
+
+    expect(events.expeditionStarted).toHaveBeenCalledTimes(1);
+  });
 
   it('tells its listener an expedition ended when the user returns Home', async () => {
     const events = eventsSpy();

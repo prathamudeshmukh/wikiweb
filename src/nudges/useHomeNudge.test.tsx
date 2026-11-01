@@ -13,7 +13,7 @@ async function setup({ reads = 3, cardCount = 10 } = {}) {
   for (let i = 0; i < reads; i += 1) await services.nudges.articleRead(PHILOSOPHY);
   const niche: NicheActions = { addPicks: jest.fn(async () => undefined), openTree: jest.fn() };
   const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
-  const hook = await renderHook((props: { generation: number; cardCount: number }) => useHomeNudge({ interests: ['philosophy', 'space', 'art'], niche, ...props }), {
+  const hook = await renderHook((props: { generation: number; cardCount: number }) => useHomeNudge({ interests: ['philosophy', 'space', 'art'], niche, isTop: true, ...props }), {
     wrapper,
     initialProps: { generation: 0, cardCount },
   });
@@ -113,5 +113,52 @@ describe('useHomeNudge', () => {
 
     expect(result.current.nudge?.kind).toBe('exhausted');
     expect(result.current.index).toBe(12);
+  });
+
+  describe('feedback card', () => {
+    async function setupFeedback({ expeditions = 2, isTop = true } = {}) {
+      const services = testServices(fakeWikiApi({}).api);
+      await services.analyticsConsent.load();
+      await services.nudges.load();
+      for (let i = 0; i < expeditions; i += 1) services.nudges.expeditionStarted();
+      const niche: NicheActions = { addPicks: jest.fn(async () => undefined), openTree: jest.fn() };
+      const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
+      const hook = await renderHook(() => useHomeNudge({ interests: ['philosophy'], niche, generation: 0, cardCount: 10, isTop }), { wrapper });
+      return { ...hook, services, niche };
+    }
+
+    it('offers it on the Home built while away when the hop that makes it due lands after that Home was built', async () => {
+      const { result, services } = await setupFeedback({ expeditions: 1, isTop: false });
+      expect(result.current.nudge).toBeNull();
+
+      await act(() => services.nudges.expeditionStarted());
+
+      expect(result.current.nudge?.kind).toBe('feedback');
+      expect(result.current.index).toBe(NICHE.minIndex);
+    });
+
+    it('places the feedback card once two expeditions are on record', async () => {
+      const { result } = await setupFeedback();
+
+      expect(result.current.nudge).toEqual({ kind: 'feedback', expeditions: 2, channel: 'analytics' });
+    });
+
+    it('takes the card out once answered, without counting it as dismissed', async () => {
+      const { result, services } = await setupFeedback();
+      await act(() => result.current.onVisible(true));
+
+      await act(() => result.current.onAnswered());
+
+      expect(result.current.index).toBeNull();
+      expect(services.analytics.named('feedback_dismissed')).toEqual([]);
+    });
+
+    it('opens no tree from the feedback card', async () => {
+      const { result, niche } = await setupFeedback();
+
+      await act(() => result.current.onOpenTree());
+
+      expect(niche.openTree).not.toHaveBeenCalled();
+    });
   });
 });

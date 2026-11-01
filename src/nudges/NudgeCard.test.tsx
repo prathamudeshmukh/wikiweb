@@ -1,12 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { NudgeCard } from './NudgeCard';
-import { chipChoices, type Nudge } from './nudgeRules';
+import { chipChoices, type NicheNudge } from './nudgeRules';
 
-const PROMPT: Nudge = { kind: 'prompt', tileId: 'philosophy', reads: 3 };
-const EXHAUSTED: Nudge = { kind: 'exhausted', node: { path: 'philosophy/ethics/stoicism', articleCount: 37 } };
+const PROMPT: NicheNudge = { kind: 'prompt', tileId: 'philosophy', reads: 3 };
+const EXHAUSTED: NicheNudge = { kind: 'exhausted', node: { path: 'philosophy/ethics/stoicism', articleCount: 37 } };
 
-async function renderNudge(nudge: Nudge, picked: readonly string[] = []) {
+async function renderNudge(nudge: NicheNudge, picked: readonly string[] = []) {
   const handlers = { onChip: jest.fn(), onOpenTree: jest.fn(), onDismiss: jest.fn() };
   const chips = chipChoices(nudge, ['philosophy/ethics/stoicism']);
   await render(

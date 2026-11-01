@@ -110,6 +110,17 @@ export const NICHE = {
   toastMs: 1800,
 } as const;
 
+/** The one-time feedback card (SPEC.md §3.10). */
+export const FEEDBACK = {
+  /** Expeditions on record before the card is due. */
+  minExpeditions: 2,
+  /** Times the card may dwell on screen unanswered before it stops coming back. */
+  maxImpressions: 3,
+  noteMaxLength: 280,
+  email: 'feedback@gotangent.app',
+  mailSubject: 'Tangent feedback',
+} as const;
+
 /** Finds (SPEC.md §3.7, DESIGN.md §5.11). */
 export const FIND = {
   /** "✦ Kept in Finds" — a confirmation, nothing to act on. */

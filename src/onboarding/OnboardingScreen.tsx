@@ -3,16 +3,18 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONT } from '../theme/fonts';
 import { useTheme } from '../theme/useTheme';
-import { canContinue, DEFAULT_INTERESTS } from './interestSelection';
+import { canContinue } from './interestSelection';
 import { pickerScreenStyles as layout } from './pickerScreenStyles';
 import { PrimaryButton } from './PrimaryButton';
 import { TopicPicker } from './TopicPicker';
 
 interface OnboardingScreenProps {
   onDone: (tileIds: readonly string[]) => void;
+  /** Skipped: the route saves the defaults, marked as not chosen. */
+  onSkip: () => void;
 }
 
-export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
+export function OnboardingScreen({ onDone, onSkip }: OnboardingScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<readonly string[]>([]);
@@ -26,7 +28,7 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
       </ScrollView>
       <View style={layout.actions}>
         <PrimaryButton label="Set off" enabled={canContinue(selected)} onPress={() => onDone(selected)} />
-        <Pressable onPress={() => onDone(DEFAULT_INTERESTS)} accessibilityRole="button" hitSlop={8} style={styles.skip}>
+        <Pressable onPress={onSkip} accessibilityRole="button" hitSlop={8} style={styles.skip}>
           <Text style={[styles.skipLabel, { color: palette.muted }]}>Skip</Text>
         </Pressable>
       </View>

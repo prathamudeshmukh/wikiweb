@@ -14,6 +14,7 @@ export interface JourneyRepository {
   hasNodes(): Promise<boolean>;
   readPageIds(): Promise<number[]>;
   stamps(): Promise<Stamp[]>;
+  expeditionCount(): Promise<number>;
   /** Every expedition, most recently active first. */
   expeditions(): Promise<Expedition[]>;
   expedition(journeyId: string): Promise<Expedition | null>;
@@ -139,6 +140,12 @@ export function createJourneyRepository(openDatabase: () => Promise<SqlDatabase>
       const db = await open();
       const rows = await db.getAllAsync<{ topic: string; page_id: number; earned_at: number }>('SELECT * FROM stamps ORDER BY earned_at', []);
       return rows.filter((row) => isKnownTileId(row.topic)).map((row) => ({ tileId: row.topic, pageId: row.page_id, earnedAt: row.earned_at }));
+    },
+
+    async expeditionCount() {
+      const db = await open();
+      const [{ count }] = await db.getAllAsync<{ count: number }>('SELECT COUNT(*) AS count FROM journeys', []);
+      return count;
     },
 
     async expeditions() {

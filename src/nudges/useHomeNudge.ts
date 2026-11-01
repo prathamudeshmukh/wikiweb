@@ -5,7 +5,7 @@ import { addPick, tileOf } from '../interests/interestPicks';
 import type { TreeTarget } from '../interests/treeTarget';
 import { useAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
-import { type Chip, chipChoices, type Nudge } from './nudgeRules';
+import { type Chip, chipChoices, isNicheNudge, type NicheNudge, type Nudge } from './nudgeRules';
 
 /** What Home's nudge card can do outside Home (provided by the route). */
 export interface NicheActions {
@@ -18,6 +18,8 @@ interface HomeNudgeOptions {
   /** Goes up with each fresh Home; a new Home gets whatever nudge is due. */
   generation: number;
   cardCount: number;
+  /** Home is the column on screen; while it isn't, a nudge can still go a few cards in without moving anything seen. */
+  isTop: boolean;
   niche: NicheActions;
 }
 
@@ -41,6 +43,8 @@ export interface HomeNudgeView {
   onChip(chip: Chip): void;
   onOpenTree(): void;
   onDismiss(): void;
+  /** The feedback card was answered: it leaves Home without counting as dismissed. */
+  onAnswered(): void;
   onVisible(visible: boolean): void;
 }
 
@@ -49,7 +53,7 @@ const NO_CHIPS: ReadonlySet<string> = new Set();
 const toggled = (set: ReadonlySet<string>, path: string): ReadonlySet<string> =>
   set.has(path) ? new Set([...set].filter((p) => p !== path)) : new Set([...set, path]);
 
-const tileOfNudge = (nudge: Nudge) => (nudge.kind === 'prompt' ? nudge.tileId : tileOf(nudge.node.path));
+const tileOfNudge = (nudge: NicheNudge) => (nudge.kind === 'prompt' ? nudge.tileId : tileOf(nudge.node.path));
 
 /** Chips settle: every chip tapped is added in one save, NICHE.chipSettleMs after the last tap (SPEC.md §3.9). */
 function useChipSettle(attached: Attached | null, interests: readonly string[], niche: NicheActions) {
@@ -81,16 +85,16 @@ function useChipSettle(attached: Attached | null, interests: readonly string[], 
 }
 
 /** Home's nudge card (SPEC.md §3.9): where it sits, and what its chips, swipe and visibility do. */
-export function useHomeNudge({ interests, generation, cardCount, niche }: HomeNudgeOptions): HomeNudgeView {
+export function useHomeNudge({ interests, generation, cardCount, isTop, niche }: HomeNudgeOptions): HomeNudgeView {
   const { nudges } = useAppServices();
   const [attached, setAttached] = useState<Attached | null>(null);
   const settle = useChipSettle(attached, interests, niche);
   const { reset } = settle;
   // Read inside listeners that must not resubscribe on every scroll or save.
-  const live = useRef({ attached, interests, cardCount });
+  const live = useRef({ attached, interests, cardCount, isTop });
   useEffect(() => {
-    live.current = { attached, interests, cardCount };
-  }, [attached, interests, cardCount]);
+    live.current = { attached, interests, cardCount, isTop };
+  }, [attached, interests, cardCount, isTop]);
 
   // A fresh Home: whatever nudge is due goes a few cards in.
   useEffect(() => {
@@ -99,14 +103,16 @@ export function useHomeNudge({ interests, generation, cardCount, niche }: HomeNu
     reset();
   }, [generation, nudges, reset]);
 
-  // A node found exhausted mid-scroll goes after the cards already loaded, so it comes next.
+  // A nudge that becomes due mid-scroll goes after the cards already loaded, so it comes next; one that becomes due
+  // while Home is off screen (the feedback card, as an expedition sets off) goes where a fresh Home's nudge goes.
   useEffect(
     () =>
       nudges.subscribe(() => {
-        const current = live.current.attached;
+        const { attached: current, isTop: onScreen, cardCount: loaded, interests: picks } = live.current;
         if (current && current.status !== 'removed') return;
-        const nudge = nudges.next(live.current.interests);
-        if (nudge) setAttached({ nudge, index: Math.max(NICHE.minIndex, live.current.cardCount), seen: false, status: 'active' });
+        const nudge = nudges.next(picks);
+        const index = onScreen ? Math.max(NICHE.minIndex, loaded) : NICHE.minIndex;
+        if (nudge) setAttached({ nudge, index, seen: false, status: 'active' });
       }),
     [nudges],
   );
@@ -133,9 +139,14 @@ export function useHomeNudge({ interests, generation, cardCount, niche }: HomeNu
     setAttached({ ...current, status: 'removed' });
   }, [nudges]);
 
+  const onAnswered = useCallback(() => {
+    const current = live.current.attached;
+    if (current) setAttached({ ...current, status: 'removed' });
+  }, []);
+
   const onOpenTree = useCallback(() => {
     const current = live.current.attached;
-    if (current) niche.openTree({ tileId: tileOfNudge(current.nudge) }, 'prompt');
+    if (current && isNicheNudge(current.nudge)) niche.openTree({ tileId: tileOfNudge(current.nudge) }, 'prompt');
   }, [niche]);
 
   const showing = attached && attached.status !== 'removed' ? attached : null;
@@ -148,6 +159,7 @@ export function useHomeNudge({ interests, generation, cardCount, niche }: HomeNu
     onChip: settle.onChip,
     onOpenTree,
     onDismiss,
+    onAnswered,
     onVisible,
   };
 }

@@ -53,7 +53,8 @@ export interface ExpeditionSummary {
 }
 
 /** Where interest picks were saved from (SPEC.md §11). */
-export type InterestsSavedFrom = 'onboarding' | 'settings' | 'prompt' | 'exhaustion';
+/** `skip`: onboarding skipped, so the defaults were saved without the user choosing them. */
+export type InterestsSavedFrom = 'onboarding' | 'skip' | 'settings' | 'prompt' | 'exhaustion';
 /** Where an interest tree was opened from. */
 export type TreeOpenedFrom = 'settings' | 'prompt' | 'topic_label' | 'completed';
 
@@ -65,6 +66,8 @@ export interface InterestsSaved {
   /** Path ids added by this save. */
   added: string[];
 }
+
+export type FeedbackRating = 'up' | 'down';
 
 export type AnalyticsEvent =
   | { name: 'card_seen'; properties: CardProperties & ColumnProperties & { interest_node: string | null } }
@@ -84,6 +87,10 @@ export type AnalyticsEvent =
   | { name: 'find_kept'; properties: { from: FindFrom; topic: string | null; territory: Territory | null; on_expedition: boolean } }
   | { name: 'find_removed'; properties: { from: FindFrom } }
   | { name: 'find_restored'; properties: Record<string, never> }
+  | { name: 'feedback_shown'; properties: { impression: number; expeditions: number } }
+  | { name: 'feedback_given'; properties: { rating: FeedbackRating; expeditions: number; impression: number } }
+  | { name: 'feedback_note'; properties: { rating: FeedbackRating; note: string } }
+  | { name: 'feedback_dismissed'; properties: { how: 'swipe' | 'scrolled_past'; impression: number } }
   | { name: 'app_error'; properties: { scope: string; reason: string } };
 
 export type AnalyticsEventName = AnalyticsEvent['name'];

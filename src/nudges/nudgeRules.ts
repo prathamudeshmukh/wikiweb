@@ -1,10 +1,16 @@
 import { NICHE } from '../config/constants';
 import { INTEREST_TREES } from '../config/interestTree';
 import type { ExhaustedNode } from '../content/nodeStream';
+import type { FeedbackNudge } from '../feedback/feedbackPrompt';
 import { hasTree, parentPath, resolvePick } from '../interests/interestPicks';
 
 /** A non-article card on Home that leads into the interest tree (SPEC.md §3.9, DESIGN.md §5.14). */
-export type Nudge = { kind: 'prompt'; tileId: string; reads: number } | { kind: 'exhausted'; node: ExhaustedNode };
+export type NicheNudge = { kind: 'prompt'; tileId: string; reads: number } | { kind: 'exhausted'; node: ExhaustedNode };
+
+/** Anything Home's single nudge slot can hold: a niche card, or the one-time feedback card (SPEC.md §3.10). */
+export type Nudge = NicheNudge | FeedbackNudge;
+
+export const isNicheNudge = (nudge: Nudge): nudge is NicheNudge => nudge.kind !== 'feedback';
 
 export interface Chip {
   path: string;
@@ -43,6 +49,7 @@ function siblingChips(path: string): Chip[] {
 
 /** The chips a nudge offers: a tile's subfields, or an exhausted node's siblings not already picked. */
 export function chipChoices(nudge: Nudge, picks: readonly string[]): Chip[] {
+  if (nudge.kind === 'feedback') return [];
   if (nudge.kind === 'prompt') return subfieldChips(nudge.tileId);
   return siblingChips(nudge.node.path).filter((chip) => chip.path !== nudge.node.path && !picks.includes(chip.path));
 }

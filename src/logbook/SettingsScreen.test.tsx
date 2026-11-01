@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsScreen } from './SettingsScreen';
 
@@ -57,5 +58,21 @@ describe('SettingsScreen', () => {
     await renderSettings({ sharing: undefined });
 
     expect(screen.getByLabelText('Share usage data')).toBeDisabled();
+  });
+
+  it('opens an email to the feedback inbox', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    await renderSettings();
+
+    await fireEvent.press(screen.getByRole('button', { name: /Send feedback/ }));
+
+    expect(openURL).toHaveBeenCalledWith(expect.stringMatching(/^mailto:feedback@gotangent\.app\?subject=Tangent%20feedback/));
+    openURL.mockRestore();
+  });
+
+  it('shows the feedback address, for when no mail app opens', async () => {
+    await renderSettings();
+
+    expect(screen.getByText('feedback@gotangent.app')).toBeOnTheScreen();
   });
 });

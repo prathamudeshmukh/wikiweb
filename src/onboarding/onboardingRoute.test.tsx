@@ -4,6 +4,7 @@ import { renderRouter } from 'expo-router/testing-library';
 import { useEffect, useSyncExternalStore } from 'react';
 import { Text } from 'react-native';
 import Onboarding from '../app/onboarding';
+import { DEFAULT_INTERESTS } from './interestSelection';
 
 // A minimal saved-interests store: Home redirects to onboarding until picks exist, as src/app/index.tsx does.
 let savedPicks: readonly string[] | null = null;
@@ -20,8 +21,11 @@ const mockInterestsStore = {
   },
 };
 
+const mockSavedFrom: string[] = [];
+
 jest.mock('../interests/useSaveInterests', () => ({
-  useSaveInterests: (onSaved: () => void) => async (picks: readonly string[]) => {
+  useSaveInterests: (onSaved: () => void, from: string) => async (picks: readonly string[]) => {
+    mockSavedFrom.push(from);
     mockInterestsStore.save(picks);
     onSaved();
   },
@@ -30,10 +34,15 @@ jest.mock('../interests/useSaveInterests', () => ({
 jest.mock('./OnboardingScreen', () => {
   const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
   return {
-    OnboardingScreen: ({ onDone }: { onDone: (ids: readonly string[]) => void }) => (
-      <Pressable onPress={() => onDone(['science', 'history', 'culture'])}>
-        <Text>Continue</Text>
-      </Pressable>
+    OnboardingScreen: ({ onDone, onSkip }: { onDone: (ids: readonly string[]) => void; onSkip: () => void }) => (
+      <>
+        <Pressable onPress={() => onDone(['science', 'history', 'culture'])}>
+          <Text>Continue</Text>
+        </Pressable>
+        <Pressable onPress={onSkip}>
+          <Text>Skip</Text>
+        </Pressable>
+      </>
     ),
   };
 });
@@ -81,6 +90,18 @@ function stackRouteNames({ router }: Awaited<ReturnType<typeof renderApp>>) {
 beforeEach(() => {
   savedPicks = null;
   homeMounts = 0;
+  mockSavedFrom.length = 0;
+});
+
+describe('onboarding route, skipped', () => {
+  it('saves the default topics as skipped, so cards never claim the user picked them', async () => {
+    await renderApp('/');
+
+    await fireEvent.press(screen.getByText('Skip'));
+
+    expect(savedPicks).toEqual(DEFAULT_INTERESTS);
+    expect(mockSavedFrom).toEqual(['skip']);
+  });
 });
 
 // Opening /onboarding directly (a reload mid-onboarding on web) builds the stack as [index, onboarding],
