@@ -84,5 +84,8 @@ export function nodeStream(options: NodeStreamOptions): Stream<NodeRef> {
         if (!isRead(ref.pageId)) return { ref, node: current.path };
       }
     },
+    prime(count) {
+      (broad ?? level?.stream)?.prime?.(count);
+    },
   };
 }

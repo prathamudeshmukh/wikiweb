@@ -32,6 +32,14 @@ function setup(overrides: Partial<NodeStreamOptions> & { searches?: Record<strin
 }
 
 describe('nodeStream', () => {
+  it('starts the node’s search when primed, before an article is asked for', () => {
+    const { stream, fake } = setup();
+
+    stream.prime?.(1);
+
+    expect(fake.calls.searches.map((s) => s.query)).toEqual([STOICISM]);
+  });
+
   it('tags each article with the node it came from', async () => {
     const { stream } = setup();
 

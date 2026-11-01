@@ -8,6 +8,7 @@ const featuredQuery = (topics: string) => `articletopic:${topics} incategory:Fea
 const FEATURED_SPACE = featuredQuery('space');
 const GOOD_SPACE = 'articletopic:space incategory:Good_articles';
 const FEATURED_HISTORY = featuredQuery('history');
+const GOOD_HISTORY = 'articletopic:history incategory:Good_articles';
 // First tile in TOPIC_TILES order that the user did not pick (when they picked Space).
 const WILDCARD_ANIMALS = 'articletopic:biology incategory:Featured_articles';
 const STOICISM = 'incategory:Stoicism';
@@ -199,6 +200,21 @@ describe('createHomeFeed', () => {
 
     expect(() => createHomeFeed(api, context({ interestPicks: [] }))).toThrow(/at least one interest/);
     expect(() => createHomeFeed(api, context({ interestPicks: ['astrology'] }))).toThrow(/Unknown interest "astrology"/);
+  });
+});
+
+describe('createHomeFeed first batch (SPEC.md §15.9)', () => {
+  it('asks every source the first batch draws from at once, not one after another', async () => {
+    const { api } = plentiful();
+    const asked: string[] = [];
+    const unanswered = { ...api, search: (query: string) => (asked.push(query), new Promise<never>(() => undefined)) };
+
+    void createHomeFeed(unanswered, context({ interestPicks: ['space', 'history'] })).nextPage();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Both pools of each interest, and the two wildcard tiles one batch of 20 reaches.
+    expect(asked).toEqual(expect.arrayContaining([FEATURED_SPACE, GOOD_SPACE, FEATURED_HISTORY, GOOD_HISTORY, WILDCARD_ANIMALS]));
+    expect(asked).toHaveLength(6);
   });
 });
 

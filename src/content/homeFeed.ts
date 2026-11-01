@@ -1,3 +1,4 @@
+import { FEED } from '../config/constants';
 import { TOPIC_TILES, type TopicTile } from '../config/topicTiles';
 import { nodeQuery, type ResolvedPick, resolvePick, tileOf } from '../interests/interestPicks';
 import type { PageRef, WikiApi } from '../wiki-api/types';
@@ -6,7 +7,7 @@ import { type ExhaustedNode, nodeStream } from './nodeStream';
 import { type CandidateSource, createPagedFeed, type Feed } from './pagedFeed';
 import { createBlocklistMatcher, isLowValueTitle } from './quality';
 import type { RankingPolicy } from './ranking';
-import { alternateStreams, onceStream, optionalStream, pagedStream, type Stream } from './refStream';
+import { alternateStreams, onceStream, optionalStream, pagedStream, primeInTurn, type Stream } from './refStream';
 import { type CardTopic, NO_TOPIC } from './topics';
 import { utcDay } from './utcDay';
 
@@ -34,6 +35,9 @@ type Slot = 'interest' | 'today' | 'wildcard';
 // SPEC.md §3.2 — 7 interest / 2 today / 1 wildcard per 10, spread out so sources never clump.
 const HOME_SLOTS: readonly Slot[] = ['interest', 'interest', 'wildcard', 'interest', 'today', 'interest', 'interest', 'today', 'interest', 'interest'];
 const SLOT_SOURCE: Readonly<Record<Slot, CardSource>> = { interest: 'home_interest', today: 'home_today', wildcard: 'home_wildcard' };
+
+/** How many of the first hydrate batch's slots go to `slot`. */
+const firstBatchDraws = (slot: Slot) => Array.from({ length: FEED.hydrateBatch }, (_, i) => HOME_SLOTS[i % HOME_SLOTS.length]).filter((s) => s === slot).length;
 
 function resolvePicks(paths: readonly string[]): ResolvedPick[] {
   if (paths.length === 0) throw new Error('Home needs at least one interest.');
@@ -76,14 +80,16 @@ function broadEntry(tile: TopicTile, stream: Stream<PageRef>): RotationEntry {
         const ref = await stream.next();
         return ref ? { ref, node: null } : null;
       },
+      prime: (count) => stream.prime?.(count),
     },
   };
 }
 
 /** Round-robin across streams, skipping those that have run dry. */
-function rotation(entries: readonly RotationEntry[]) {
+function rotation(entries: readonly RotationEntry[]): Stream<TaggedRef> {
   let turn = 0;
-  return async function next(): Promise<TaggedRef | null> {
+  const streams = entries.map((entry) => entry.stream);
+  async function next(): Promise<TaggedRef | null> {
     for (let tried = 0; tried < entries.length; tried += 1) {
       const { tile, stream } = entries[(turn + tried) % entries.length];
       const item = await stream.next();
@@ -94,7 +100,8 @@ function rotation(entries: readonly RotationEntry[]) {
       }
     }
     return null;
-  };
+  }
+  return { next, prime: (count) => primeInTurn(streams, turn, count) };
 }
 
 /** Broad tiles draw on `articletopic`; subfield/leaf picks on their own categories, widening once read in full. */
@@ -117,30 +124,38 @@ function homeCandidates(api: WikiApi, context: HomeContext): CandidateSource {
   const matchesBlocklist = createBlocklistMatcher(context.blocklist);
   const isEligible = (title: string) => !matchesBlocklist(title) && !isLowValueTitle(title);
   // SPEC.md §3.9 — the rotation is over effective picks, so five Philosophy leaves fill most interest slots.
-  const nextInterest = rotation(picks.map((pick) => interestEntry(api, pick, context, isEligible)));
+  const interests = rotation(picks.map((pick) => interestEntry(api, pick, context, isEligible)));
   // Wildcards are Featured articles from tiles the user did not touch — outside their interests by construction.
   const touched = new Set(context.interestPicks.map(tileOf));
   const otherTiles = TOPIC_TILES.filter((tile) => !touched.has(tile.id));
   const reportError = context.onSourceError ?? (() => undefined);
-  const nextWildcard = rotation(otherTiles.map((tile) => broadEntry(tile, optionalStream(curated(api, tile, FEATURED), reportError))));
+  const wildcards = rotation(otherTiles.map((tile) => broadEntry(tile, optionalStream(curated(api, tile, FEATURED), reportError))));
   const today = optionalStream(onceStream(() => api.featured(context.today)), reportError);
   let slotIndex = 0;
+
+  // Each source's first page is a round trip; asked for one by one they would queue up before the first card.
+  function primeFirstBatch() {
+    interests.prime?.(firstBatchDraws('interest'));
+    wildcards.prime?.(firstBatchDraws('wildcard'));
+    today.prime?.(firstBatchDraws('today'));
+  }
 
   async function nextToday(): Promise<TaggedRef | null> {
     const ref = await today.next();
     return ref ? { ref, fallbackTopic: NO_TOPIC, featuredOn: utcDay(context.today) } : null;
   }
 
-  const forSlot: Readonly<Record<Slot, () => Promise<TaggedRef | null>>> = { interest: nextInterest, today: nextToday, wildcard: nextWildcard };
+  const forSlot: Readonly<Record<Slot, () => Promise<TaggedRef | null>>> = { interest: interests.next, today: nextToday, wildcard: wildcards.next };
 
   return {
     async next(): Promise<Candidate | null> {
+      if (slotIndex === 0) primeFirstBatch();
       const slot = HOME_SLOTS[slotIndex % HOME_SLOTS.length];
       slotIndex += 1;
       const tagged = await forSlot[slot]();
       if (tagged) return { ...tagged, source: SLOT_SOURCE[slot] };
       // An empty today/wildcard source gives its slot to interests rather than shrinking the page.
-      const fallback = slot === 'interest' ? null : await nextInterest();
+      const fallback = slot === 'interest' ? null : await interests.next();
       return fallback ? { ...fallback, source: 'home_interest' } : null;
     },
     accepts: (card: Card) => !matchesBlocklist(card.title) && !context.isRead(card.pageId) && !context.wasShown(card.pageId),
