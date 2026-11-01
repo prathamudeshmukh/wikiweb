@@ -1,0 +1,116 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "settings": {
+        "onlyCategories": [
+          "performance",
+          "accessibility",
+          "best-practices",
+          "seo"
+        ]
+      }
+    },
+    "assert": {
+      "assertMatrix": [
+        {
+          "matchingUrlPattern": ".*",
+          "assertions": {
+            "categories:performance": [
+              "warn",
+              {
+                "minScore": 0.8,
+                "aggregationMethod": "median"
+              }
+            ],
+            "largest-contentful-paint": [
+              "warn",
+              {
+                "maxNumericValue": 2500,
+                "aggregationMethod": "median"
+              }
+            ],
+            "cumulative-layout-shift": [
+              "warn",
+              {
+                "maxNumericValue": 0.1,
+                "aggregationMethod": "median"
+              }
+            ],
+            "total-blocking-time": [
+              "warn",
+              {
+                "maxNumericValue": 700,
+                "aggregationMethod": "median"
+              }
+            ],
+            "total-byte-weight": [
+              "warn",
+              {
+                "maxNumericValue": 1000000,
+                "aggregationMethod": "median"
+              }
+            ],
+            "resource-summary:script:size": [
+              "warn",
+              {
+                "maxNumericValue": 500000,
+                "aggregationMethod": "median"
+              }
+            ]
+          }
+        },
+        {
+          "matchingUrlPattern": ".*",
+          "assertions": {
+            "categories:performance": [
+              "warn",
+              {
+                "minScore": 0.9,
+                "aggregationMethod": "median"
+              }
+            ],
+            "total-blocking-time": [
+              "warn",
+              {
+                "maxNumericValue": 200,
+                "aggregationMethod": "median"
+              }
+            ],
+            "interactive": [
+              "warn",
+              {
+                "maxNumericValue": 3000,
+                "aggregationMethod": "median"
+              }
+            ],
+            "categories:accessibility": [
+              "warn",
+              {
+                "minScore": 0.9,
+                "aggregationMethod": "median"
+              }
+            ],
+            "categories:best-practices": [
+              "warn",
+              {
+                "minScore": 0.9,
+                "aggregationMethod": "median"
+              }
+            ],
+            "categories:seo": [
+              "warn",
+              {
+                "minScore": 0.9,
+                "aggregationMethod": "median"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

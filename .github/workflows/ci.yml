@@ -15,6 +15,10 @@ env:
   NODE_VERSION: 22
   JAVA_VERSION: 17
   VERCEL_CLI_VERSION: 63.1.2
+  LHCI_CLI_VERSION: 0.15.1
+  # Only to run lighthouserc.json's puppeteerScript, in the runner's own Chrome.
+  PUPPETEER_CORE_VERSION: 25.16.0
+  PRODUCTION_URL: https://gotangent.app
 
 jobs:
   checks:
@@ -50,12 +54,15 @@ jobs:
   web:
     name: Deploy web to Vercel
     needs: checks
-    # Pull requests get a preview, main goes to production. A manual run is an APK release only.
+    # Pull requests get a preview. main gets a production build staged without the domain;
+    # the promote job moves the domain onto it once Lighthouse passes. A manual run is an APK release only.
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
-      name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      name: ${{ github.event_name == 'push' && 'staged' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    outputs:
       url: ${{ steps.deploy.outputs.url }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -91,9 +98,85 @@ jobs:
       - name: Deploy
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt ${{ env.VERCEL_TARGET == 'production' && '--prod' || '' }} --token="$VERCEL_TOKEN")
+          url=$(vercel deploy --prebuilt ${{ env.VERCEL_TARGET == 'production' && '--prod --skip-domain' || '' }} --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Deployed to $VERCEL_TARGET: $url" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$VERCEL_TARGET" = production ]; then
+            echo "Staged for production (promoted once Lighthouse passes): $url" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Deployed to preview: $url" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  lighthouse:
+    name: Lighthouse
+    needs: web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DEPLOY_URL: ${{ needs.web.outputs.url }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Require the Vercel bypass secret
+        if: env.VERCEL_AUTOMATION_BYPASS_SECRET == ''
+        run: |
+          echo "::error::Set the VERCEL_AUTOMATION_BYPASS_SECRET repository secret (Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation)."
+          exit 1
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - run: echo "LHCI=npx --yes -p @lhci/cli@$LHCI_CLI_VERSION -p puppeteer-core@$PUPPETEER_CORE_VERSION lhci" >> "$GITHUB_ENV"
+
+      # Thresholds are in lighthouserc.json; CONTRIBUTING.md says how to tighten them.
+      # The puppeteer script gets past Vercel Deployment Protection without the secret reaching the public reports.
+      - name: Run Lighthouse
+        run: |
+          $LHCI collect --url="$DEPLOY_URL" --chromePath="$(command -v google-chrome)" \
+            --puppeteerScript=scripts/lighthouse/vercelBypassCookie.js
+
+      - name: Upload reports
+        if: always() && hashFiles('.lighthouseci/lhr-*.json') != ''
+        run: $LHCI upload
+
+      - name: Check thresholds
+        run: $LHCI assert
+
+      - name: Summarise
+        if: always()
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/lighthouse-summary.ts "$DEPLOY_URL"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lighthouse
+          path: .lighthouseci/
+          include-hidden-files: true
+          retention-days: 14
+
+  promote:
+    name: Promote to production
+    needs: [web, lighthouse]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: ${{ env.PRODUCTION_URL }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      DEPLOY_URL: ${{ needs.web.outputs.url }}
+    steps:
+      - run: npm install -g vercel@${{ env.VERCEL_CLI_VERSION }}
+
+      # The staged deployment is already a production build, so promoting only moves the domain: no rebuild.
+      - name: Promote
+        run: |
+          vercel promote "$DEPLOY_URL" --yes --token="$VERCEL_TOKEN"
+          echo "Promoted to production ($PRODUCTION_URL): $DEPLOY_URL" >> "$GITHUB_STEP_SUMMARY"
 
   android-apk:
     name: Build & release Android APK
