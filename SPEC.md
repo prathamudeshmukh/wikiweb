@@ -712,17 +712,18 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`
   - first screen (onboarding or Home) on a cold load: < 3 s;
   - Set off / Skip → first card: < 3 s;
   - returning visitor → first card: < 3 s.
-- **Measured** 2026-10-31, medians of three or more runs. Lighthouse alone never reaches a card (a fresh visitor lands on onboarding), so first-card times come from a scripted run under the same throttling with 5 s spent on onboarding. "Before" is production; the other columns are local production builds (gzip, no CDN), which run ~0.4 s slower on the first screen than production's brotli.
+- **Measured** on production (`gotangent.app`), medians of three runs: before on 2026-10-30, after #26 and #29 on 2026-11-01. Lighthouse alone never reaches a card (a fresh visitor lands on onboarding), so first-card times come from a scripted run under the same throttling with 5 s spent on onboarding.
 
-  | | Before (`main`) | First-card fixes (#26) | First-screen fixes | Budget |
-  |---|---|---|---|---|
-  | First screen, cold | 8.5 s | 5.2 s | 3.0 s (expected ~2.6 s on production) | ✅ to confirm |
-  | Skip → first card | 9.1 s | ~3.05 s, 2.5–3.9 s | ~3.1 s, 3.0–3.3 s | borderline |
-  | Returning → first card | 0.7 s (saved Home, §3.2) | ~1.0 s | ~1.0 s | ✅ |
+  | | Before | After (#26, #29) | Budget |
+  |---|---|---|---|
+  | First screen, cold | 8.5 s | 3.06 s (3.02–3.22) | met within ~0.1 s |
+  | Skip → first card | 9.1 s | 3.16 s (3.08–3.38) | met within ~0.2 s |
+  | Returning → first card | 0.7 s (saved Home, §3.2) | 0.85 s | ✅ |
 
-  Lighthouse mobile on production before: performance 82–89, FCP/LCP 0.8–1.1 s (the onboarding heading), TBT 460–630 ms, CLS 0.01, TTI ~8.2 s. Re-run against production once deployed.
+  Lighthouse mobile on production before: performance 82–89, FCP/LCP 0.8–1.1 s (the onboarding heading), TBT 460–630 ms, CLS 0.01, TTI ~8.2 s.
+- **Accepted** (#9, 2026-11-01): both new-visitor timings are within 0.2 s of the budget and were taken as meeting it for the beta. The remaining gap is mostly outside the bundle: Vercel compresses the entry about as well as gzip (438 KB on the wire; 348 KB at maximum brotli), and Skip → first card waits on Wikipedia.
 - **Fixed — Skip → first card:** Home asked each source's first page one after another, ~8 searches in a row before the first card; the first batch's sources are now primed together (`Stream.prime`, `homeFeed.ts`). What is left is Wikipedia's own time — the searches (~0.9 s) and one hydrate (~1.5 s) — plus a second batch whenever the first leaves the page short of 20 usable cards. Next: show the first cards before a full page.
-- **Fixed — first screen:** the entry bundle went from 664 KB to 348 KB brotli. Before onboarding draws, the browser now waits only for that bundle:
+- **Fixed — first screen:** the entry bundle went from 3.5 MB to 1.7 MB raw (664 KB to 348 KB at maximum brotli). Before onboarding draws, the browser now waits only for that bundle:
   - fonts load with `font-display: swap`, as WOFF2 (`fontLoading.web.ts`, `scripts/build-web-fonts.py`); native still waits for its TTFs;
   - every screen but onboarding is one chunk fetched after the first screen (`src/routes/screens.ts`, `deferredScreen.web.tsx`), preloaded while the visitor reads onboarding; it carries reanimated and gesture-handler, whose root is a plain view on web until then (`AppRoot.web.tsx`). Home's interest check stays in `src/app/index.tsx` so a new visitor reaches onboarding without Home's code;
   - `posthog-js` is imported on demand (`connectPostHog.web.ts`); events made meanwhile wait in order;
