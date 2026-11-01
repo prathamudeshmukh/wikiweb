@@ -4,7 +4,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AnalyticsRoot } from '../analytics/AnalyticsRoot';
 import { HintsProvider } from '../hints/HintsContext';
@@ -12,7 +11,9 @@ import { interestsSavedProperties } from '../analytics/interestsSaved';
 import { type InterestsSaved, InterestsProvider } from '../interests/InterestsContext';
 import { AppServicesProvider, createAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
+import { preloadScreens } from '../routes/deferredScreen';
 import { TangentProvider } from '../tangent/TangentContext';
+import { AppRoot } from '../theme/AppRoot';
 import { useAppFrame } from '../theme/appFrame';
 import { LOADED_FONTS, WAITS_FOR_FONTS } from '../theme/fontLoading';
 import { prepareDocument } from '../theme/prepareDocument';
@@ -62,6 +63,11 @@ export default function RootLayout() {
     if (result.ok) result.services.nudges.load().catch((error: unknown) => reportError('nudges.load', error));
   }, [result]);
 
+  // The first screen is up; fetch the rest while the visitor reads it (SPEC.md §15.9).
+  useEffect(() => {
+    if (ready) preloadScreens();
+  }, [ready]);
+
   useEffect(() => {
     if (fontError) reportError('fonts', fontError);
     if (ready) SplashScreen.hideAsync().catch((error: unknown) => reportError('splash', error));
@@ -72,7 +78,7 @@ export default function RootLayout() {
 
   return (
     // The root view shows through during screen transitions; paper here keeps them from flashing white.
-    <GestureHandlerRootView style={[styles.root, { backgroundColor: palette.paper }]}>
+    <AppRoot style={[styles.root, { backgroundColor: palette.paper }]}>
       {/* A wide browser window shows the app as a centred phone-width column (SPEC.md §15.1). */}
       <View style={[styles.frame, { width: frame.width }]}>
         <SafeAreaProvider>
@@ -100,7 +106,7 @@ export default function RootLayout() {
           </AppServicesProvider>
         </SafeAreaProvider>
       </View>
-    </GestureHandlerRootView>
+    </AppRoot>
   );
 }
 
