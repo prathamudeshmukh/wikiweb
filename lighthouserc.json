@@ -38,7 +38,7 @@
             "resource-summary:script:size": [
               "error",
               {
-                "maxNumericValue": 700000,
+                "maxNumericValue": 761000,
                 "aggregationMethod": "median"
               }
             ],

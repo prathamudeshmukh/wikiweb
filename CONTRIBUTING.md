@@ -35,21 +35,19 @@ CI runs [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci) on every 
 
 `lighthouserc.json` has two assertion sets:
 
-- the **gate** (first entry, `error`): today's numbers plus headroom, so the job fails on a regression;
-- the **targets** (second entry, `warn`): SPEC §15.9's budget and Google's "good" thresholds. They show in the job summary but never fail it.
+- the **gate** (first entry, `error`): total transfer size, script transfer size and layout shift. Byte sizes are today's plus ~5 %, so the job fails when the first screen gets heavier;
+- the **targets** (second entry, `warn`): performance score, LCP, TBT and time to interactive at SPEC §15.9's budget and Google's "good" thresholds, plus the accessibility, best-practices and SEO scores. They show in the job summary but never fail it.
+
+Timings are not gated because GitHub's shared runners differ in CPU from job to job, and Lighthouse's simulated timings scale with it: on one build, LCP ranged 3.7–10.5 s and the performance score 0.36–0.82, while byte sizes moved under 0.1 % (SPEC §15.9). The summary prints the runner's CPU benchmark index so a bad timing can be read against it.
 
 ### Tightening the gate
 
-When a change makes the first screen faster, ratchet the gate to the new numbers in the same pull request:
-
-1. Re-run the Lighthouse job about five times on the pull request (Actions → the run → Re-run jobs).
-2. For each gate metric, take the worst of those medians and add ~10 % to timings and ~5 % to byte sizes, and take ~0.05 off scores.
-3. Lower the `error` thresholds to those values (never raise them to make a regression pass) and record the numbers in SPEC §15.9.
+When a change makes the first screen lighter, ratchet the gate in the same pull request: set each byte budget to the new size plus ~5 % (one run is enough — bytes don't vary), never raise a budget to let a regression through, and record the numbers in SPEC §15.9.
 
 ### When the gate is wrong
 
-- A noisy runner: re-run the failed job.
-- An urgent fix on `main` that the gate stops: the staged deployment is still on Vercel; promote it by hand (`vercel promote <url>`, or Promote in the dashboard). Follow up by fixing the regression or ratcheting with a reason.
+- A new dependency or screen that is worth its bytes: raise the budget in the same pull request and say why in SPEC §15.9.
+- An urgent fix on `main` that the gate stops: the staged deployment is still on Vercel; promote it by hand (`vercel promote <url>`, or Promote in the dashboard), then follow up.
 
 ### Running it locally
 
@@ -57,4 +55,4 @@ When a change makes the first screen faster, ratchet the gate to the new numbers
 npx -y @lhci/cli@0.15.1 autorun --collect.url=https://gotangent.app/ --upload.target=filesystem
 ```
 
-Results land in `.lighthouseci/` (git-ignored). Laptop numbers differ from the CI runner's; set thresholds from CI runs only.
+Results land in `.lighthouseci/` (git-ignored). Byte sizes match CI; timings and scores depend on your machine.
