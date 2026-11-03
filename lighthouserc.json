@@ -8,6 +8,18 @@
           "accessibility",
           "best-practices",
           "seo"
+        ],
+        "clearStorageTypes": [
+          "file_systems",
+          "shader_cache",
+          "service_workers",
+          "cache_storage",
+          "indexeddb",
+          "local_storage"
+        ],
+        "skipAudits": [
+          "is-crawlable",
+          "robots-txt"
         ]
       }
     },
