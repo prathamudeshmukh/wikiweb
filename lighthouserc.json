@@ -28,45 +28,24 @@
         {
           "matchingUrlPattern": ".*",
           "assertions": {
-            "categories:performance": [
-              "warn",
-              {
-                "minScore": 0.8,
-                "aggregationMethod": "median"
-              }
-            ],
-            "largest-contentful-paint": [
-              "warn",
-              {
-                "maxNumericValue": 2500,
-                "aggregationMethod": "median"
-              }
-            ],
-            "cumulative-layout-shift": [
-              "warn",
-              {
-                "maxNumericValue": 0.1,
-                "aggregationMethod": "median"
-              }
-            ],
-            "total-blocking-time": [
-              "warn",
-              {
-                "maxNumericValue": 700,
-                "aggregationMethod": "median"
-              }
-            ],
             "total-byte-weight": [
-              "warn",
+              "error",
               {
-                "maxNumericValue": 1000000,
+                "maxNumericValue": 1475000,
                 "aggregationMethod": "median"
               }
             ],
             "resource-summary:script:size": [
-              "warn",
+              "error",
               {
-                "maxNumericValue": 500000,
+                "maxNumericValue": 700000,
+                "aggregationMethod": "median"
+              }
+            ],
+            "cumulative-layout-shift": [
+              "error",
+              {
+                "maxNumericValue": 0.1,
                 "aggregationMethod": "median"
               }
             ]
@@ -79,6 +58,13 @@
               "warn",
               {
                 "minScore": 0.9,
+                "aggregationMethod": "median"
+              }
+            ],
+            "largest-contentful-paint": [
+              "warn",
+              {
+                "maxNumericValue": 2500,
                 "aggregationMethod": "median"
               }
             ],

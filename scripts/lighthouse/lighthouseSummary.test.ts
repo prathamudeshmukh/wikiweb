@@ -2,10 +2,11 @@ import { findRedirectedRuns, renderSummary, type AssertionResult, type RunReport
 
 const PREVIEW_URL = 'https://tangent-abc123.vercel.app/';
 
-const run = (finalDisplayedUrl: string, performance = 0.85): RunReport => ({
+const run = (finalDisplayedUrl: string, performance = 0.85, benchmarkIndex = 2400): RunReport => ({
   requestedUrl: PREVIEW_URL,
   finalDisplayedUrl,
   categories: { performance: { score: performance }, accessibility: { score: 0.93 } },
+  environment: { benchmarkIndex },
 });
 
 const assertion = (overrides: Partial<AssertionResult>): AssertionResult => ({
@@ -70,6 +71,14 @@ describe('renderSummary', () => {
 
     expect(summary).toContain('| Performance | 0.83 |');
     expect(summary).toContain('[Full report](https://storage.googleapis.com/report.html)');
+  });
+
+  it("shows the runner's CPU benchmark range, since timings and scores move with it", () => {
+    const runs = [run(PREVIEW_URL, 0.8, 3944.2), run(PREVIEW_URL, 0.55, 2232.5), run(PREVIEW_URL, 0.6, 3000)];
+
+    const summary = renderSummary({ ...base, runs, assertions: [] });
+
+    expect(summary).toContain('Runner CPU benchmark index: 2,233–3,944');
   });
 
   it('says so when no report link was uploaded, rather than linking nothing', () => {

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { loadLighthouseResults } from './loadLighthouseResults';
 
 const PREVIEW_URL = 'https://tangent-abc123.vercel.app/';
-const lhr = { requestedUrl: PREVIEW_URL, finalDisplayedUrl: PREVIEW_URL, categories: { performance: { score: 0.8 } }, audits: {} };
+const lhr = { requestedUrl: PREVIEW_URL, finalDisplayedUrl: PREVIEW_URL, categories: { performance: { score: 0.8 } }, environment: { benchmarkIndex: 2400 }, audits: {} };
 
 describe('loadLighthouseResults', () => {
   let dir: string;

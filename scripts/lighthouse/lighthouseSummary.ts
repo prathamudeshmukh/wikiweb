@@ -18,6 +18,7 @@ export type RunReport = {
   requestedUrl: string;
   finalDisplayedUrl: string;
   categories: Record<string, { score: number | null }>;
+  environment: { benchmarkIndex: number };
 };
 
 export type SummaryInput = {
@@ -98,6 +99,14 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
+/** Shared runners differ in CPU; Lighthouse's simulated timings and scores scale with it, byte sizes do not. */
+function benchmarkLine(runs: RunReport[]): string[] {
+  const indexes = runs.map((run) => Math.round(run.environment.benchmarkIndex));
+  if (indexes.length === 0) return [];
+  const range = [Math.min(...indexes), Math.max(...indexes)].map((index) => index.toLocaleString('en-US'));
+  return [`Runner CPU benchmark index: ${range[0]}–${range[1]} (timings and scores fall as it drops)`, ''];
+}
+
 function scoreTable(runs: RunReport[]): string[] {
   const categories = Object.keys(runs[0]?.categories ?? {});
   const rows = categories.map((category) => {
@@ -124,5 +133,6 @@ export function renderSummary({ url, assertions, runs, reportLinks }: SummaryInp
     ...assertionTable('Gate failures', failures),
     ...assertionTable('Targets not yet met', missedTargets),
     ...scoreTable(runs),
+    ...benchmarkLine(runs),
   ].join('\n');
 }
