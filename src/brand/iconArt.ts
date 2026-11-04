@@ -102,7 +102,7 @@ function rim(ink: string): string {
 }
 
 /** The glyph's own shapes on its 24-unit grid; callers place and scale it. */
-function glyphShapes(ink: string): string {
+export function glyphShapes(ink: string): string {
   const { strokeWidth, circle, tangent, dot } = TANGENT_GLYPH;
   return (
     `<circle cx="${circle.cx}" cy="${circle.cy}" r="${circle.r}" fill="none" stroke="${ink}" stroke-width="${strokeWidth}"/>` +
