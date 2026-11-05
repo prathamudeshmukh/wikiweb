@@ -17,6 +17,14 @@ Tangent (repo: `wikiweb`). Keep this list current; add new links here, not in ch
 | Spec | `SPEC.md` (source of truth for product decisions) |
 | Design system | `DESIGN.md` |
 
+## Backlog — what to work on next
+
+The [kanban board](https://github.com/users/prathamudeshmukh/projects/2) is the backlog. Don't keep a copy in the repo.
+
+- **"What next?"** Read the board live, don't answer from memory or docs: `gh project item-list 2 --owner prathamudeshmukh --limit 100 --format json`. Rank by Status (*In progress* → *In review* → *Ready* → *Backlog*), then Priority (P0 → P2) when set, then the `launch-blocker` label, then dependencies stated in the issue bodies. Recommend one item, with the reason.
+- **Moving cards:** set *In progress* when work starts and *In review* when its PR opens. Set *Done* only when the PR is merged **and** CI's *Promote to production* job on `main` has succeeded. Merged but not promoted stays *In review*. Use `gh project item-edit` (field and option IDs from `gh project field-list 2 --owner prathamudeshmukh --format json`).
+- New issues go on the board (`gh project item-add 2 --owner prathamudeshmukh --url <issue-url>`).
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
@@ -56,4 +64,3 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
-- Keep the backlog in `SPEC.md` §16 current. When an issue's PR is merged and CI's *Promote to production* job succeeds, tick its row with that date and move it to the done rows; add a row for every new issue, in priority order. Merged but not promoted stays 🔄.

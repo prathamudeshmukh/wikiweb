@@ -766,31 +766,3 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`
 1. **Reach:** web is ≥ 30 % of first sessions.
 2. **Core loop holds:** web hops per session and hop→read rate are ≥ 80 % of native. If not, browser gestures are the suspect.
 3. **Quality:** §15.9 budget met; no reader bridge or storage `app_error`s in a week of production.
-
----
-
-## 16. Backlog
-
-Open work in priority order, one row per GitHub issue. A row is **done** only once its PR is merged to `main` *and* CI has promoted that build to production (the run's *Promote to production* job is green). It's ticked with that date. A merged PR whose promotion hasn't run is still 🔄. Done rows move to the bottom, newest first.
-
-| Status | Issue | Item | Notes |
-|---|---|---|---|
-| 🔄 | #17 🚩 | Open Graph and X preview tags with a designed image | Tags and image merged in #34, live 2026-11-04 at 1×. The 2× fix (`-v2.png`, sharp in LinkedIn) is in #35. Blocked: *Promote to production* fails since #33 (`vercel promote` → `User not found (404)`). Then check unfurls on LinkedIn, Slack, WhatsApp and X. |
-| | #18 | Analytics for the beta funnel (`pointer`, `route_shared`, feedback) | Overlaps #11 and #14; build together. |
-| | #11 | Onboarding pitch line and *Just start* button | |
-| | #14 | Share an expedition route from the recap card | |
-| | #19 🚩 | PostHog beta funnel dashboard live before launch | Needs #18's events. |
-| | #15 | About & Privacy page and onboarding disclosure | Not a 🚩, but analytics sends article titles with no notice: ship before launch. |
-| | #12 | Desktop-aware swipe hint and keyboard legend | |
-| | #10 🚩 | Manual funnel run on real iPhone Safari and Android Chrome | Last check before posting, after everything above. |
-| | #20 | Record the launch screen recording | On the live domain, after #10. |
-| | #21 | Orphan line in trimmed card extracts on web | After launch; not a blocker (§15.10). |
-| | #22 | Playwright E2E suite for web | Built during the beta (§15.8). |
-| | #31 | Lighthouse CI on deep-link routes after code-splitting | |
-| | #32 | Scripted first-card check (Skip → first card < 3 s) in CI | Needs recorded Wikipedia fixtures. |
-| ✅ 2026-11-01 | #9 🚩 | Lighthouse mobile pass against the first-card budget | Accepted within 0.2 s of budget (§15.9). |
-| ✅ 2026-11-01 | #13 | One-time feedback card after the second expedition | |
-| ✅ 2026-10-30 | #16 🚩 | Pick and connect a custom domain | `gotangent.app` (§15.6). |
-| ✅ 2026-10-30 | #8 🚩 | Second ExploreScreen stays mounted after onboarding skip | §15.10. |
-
-🚩 launch blocker. Done dates before #33 are the issue's close date: back then a merge to `main` went straight to production.
