@@ -17,10 +17,10 @@ describe('buildPreviewImage', () => {
     rmSync(join(outFile, '..', '..'), { recursive: true, force: true });
   });
 
-  it('writes a 1200 × 630 PNG', () => {
+  it('writes the 1200 × 630 art at 2× (2400 × 1260), so high-DPI unfurls stay sharp', () => {
     buildPreviewImage({ outFile, fontFiles: PREVIEW_FONT_FILES });
 
-    expect(pngSize(readFileSync(outFile))).toEqual({ width: 1200, height: 630 });
+    expect(pngSize(readFileSync(outFile))).toEqual({ width: 2400, height: 1260 });
   });
 
   it('renders the same bytes every time, so a rebuild only changes the PNG when the art changes', () => {

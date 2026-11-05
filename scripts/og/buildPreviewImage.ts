@@ -8,7 +8,9 @@ import { PREVIEW_CANVAS, previewSvg, SERIF_FAMILY } from '../../src/brand/previe
  * Served from public/ at this path, and named by public/index.html's og:image.
  * Bump the version on every redesign: unfurl caches key on the URL and can't be purged.
  */
-export const PREVIEW_IMAGE_PATH = 'og/tangent-preview-v1.png';
+export const PREVIEW_IMAGE_PATH = 'og/tangent-preview-v2.png';
+// Unfurls show the card about 1200 px wide; at 1× a high-DPI screen upscales it and it blurs (LinkedIn).
+const PIXEL_RATIO = 2;
 
 // Resolved from the repo root: run through `npm run og` (or Jest), both of which start there.
 const FONTS = 'node_modules/@expo-google-fonts';
@@ -24,7 +26,7 @@ export function buildPreviewImage({ outFile, fontFiles }: { outFile: string; fon
   const missing = fontFiles.filter((file) => !existsSync(file));
   if (missing.length > 0) throw new Error(`Preview font not found at ${missing.join(', ')} — run npm install`);
   const png = new Resvg(previewSvg(), {
-    fitTo: { mode: 'width', value: PREVIEW_CANVAS.width },
+    fitTo: { mode: 'width', value: PREVIEW_CANVAS.width * PIXEL_RATIO },
     font: { fontFiles: [...fontFiles], loadSystemFonts: false, defaultFontFamily: SERIF_FAMILY },
   })
     .render()
