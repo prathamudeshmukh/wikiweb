@@ -737,6 +737,21 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`
   `sql-wasm.wasm` (316 KB) is not on the first screen's path; it loads alongside the screens chunk, both finishing within the 5 s on onboarding.
 - **Spike measurement:** the JS bundle is 9.4 MB (1.9 MB gzip), far over budget. Likely cause: the `phosphor-react-native` barrel import pulls in every icon. Fixed: icons are imported one file each (`src/theme/icons.ts`, lint-enforced) — 3,027 icon modules down to 72; the web bundle is 3.8 MB raw.
 - Fonts: serve the `@expo-google-fonts` weights actually used, not every variant the packages export. Done: each weight is imported from its own entry point, so only the seven DESIGN.md §3 faces are exported.
+- **CI gate** (Lighthouse CI, `lighthouserc.json`; how to tighten it: CONTRIBUTING.md). Every preview and every staged `main` build is audited on `/`, three runs, medians; `main` is promoted to production only if it passes.
+  - Calibrated 2026-11-03 on GitHub's `ubuntu-latest`, five jobs × three runs on one build:
+
+    | | Range of job medians | Gate (error) | Target (warn) |
+    |---|---|---|---|
+    | Total transfer | 1,370–1,371 KB | ≤ 1,475,000 B (+5 %) | — |
+    | Script transfer | 707.5 KB | ≤ 761,000 B (+5 %) | — |
+    | CLS | 0.01–0.013 | ≤ 0.1 | — |
+    | Performance score | 0.52–0.77 | — | ≥ 0.9 |
+    | LCP | 4.1–9.6 s | — | ≤ 2.5 s |
+    | TBT | 412–794 ms | — | ≤ 200 ms |
+    | Time to interactive | 9.1–9.8 s | — | ≤ 3 s |
+
+  - Timings are warnings only: the runner's CPU benchmark index ranged 93–4,086 between jobs and Lighthouse's simulated LCP followed it (3.7 s at ~4,000, 7–9.6 s at ~2,400). The LCP element is the onboarding heading every time, painted at 0.35–0.55 s unthrottled. Byte sizes are the deterministic signal, and they are what still holds the first screen back (see above). Real timings come from field data.
+  - `is-crawlable` and `robots-txt` are skipped: Vercel sends `noindex` on deployment URLs.
 
 ### 15.10 Known web issues (from the spike)
 | Issue | Status |

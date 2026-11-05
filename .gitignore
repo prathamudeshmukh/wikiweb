@@ -48,3 +48,6 @@ public/sql-wasm.wasm
 
 # Vercel CLI link (vercel pull / vercel link)
 .vercel/
+
+# Lighthouse CI output (lhci collect / assert / upload)
+.lighthouseci/
