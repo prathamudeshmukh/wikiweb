@@ -169,17 +169,27 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       DEPLOY_URL: ${{ needs.web.outputs.url }}
+      VERCEL_API: https://api.vercel.com
     steps:
-      - run: npm install -g vercel@${{ env.VERCEL_CLI_VERSION }}
-
-      # Links the project (.vercel/project.json) as the web job does; without it promote fails with "User not found".
-      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-
+      # Vercel's REST API, not `vercel promote`: the CLI first looks up the token's user (/v2/user),
+      # which answers "User not found. (404)" for this token. pull, build and deploy never make that call.
       # The staged deployment is already a production build, so promoting only moves the domain: no rebuild.
       - name: Promote
         run: |
-          vercel promote "$DEPLOY_URL" --yes --token="$VERCEL_TOKEN"
-          echo "Promoted to production ($PRODUCTION_URL): $DEPLOY_URL" >> "$GITHUB_STEP_SUMMARY"
+          api() { curl --silent --show-error --fail-with-body -H "Authorization: Bearer $VERCEL_TOKEN" "$@"; }
+          deployment_id() { api "$VERCEL_API/v13/deployments/${1#https://}?teamId=$VERCEL_ORG_ID" | jq -er .id; }
+
+          staged=$(deployment_id "$DEPLOY_URL")
+          api -X POST -H 'Content-Type: application/json' -d '{}' -o /dev/null \
+            "$VERCEL_API/v10/projects/$VERCEL_PROJECT_ID/promote/$staged?teamId=$VERCEL_ORG_ID"
+
+          # The domain can take a few seconds to move; confirm it serves the staged deployment.
+          for attempt in $(seq 1 12); do
+            [ "$(deployment_id "$PRODUCTION_URL")" = "$staged" ] && break
+            [ "$attempt" = 12 ] && { echo "::error::$PRODUCTION_URL still serves another deployment after promoting $staged."; exit 1; }
+            sleep 5
+          done
+          echo "Promoted to production ($PRODUCTION_URL): $DEPLOY_URL ($staged)" >> "$GITHUB_STEP_SUMMARY"
 
   android-apk:
     name: Build & release Android APK
