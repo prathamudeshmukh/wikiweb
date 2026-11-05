@@ -172,6 +172,9 @@ jobs:
     steps:
       - run: npm install -g vercel@${{ env.VERCEL_CLI_VERSION }}
 
+      # Links the project (.vercel/project.json) as the web job does; without it promote fails with "User not found".
+      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
       # The staged deployment is already a production build, so promoting only moves the domain: no rebuild.
       - name: Promote
         run: |
