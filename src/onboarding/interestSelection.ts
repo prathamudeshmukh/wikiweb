@@ -3,7 +3,7 @@ import { addPick, picksBelow, tileOf, tilesTouched } from '../interests/interest
 
 export const MIN_INTERESTS = 3;
 
-/** Used when the user skips onboarding (SPEC.md §3.1). */
+/** Used when the user just starts onboarding without picking (SPEC.md §3.1). */
 export const DEFAULT_INTERESTS: readonly string[] = ['science', 'history', 'art'];
 
 const SUMMARY_NAMED_PICKS = 3;
@@ -19,6 +19,16 @@ export function toggleInterest(selected: readonly string[], tileId: string): str
 /** The minimum counts tiles touched, so any number of subfields within one tile count once. */
 export function canContinue(selected: readonly string[]): boolean {
   return tilesTouched(selected) >= MIN_INTERESTS;
+}
+
+/** What onboarding's one button does (SPEC.md §3.1): just start untouched, count down once picking, then set off. */
+export type OnboardingAction = { kind: 'just_start' } | { kind: 'pick_more'; missing: number } | { kind: 'set_off' };
+
+export function onboardingAction(selected: readonly string[]): OnboardingAction {
+  const touched = tilesTouched(selected);
+  if (touched === 0) return { kind: 'just_start' };
+  if (touched < MIN_INTERESTS) return { kind: 'pick_more', missing: MIN_INTERESTS - touched };
+  return { kind: 'set_off' };
 }
 
 function samePicks(a: readonly string[], b: readonly string[]): boolean {

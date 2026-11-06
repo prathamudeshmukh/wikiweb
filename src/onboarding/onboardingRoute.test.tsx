@@ -4,6 +4,7 @@ import { renderRouter } from 'expo-router/testing-library';
 import { useEffect, useSyncExternalStore } from 'react';
 import { Text } from 'react-native';
 import Onboarding from '../app/onboarding';
+import { memoryAnalytics } from '../analytics/__testing__/memoryAnalytics';
 import { DEFAULT_INTERESTS } from './interestSelection';
 
 // A minimal saved-interests store: Home redirects to onboarding until picks exist, as src/app/index.tsx does.
@@ -31,16 +32,22 @@ jest.mock('../interests/useSaveInterests', () => ({
   },
 }));
 
+const mockAnalytics = memoryAnalytics();
+
+jest.mock('../services/AppServices', () => ({
+  useAppServices: () => ({ analytics: mockAnalytics }),
+}));
+
 jest.mock('./OnboardingScreen', () => {
   const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
   return {
-    OnboardingScreen: ({ onDone, onSkip }: { onDone: (ids: readonly string[]) => void; onSkip: () => void }) => (
+    OnboardingScreen: ({ onDone, onJustStart }: { onDone: (ids: readonly string[]) => void; onJustStart: () => void }) => (
       <>
         <Pressable onPress={() => onDone(['science', 'history', 'culture'])}>
           <Text>Continue</Text>
         </Pressable>
-        <Pressable onPress={onSkip}>
-          <Text>Skip</Text>
+        <Pressable onPress={onJustStart}>
+          <Text>Just start</Text>
         </Pressable>
       </>
     ),
@@ -93,11 +100,21 @@ beforeEach(() => {
   mockSavedFrom.length = 0;
 });
 
-describe('onboarding route, skipped', () => {
+describe('onboarding route, viewed', () => {
+  it('reports that onboarding was shown', async () => {
+    const before = mockAnalytics.named('onboarding_viewed').length;
+
+    await renderApp('/');
+
+    expect(mockAnalytics.named('onboarding_viewed')).toHaveLength(before + 1);
+  });
+});
+
+describe('onboarding route, just started', () => {
   it('saves the default topics as skipped, so cards never claim the user picked them', async () => {
     await renderApp('/');
 
-    await fireEvent.press(screen.getByText('Skip'));
+    await fireEvent.press(screen.getByText('Just start'));
 
     expect(savedPicks).toEqual(DEFAULT_INTERESTS);
     expect(mockSavedFrom).toEqual(['skip']);

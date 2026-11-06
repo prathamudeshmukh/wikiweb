@@ -1,57 +1,72 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DEFAULT_INTERESTS } from './interestSelection';
 import { OnboardingScreen } from './OnboardingScreen';
 
 const SAFE_AREA = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 
 async function renderScreen() {
   const onDone = jest.fn();
-  const onSkip = jest.fn();
+  const onJustStart = jest.fn();
   await render(
     <SafeAreaProvider initialMetrics={SAFE_AREA}>
-      <OnboardingScreen onDone={onDone} onSkip={onSkip} />
+      <OnboardingScreen onDone={onDone} onJustStart={onJustStart} />
     </SafeAreaProvider>,
   );
-  return { onDone, onSkip, setOff: () => screen.getByRole('button', { name: 'Set off' }) };
+  return { onDone, onJustStart };
+}
+
+async function pick(...names: string[]) {
+  for (const name of names) await fireEvent.press(screen.getByRole('checkbox', { name }));
 }
 
 describe('OnboardingScreen', () => {
-  it('keeps Set off disabled until three topics are picked', async () => {
-    const { onDone, setOff } = await renderScreen();
+  it('opens on the pitch, so a cold visitor knows what this is', async () => {
+    await renderScreen();
 
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'Space' }));
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'History' }));
-    await fireEvent.press(setOff());
+    expect(screen.getByRole('header', { name: 'Wikipedia, one swipe at a time' })).toBeOnTheScreen();
+  });
 
+  it('just starts with nothing picked', async () => {
+    const { onDone, onJustStart } = await renderScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Just start' }));
+
+    expect(onJustStart).toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
   });
 
-  it('sets off with the picked topics in the order they were picked', async () => {
-    const { onDone, setOff } = await renderScreen();
+  it('counts down to three picks instead of offering to just start', async () => {
+    const { onDone, onJustStart } = await renderScreen();
 
-    for (const name of ['Space', 'History', 'Art']) await fireEvent.press(screen.getByRole('checkbox', { name }));
-    await fireEvent.press(setOff());
+    await pick('Space', 'History');
+    await fireEvent.press(screen.getByRole('button', { name: 'Pick 1 more' }));
+
+    expect(onDone).not.toHaveBeenCalled();
+    expect(onJustStart).not.toHaveBeenCalled();
+  });
+
+  it('sets off with the picked topics in the order they were picked', async () => {
+    const { onDone } = await renderScreen();
+
+    await pick('Space', 'History', 'Art');
+    await fireEvent.press(screen.getByRole('button', { name: 'Set off' }));
 
     expect(onDone).toHaveBeenCalledWith(['space', 'history', 'art']);
   });
 
-  it('un-picks a topic when tapped again', async () => {
+  it('offers to just start again once every pick is undone', async () => {
     await renderScreen();
-    const space = screen.getByRole('checkbox', { name: 'Space' });
 
-    await fireEvent.press(space);
-    await fireEvent.press(space);
+    await pick('Space', 'Space');
 
-    expect(screen.getByRole('checkbox', { name: 'Space' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Just start' })).toBeEnabled();
   });
 
-  it('skips without picking anything', async () => {
-    const { onDone, onSkip } = await renderScreen();
+  it('un-picks a topic when tapped again', async () => {
+    await renderScreen();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Skip' }));
+    await pick('Space', 'Space');
 
-    expect(onSkip).toHaveBeenCalled();
-    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.getByRole('checkbox', { name: 'Space' })).not.toBeChecked();
   });
 });
