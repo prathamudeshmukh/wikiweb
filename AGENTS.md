@@ -12,7 +12,8 @@ Tangent (repo: `wikiweb`). Keep this list current; add new links here, not in ch
 | Vercel project | `tangent` (`.vercel/project.json`); CI deploys, Git deploys off |
 | EAS project | owner `prathamudeshmukh`, id `cb3128fc-3c20-4bbe-b34a-cb9610fab9c4` |
 | Android package | `com.prathamudeshmukh.tangent` |
-| Analytics | PostHog EU (`eu.i.posthog.com`) |
+| Analytics | PostHog US, org *Tangent*, *Default project* (id 688663): https://us.posthog.com/project/688663 |
+| Onboarding funnel (#11 decision rule) | https://us.posthog.com/project/688663/insights/tSmxNMN5 |
 | DNS | Cloudflare, DNS-only CNAMEs to Vercel |
 | Spec | `SPEC.md` (source of truth for product decisions) |
 | Design system | `DESIGN.md` |
