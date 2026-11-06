@@ -17,6 +17,14 @@ Tangent (repo: `wikiweb`). Keep this list current; add new links here, not in ch
 | Spec | `SPEC.md` (source of truth for product decisions) |
 | Design system | `DESIGN.md` |
 
+## Backlog — what to work on next
+
+The [kanban board](https://github.com/users/prathamudeshmukh/projects/2) is the backlog. Don't keep a copy in the repo.
+
+- **"What next?"** Read the board live, don't answer from memory or docs: `gh project item-list 2 --owner prathamudeshmukh --limit 100 --format json`. Rank by Status (*In progress* → *In review* → *Ready* → *Backlog*), then Priority (P0 → P2) when set, then the `launch-blocker` label, then dependencies stated in the issue bodies. Recommend one item, with the reason.
+- **Moving cards:** set *In progress* when work starts and *In review* when its PR opens. Set *Done* only when the PR is merged **and** CI's *Promote to production* job on `main` has succeeded. Merged but not promoted stays *In review*. Use `gh project item-edit` (field and option IDs from `gh project field-list 2 --owner prathamudeshmukh --format json`).
+- New issues go on the board (`gh project item-add 2 --owner prathamudeshmukh --url <issue-url>`).
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
