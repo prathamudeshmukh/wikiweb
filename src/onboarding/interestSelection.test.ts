@@ -1,4 +1,4 @@
-import { canContinue, canSave, DEFAULT_INTERESTS, interestsSummary, MIN_INTERESTS, toggleInterest } from './interestSelection';
+import { canContinue, canSave, DEFAULT_INTERESTS, interestsSummary, MIN_INTERESTS, onboardingAction, toggleInterest } from './interestSelection';
 
 describe('interest selection', () => {
   it('adds an interest that is not selected', () => {
@@ -56,5 +56,19 @@ describe('interestsSummary', () => {
 
   it('names the first three picks and counts the rest', () => {
     expect(interestsSummary(['space', 'history', 'music', 'food', 'sport'])).toBe('Space, History, Music +2');
+  });
+});
+
+describe('onboardingAction', () => {
+  it('offers to just start with the defaults before anything is picked', () => {
+    expect(onboardingAction([])).toEqual({ kind: 'just_start' });
+  });
+
+  it('counts down the picks still needed once the user has started picking', () => {
+    expect(onboardingAction(['space', 'history'])).toEqual({ kind: 'pick_more', missing: 1 });
+  });
+
+  it('sets off once enough tiles are touched', () => {
+    expect(onboardingAction(['space', 'history', 'art'])).toEqual({ kind: 'set_off' });
   });
 });

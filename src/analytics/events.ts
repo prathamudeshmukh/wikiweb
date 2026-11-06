@@ -53,7 +53,7 @@ export interface ExpeditionSummary {
 }
 
 /** Where interest picks were saved from (SPEC.md §11). */
-/** `skip`: onboarding skipped, so the defaults were saved without the user choosing them. */
+/** `skip`: onboarding's Just start, so the defaults were saved without the user choosing them. */
 export type InterestsSavedFrom = 'onboarding' | 'skip' | 'settings' | 'prompt' | 'exhaustion';
 /** Where an interest tree was opened from. */
 export type TreeOpenedFrom = 'settings' | 'prompt' | 'topic_label' | 'completed';
@@ -79,6 +79,7 @@ export type AnalyticsEvent =
   | { name: 'stamp_earned'; properties: { topic: string; territory: Territory | null } }
   | { name: 'first_hop'; properties: { route: HopRoute; peels_seen: number; seconds_on_home: number } }
   | { name: 'first_return'; properties: { route: ReturnRoute } }
+  | { name: 'onboarding_viewed'; properties: Record<string, never> }
   | { name: 'interests_saved'; properties: InterestsSaved }
   | { name: 'interest_tree_opened'; properties: { tile: string; from: TreeOpenedFrom } }
   | { name: 'niche_prompt_shown'; properties: { tile: string } }

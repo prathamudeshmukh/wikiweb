@@ -52,9 +52,11 @@ Tangent is a phone app (iOS + Android, plus phone browsers — §15) for explori
 ## 3. User flows
 
 ### 3.1 Onboarding (first launch only)
-1. Screen shows 24 typographic tiles (territory colour, topic icon, name).
-2. User selects ≥ 3. **Continue** disabled until 3 are picked. **Skip** uses defaults (`Science`, `History`, `Art`), saved as **not chosen**: until the user saves interests of their own (Settings, a prompt or exhaustion chip, the tree), Home's interest cards say `★ STARTING WITH {TOPIC}` instead of `★ YOU LIKE {TOPIC}`, so the app never claims a liking the user didn't state. Decided 2026-11-01.
+1. Screen opens on the pitch as its heading, **Wikipedia, one swipe at a time** (the same words as the social preview card, so a cold visitor lands on the promise they clicked), then one intro line: *Swipe left to follow a link and see where you end up. Pick a few topics to start from, or just start.* Below them, 24 typographic tiles (territory colour, topic icon, name). Decided 2026-11-06 (#11).
+2. One button, which follows the picks: nothing picked → **Just start →**; 1–2 tiles touched → disabled **Pick 2 more** / **Pick 1 more** (no way to the defaults once the user has started picking); ≥ 3 → **Set off →**. **Just start** uses defaults (`Science`, `History`, `Art`), saved as **not chosen**: until the user saves interests of their own (Settings, a prompt or exhaustion chip, the tree), Home's interest cards say `★ STARTING WITH {TOPIC}` instead of `★ YOU LIKE {TOPIC}`, so the app never claims a liking the user didn't state. Decided 2026-11-01.
 3. Selections persisted; user lands on Home.
+
+**Decision rule (beta).** PostHog funnel *Onboarding completion*: `onboarding_viewed` → `interests_saved` with `from` `onboarding` or `skip`, same session. Read once ≥ 100 sessions have viewed onboarding; if more than ~25 % abandon, drop onboarding for cold visitors — land straight on Home with the defaults and ask for interests later. That fallback isn't built until the data calls for it: Just start already reaches Home in one tap. Decided 2026-11-06.
 
 Interests are editable later from Settings (Logbook gear → Interests): the same tile picker, starting from the saved picks, with **Save** enabled only when the picks changed and still touch ≥ 3 tiles. Saving returns straight to Home, which rebuilds from the new picks. Tiles with an interest tree can be narrowed to subfields and leaves here (§3.9); onboarding itself never shows the tree.
 
@@ -555,7 +557,8 @@ Analytics exists mainly to judge **feed quality**: which columns and Home picks 
 | `stamp_earned` | A new stamp | `topic`, `territory` |
 | `first_hop` | Once per install | `route`, `peels_seen`, `seconds_on_home` (Home time this launch, while Home is on top and the app foregrounded) |
 | `first_return` | Once per install | `route` |
-| `interests_saved` | Picks saved (§3.9) | `from` (`onboarding`/`skip`/`settings`/`prompt`/`exhaustion`; `skip` = onboarding skipped, defaults saved), `tiles`, `subfields`, `leaves` (counts after the save), `added` (path ids). Title-free. |
+| `onboarding_viewed` | Onboarding is shown (once per mount, §3.1) | none |
+| `interests_saved` | Picks saved (§3.9) | `from` (`onboarding`/`skip`/`settings`/`prompt`/`exhaustion`; `skip` = onboarding's **Just start**, defaults saved; the value predates the button's rename), `tiles`, `subfields`, `leaves` (counts after the save), `added` (path ids). Title-free. |
 | `interest_tree_opened` | A tree screen opens | `tile`, `from` (`settings`/`prompt`/`topic_label`/`completed`) |
 | `niche_prompt_shown` | A prompt card dwells | `tile` |
 | `niche_prompt_dismissed` | A prompt card is swiped away or scrolled past without a chip | `tile`, `how` (`swipe`/`scrolled_past`) |
