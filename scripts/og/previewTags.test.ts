@@ -23,8 +23,8 @@ describe('share preview tags in public/index.html', () => {
   });
 
   it('declares the image size so first shares render without a fetch', () => {
-    expect(meta('og:image:width')).toBe('1200');
-    expect(meta('og:image:height')).toBe('630');
+    expect(meta('og:image:width')).toBe('2400');
+    expect(meta('og:image:height')).toBe('1260');
     expect(meta('twitter:card')).toBe('summary_large_image');
   });
 
