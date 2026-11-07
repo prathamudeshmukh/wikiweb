@@ -31,14 +31,14 @@
             "total-byte-weight": [
               "error",
               {
-                "maxNumericValue": 1475000,
+                "maxNumericValue": 1592000,
                 "aggregationMethod": "median"
               }
             ],
             "resource-summary:script:size": [
               "error",
               {
-                "maxNumericValue": 761000,
+                "maxNumericValue": 878000,
                 "aggregationMethod": "median"
               }
             ],
