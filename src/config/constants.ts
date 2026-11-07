@@ -145,7 +145,7 @@ export function buildUserAgent(contact: string): string {
 
 /** PostHog (SPEC.md §11). The project key comes from EXPO_PUBLIC_POSTHOG_KEY; without one analytics is off. */
 export const ANALYTICS = {
-  defaultHost: 'https://eu.i.posthog.com',
+  defaultHost: 'https://us.i.posthog.com',
 } as const;
 
 /** A column's list on web (SPEC.md §15.3). */

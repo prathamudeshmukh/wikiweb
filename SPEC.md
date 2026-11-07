@@ -540,7 +540,7 @@ src/
 
 Analytics exists mainly to judge **feed quality**: which columns and Home picks keep people hopping and reading, and which they back out of.
 
-**Setup.** `posthog-react-native` on the EU host. The project key comes from `EXPO_PUBLIC_POSTHOG_KEY` (host override: `EXPO_PUBLIC_POSTHOG_HOST`). With no key, analytics is a no-op; development builds log events to the console instead of sending. Anonymous: `personProfiles: 'never'`, GeoIP off, session replay off. Touch autocapture and app lifecycle events are on. Screen views are sent by hand as route patterns (`/expedition/[id]`), never with params.
+**Setup.** `posthog-react-native` on the US host (project *Tangent → Default project*; the key and host reach the build as GitHub secrets, `ci.yml`). The project key comes from `EXPO_PUBLIC_POSTHOG_KEY` (host override: `EXPO_PUBLIC_POSTHOG_HOST`). With no key, analytics is a no-op; development builds log events to the console instead of sending. Anonymous: `personProfiles: 'never'`, GeoIP off, session replay off. Touch autocapture and app lifecycle events are on. Screen views are sent by hand as route patterns (`/expedition/[id]`), never with params.
 
 **Privacy rule.** Article titles are sent **only** on the feed-quality events (`card_seen`, `column_left`, `hop`, `return`, `read_open`), and only for the column's seed and the card acted on. Everything else is title-free: views that show a title carry `ph-no-capture`, so touch autocapture sends nothing from them; errors are sent as fixed reason codes. Settings has a **Share usage data** switch (on by default) that says it includes the titles of articles explored. Store listings must declare browsing history.
 
