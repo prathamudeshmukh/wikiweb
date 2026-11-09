@@ -64,6 +64,15 @@ describe('connectPostHogWeb', () => {
     expect(client.opt_in_capturing).toHaveBeenCalledTimes(1);
   });
 
+  it('opts in without sending an $opt_in event, since the saved choice is re-applied on every load', async () => {
+    const { client, analytics } = connect();
+
+    analytics.setOptedOut(false);
+    await settle();
+
+    expect(client.opt_in_capturing).toHaveBeenCalledWith({ captureEventName: false });
+  });
+
   it('has no client for touch autocapture', () => {
     const client = fakeClient();
 
