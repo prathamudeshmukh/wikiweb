@@ -53,12 +53,15 @@ const POSTHOG_JS_CONFIG: Omit<Partial<PostHogConfig>, 'api_host'> = {
 
 const SUPER_PROPERTIES = { platform: 'web', $geoip_disable: true } as const;
 
+// The saved choice is re-applied on every load and every Settings visit; opting in must not send a `$opt_in` event each time.
+const SILENT_OPT_IN = { captureEventName: false } as const;
+
 function posthogJsAnalytics(client: PostHogJsClient): Analytics {
   return {
     track: ({ name, properties }) => void client.capture(name, properties),
     // The `$screen` event native PostHog sends, so screens chart together across platforms.
     screen: (route) => void client.capture('$screen', { $screen_name: route }),
-    setOptedOut: (optedOut) => (optedOut ? client.opt_out_capturing() : client.opt_in_capturing()),
+    setOptedOut: (optedOut) => (optedOut ? client.opt_out_capturing() : client.opt_in_capturing(SILENT_OPT_IN)),
   };
 }
 
