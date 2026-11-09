@@ -37,12 +37,12 @@ describe('createAnalytics', () => {
     expect(log).not.toHaveBeenCalled();
   });
 
-  it('connects to PostHog on the EU host by default', () => {
+  it('connects to PostHog on the US host, where the Tangent project lives, by default', () => {
     const connect = connector();
 
     createAnalytics({ key: ' phc_key ', host: '', isDev: false }, connect);
 
-    expect(connect).toHaveBeenCalledWith({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
+    expect(connect).toHaveBeenCalledWith({ key: 'phc_key', host: 'https://us.i.posthog.com' });
   });
 
   it('connects to the configured host when there is one', () => {

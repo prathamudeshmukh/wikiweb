@@ -542,7 +542,7 @@ src/
 
 Analytics exists mainly to judge **feed quality**: which columns and Home picks keep people hopping and reading, and which they back out of.
 
-**Setup.** `posthog-react-native` on the EU host. The project key comes from `EXPO_PUBLIC_POSTHOG_KEY` (host override: `EXPO_PUBLIC_POSTHOG_HOST`). With no key, analytics is a no-op; development builds log events to the console instead of sending. Anonymous: `personProfiles: 'never'`, GeoIP off, session replay off. Touch autocapture and app lifecycle events are on. Screen views are sent by hand as route patterns (`/expedition/[id]`), never with params.
+**Setup.** `posthog-react-native` on the US host (project *Tangent → Default project*; the key and host reach the build as GitHub secrets, `ci.yml`). The project key comes from `EXPO_PUBLIC_POSTHOG_KEY` (host override: `EXPO_PUBLIC_POSTHOG_HOST`). With no key, analytics is a no-op; development builds log events to the console instead of sending. Anonymous: `personProfiles: 'never'`, GeoIP off, session replay off. Touch autocapture and app lifecycle events are on. Screen views are sent by hand as route patterns (`/expedition/[id]`), never with params.
 
 **Privacy rule.** Article titles are sent **only** on the feed-quality events (`card_seen`, `column_left`, `hop`, `return`, `read_open`), and only for the column's seed and the card acted on. Everything else is title-free: views that show a title carry `ph-no-capture`, so touch autocapture sends nothing from them; errors are sent as fixed reason codes. Settings has a **Share usage data** switch (on by default) that says it includes the titles of articles explored. Store listings must declare browsing history.
 
@@ -745,14 +745,15 @@ Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`
 
     | | Range of job medians | Gate (error) | Target (warn) |
     |---|---|---|---|
-    | Total transfer | 1,370–1,371 KB | ≤ 1,475,000 B (+5 %) | — |
-    | Script transfer | 707.5 KB | ≤ 761,000 B (+5 %) | — |
+    | Total transfer | 1,370–1,371 KB → 1,480 KB with analytics | ≤ 1,592,000 B (+5 %) | — |
+    | Script transfer | 707.5 KB → 816 KB with analytics | ≤ 878,000 B (+5 %) | — |
     | CLS | 0.01–0.013 | ≤ 0.1 | — |
     | Performance score | 0.52–0.77 | — | ≥ 0.9 |
     | LCP | 4.1–9.6 s | — | ≤ 2.5 s |
     | TBT | 412–794 ms | — | ≤ 200 ms |
     | Time to interactive | 9.1–9.8 s | — | ≤ 3 s |
 
+  - **Byte gates re-measured 2026-11-07 (#42):** the 2026-11-03 calibration ran on a build with no PostHog key, so analytics was off and `posthog-js` never loaded. With the key set it loads during the audit (~75 KB of script). New gates are that run's medians (script 835,575 B, total 1,515,300 B) + 5 %. Deferring `posthog-js` past the audit was rejected: visitors who leave onboarding before it loads would never send `onboarding_viewed`, skewing the #11 abandonment rate low.
   - Timings are warnings only: the runner's CPU benchmark index ranged 93–4,086 between jobs and Lighthouse's simulated LCP followed it (3.7 s at ~4,000, 7–9.6 s at ~2,400). The LCP element is the onboarding heading every time, painted at 0.35–0.55 s unthrottled. Byte sizes are the deterministic signal, and they are what still holds the first screen back (see above). Real timings come from field data.
   - `is-crawlable` and `robots-txt` are skipped: Vercel sends `noindex` on deployment URLs.
 
