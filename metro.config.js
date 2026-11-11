@@ -8,6 +8,9 @@ const config = getDefaultConfig(__dirname);
 const ZOD_LOCALES_INDEX = /[\\/]node_modules[\\/]zod[\\/]v4[\\/]locales[\\/]index\.js$/;
 const NO_ZOD_LOCALES = path.join(__dirname, 'metro', 'zodLocales.js');
 
+// demo-video/ is a separate Node project (its own React and Remotion); the app never imports it.
+config.resolver.blockList = [...config.resolver.blockList, /[\\/]demo-video[\\/].*/];
+
 // The web build loads WOFF2 faces (`src/theme/fontLoading.web.ts`).
 config.resolver.assetExts = [...config.resolver.assetExts, 'woff2'];
 

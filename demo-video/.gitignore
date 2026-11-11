@@ -1,0 +1,7 @@
+node_modules/
+# Recorded path and raw takes: large, and full of Wikipedia content we don't redistribute.
+capture/
+public/capture/
+# Licensed track supplied locally.
+public/music.mp3
+out/
