@@ -1,4 +1,5 @@
 import type { Page } from 'playwright';
+import type { Step } from './cardChoice.ts';
 import { pickCard } from './cardPicker.ts';
 import { Thumb } from './gestures.ts';
 
@@ -68,14 +69,14 @@ export async function perform(director: Director): Promise<void> {
 }
 
 /** Hops from a fresh card and returns the route so far, so the next hop can avoid its siblings. */
-async function hop(director: Director, { name, path }: { name: string; path: readonly string[] }): Promise<readonly string[]> {
+async function hop(director: Director, { name, path }: { name: string; path: readonly Step[] }): Promise<readonly Step[]> {
   const card = await pickCard(director.page, path);
   await director.thumb.swipeLeft(card.middle.y);
   // A live column can take seconds ("Setting a course…"); a replayed one is instant.
   await director.page.getByText(COLUMN_LOADING).waitFor({ state: 'hidden', timeout: COLUMN_TIMEOUT_MS });
   await director.page.waitForTimeout(PAUSE.afterHop);
   await director.still(name);
-  return [...path, card.title];
+  return [...path, { title: card.title, topic: card.topic }];
 }
 
 /** The Home crumb jumps straight back; if the route is already home there is nothing to do. */

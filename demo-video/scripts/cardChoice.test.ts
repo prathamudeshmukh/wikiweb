@@ -1,30 +1,36 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { chooseCard, isFresh } from './cardChoice.ts';
+import { chooseCard, isFresh, topicOf } from './cardChoice.ts';
 
-const PATH = ['Banksia brownii', 'Banksia subg. Banksia'];
+const ROUTE = [
+  { title: 'Banksia brownii', topic: 'ANIMALS' },
+  { title: 'Banksia subg. Banksia', topic: 'ANIMALS' },
+];
+const card = (title: string, topic: string | null, hasPhoto = true) => ({ title, topic, hasPhoto });
 
-test('a title sharing a significant word with the path is not fresh', () => {
-  assert.equal(isFresh('Banksia ilicifolia', PATH), false);
-  assert.equal(isFresh('Honey possum', PATH), true);
+test('reads the topic label from a card’s text', () => {
+  assert.equal(topicOf('TAKE A TANGENT →\nSauropoda\n● ANIMALS · EXTINCT CLADE'), 'ANIMALS');
+  assert.equal(topicOf('Untagged article\nSome extract'), null);
 });
 
-test('takes the first fresh card with a photo, skipping siblings and text-only cards', () => {
-  const candidates = [
-    { title: 'Banksia ilicifolia', hasPhoto: true },
-    { title: 'Western Australia', hasPhoto: false },
-    { title: 'Honey possum', hasPhoto: true },
-  ];
+test('a title sharing a significant word with the route is not fresh', () => {
+  assert.equal(isFresh('Banksia ilicifolia', ROUTE), false);
+  assert.equal(isFresh('Honey possum', ROUTE), true);
+});
 
-  assert.equal(chooseCard(candidates, PATH), 2);
+test('prefers a fresh photo card from a new topic', () => {
+  const candidates = [card('Banksia ilicifolia', 'ANIMALS'), card('Honey possum', 'ANIMALS'), card('Perth', 'PLACES')];
+
+  assert.equal(chooseCard(candidates, ROUTE), 2);
+});
+
+test('without a new topic, takes the first fresh photo card', () => {
+  const candidates = [card('Banksia ilicifolia', 'ANIMALS'), card('Western Australia', 'PLACES', false), card('Honey possum', 'ANIMALS')];
+
+  assert.equal(chooseCard(candidates, ROUTE), 2);
 });
 
 test('falls back to the first photo, then to the top card', () => {
-  const siblings = [
-    { title: 'Banksia text', hasPhoto: false },
-    { title: 'Banksia photo', hasPhoto: true },
-  ];
-
-  assert.equal(chooseCard(siblings, PATH), 1);
-  assert.equal(chooseCard([{ title: 'Banksia text', hasPhoto: false }], PATH), 0);
+  assert.equal(chooseCard([card('Banksia text', null, false), card('Banksia photo', 'ANIMALS')], ROUTE), 1);
+  assert.equal(chooseCard([card('Banksia text', null, false)], ROUTE), 0);
 });
