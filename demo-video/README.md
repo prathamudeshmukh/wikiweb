@@ -26,7 +26,7 @@ npm run studio    # preview and scrub in the browser
 - Wikimedia requests replay from the HAR. The app itself is the live production build.
 - The page's `Date` starts at the time of recording and `Math.random` is seeded, so a replay sends exactly the requests the recording saved.
 - PostHog is blocked, so demo runs never reach the beta funnels.
-- Onboarding is done off camera with **Just start**.
+- Onboarding is done off camera by picking Animals, Space, Music and Food (`INTERESTS` in `scripts/storyboard.ts`). Each hop and the read take the first card with a photo, scrolling to it on camera if needed.
 - `capture` lists any Wikimedia request the HAR couldn't answer. Some misses are expected: Home rebuilds itself in the background with the same random query, so the brief pass through Home before the Logbook shows different cards than the recording. Misses anywhere else mean the path has drifted, so run `record` again.
 
 ## Where things live

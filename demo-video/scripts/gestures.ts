@@ -3,6 +3,7 @@ import { type Point, STROKE_FRAME_MS, strokePoints } from './gesturePath.ts';
 
 /** Where a thumb rests on a card: right of centre, clear of the 24 pt edge guard (SPEC.md §15). */
 const SWIPE_Y = 460;
+/** Horizontal travel of a swipe; the height comes from the card being swiped. */
 const SWIPE_SPAN = { start: 300, end: 70 } as const;
 const SWIPE_MS = 340;
 const TAP_HOLD_MS = 90;
@@ -16,9 +17,9 @@ export class Thumb {
     this.page = page;
   }
 
-  /** Left swipe on the top card: one hop deeper. */
-  swipeLeft(): Promise<void> {
-    return this.stroke({ x: SWIPE_SPAN.start, y: SWIPE_Y }, { x: SWIPE_SPAN.end, y: SWIPE_Y });
+  /** Left swipe across the card at height `y`: one hop deeper. */
+  swipeLeft(y: number = SWIPE_Y): Promise<void> {
+    return this.stroke({ x: SWIPE_SPAN.start, y }, { x: SWIPE_SPAN.end, y });
   }
 
   /** Right swipe: back one column. */
