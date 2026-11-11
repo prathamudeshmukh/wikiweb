@@ -46,7 +46,7 @@ export async function perform(director: Director): Promise<void> {
   const route = await hop(director, { name: 'hop-3', path: secondHop });
 
   director.beat('read');
-  await thumb.tap((await pickCard(page, route)).image);
+  await thumb.tap((await pickCard(page, route, { needsTopic: true })).image);
   await page.frameLocator('iframe').locator('p').first().waitFor({ timeout: READER_TEXT_TIMEOUT_MS });
   await page.waitForTimeout(PAUSE.read);
   await thumb.scroll(SCREEN_MIDDLE, READER_SCROLL.distancePx, READER_SCROLL.durationMs);
@@ -66,6 +66,14 @@ export async function perform(director: Director): Promise<void> {
   // Stamps, the new find and the expedition all fit on one phone screen: hold, don't scroll.
   await page.waitForTimeout(PAUSE.logbook);
   await director.still('logbook');
+  await expectStampEarned(page);
+}
+
+/** The last beat is about the stamp; a take without one is not worth rendering. */
+async function expectStampEarned(page: Page): Promise<void> {
+  // Stamp labels are "{Topic} stamp", or "{Topic} stamp, not collected yet" (Stamp.tsx).
+  const earned = await page.locator('[aria-label$=" stamp"]').count();
+  if (earned === 0) throw new Error('The read earned no stamp, so the Logbook beat shows none. Run `npm run record` again.');
 }
 
 /** Hops from a fresh card and returns the route so far, so the next hop can avoid its siblings. */

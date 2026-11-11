@@ -13,6 +13,22 @@ test('reads the topic label from a card’s text', () => {
   assert.equal(topicOf('Untagged article\nSome extract'), null);
 });
 
+test('an empty topic label is no topic, not the next line', () => {
+  assert.equal(topicOf('Indigenous peoples in Brazil\n●\nIndigenous peoples in Brazil are'), null);
+});
+
+test('an untagged card is not a new topic', () => {
+  const candidates = [card('Raposa Serra do Sol', null), card('Perth', 'PLACES')];
+
+  assert.equal(chooseCard(candidates, ROUTE), 1);
+});
+
+test('a read that must earn a stamp skips untagged cards, even text-only fallbacks', () => {
+  const candidates = [card('Raposa Serra do Sol', null), card('Banksia text', 'ANIMALS', false)];
+
+  assert.equal(chooseCard(candidates, ROUTE, { needsTopic: true }), 1);
+});
+
 test('a title sharing a significant word with the route is not fresh', () => {
   assert.equal(isFresh('Banksia ilicifolia', ROUTE), false);
   assert.equal(isFresh('Honey possum', ROUTE), true);

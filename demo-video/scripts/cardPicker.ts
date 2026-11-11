@@ -1,5 +1,5 @@
 import type { ElementHandle, JSHandle, Page } from 'playwright';
-import { chooseCard, type Step, topicOf } from './cardChoice.ts';
+import { type ChoiceRules, chooseCard, type Step, topicOf } from './cardChoice.ts';
 import type { Point } from './gesturePath.ts';
 
 /** A point on the top column, used to find which column the viewer is looking at. */
@@ -21,7 +21,7 @@ export interface PickedCard extends Step {
  * Picks a card in the column on top (see chooseCard) and scrolls it to the middle of the screen,
  * on camera, when it isn't the visible one. `route` is the articles already taken this take.
  */
-export async function pickCard(page: Page, route: readonly Step[]): Promise<PickedCard> {
+export async function pickCard(page: Page, route: readonly Step[], rules: ChoiceRules = {}): Promise<PickedCard> {
   const cards = await visibleColumnCards(page);
   const seen = await cards.evaluate((els) =>
     els.map((el) => ({
@@ -34,7 +34,7 @@ export async function pickCard(page: Page, route: readonly Step[]): Promise<Pick
   );
   if (seen.length === 0) throw new Error('No card on screen to pick from.');
   const candidates = seen.map(({ title, text, hasPhoto }) => ({ title, topic: topicOf(text), hasPhoto }));
-  const index = chooseCard(candidates, route);
+  const index = chooseCard(candidates, route, rules);
   const card = (await cards.evaluateHandle((els, i) => els[i], index)).asElement() as ElementHandle<HTMLElement>;
   await card.evaluate((el) => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   await page.waitForTimeout(SCROLL_SETTLE_MS);
