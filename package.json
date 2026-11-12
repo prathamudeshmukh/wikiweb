@@ -90,6 +90,7 @@
     },
     "testPathIgnorePatterns": [
       "/node_modules/",
+      "/demo-video/",
       "\\.smoke\\.test\\.ts$"
     ],
     "setupFiles": [

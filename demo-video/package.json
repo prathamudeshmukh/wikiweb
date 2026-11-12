@@ -1,0 +1,26 @@
+{
+  "name": "tangent-demo-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "record": "node scripts/capture.ts --record",
+    "capture": "node scripts/capture.ts",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts TangentDemo out/tangent-demo.mp4",
+    "test": "node --test 'scripts/**/*.test.ts' 'src/**/*.test.ts'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.542",
+    "@remotion/google-fonts": "4.0.542",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.542"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "playwright": "1.65.0",
+    "typescript": "7.0.2"
+  }
+}
