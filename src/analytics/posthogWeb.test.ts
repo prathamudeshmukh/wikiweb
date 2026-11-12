@@ -13,7 +13,7 @@ function fakeClient() {
 function connect() {
   const client = fakeClient();
   const clientFor: jest.MockedFunction<PostHogJsFactory> = jest.fn(async (_key: string, _config: Partial<PostHogConfig>) => client);
-  const { analytics } = connectPostHogWeb(clientFor)({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
+  const { analytics } = connectPostHogWeb(clientFor, () => 'coarse')({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
   return { client, clientFor, analytics };
 }
 
@@ -39,7 +39,14 @@ describe('connectPostHogWeb', () => {
     const { client } = connect();
     await settle();
 
-    expect(client.register).toHaveBeenCalledWith({ platform: 'web', $geoip_disable: true });
+    expect(client.register).toHaveBeenCalledWith(expect.objectContaining({ platform: 'web', $geoip_disable: true }));
+  });
+
+  it('tags every event with the primary pointer, so phones and desktops split on web', async () => {
+    const { client } = connect();
+    await settle();
+
+    expect(client.register).toHaveBeenCalledWith(expect.objectContaining({ pointer: 'coarse' }));
   });
 
   it('sends events, and screens the way native PostHog does', async () => {
@@ -76,7 +83,7 @@ describe('connectPostHogWeb', () => {
   it('has no client for touch autocapture', () => {
     const client = fakeClient();
 
-    const setup = connectPostHogWeb(async () => client)({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
+    const setup = connectPostHogWeb(async () => client, () => 'fine')({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
 
     expect(setup.client).toBeNull();
   });
@@ -89,7 +96,7 @@ describe('connectPostHogWeb', () => {
     client.capture.mockImplementation((name: string) => order.push(name));
     client.opt_out_capturing.mockImplementation(() => order.push('opt out'));
     let load: (loaded: typeof client) => void = () => undefined;
-    const { analytics } = connectPostHogWeb(() => new Promise((resolve) => (load = resolve)))({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
+    const { analytics } = connectPostHogWeb(() => new Promise((resolve) => (load = resolve)), () => 'fine')({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
 
     analytics.track({ name: 'first_return', properties: { route: 'swipe' } });
     analytics.setOptedOut(true);
@@ -103,7 +110,7 @@ describe('connectPostHogWeb', () => {
 
   it('reports a PostHog that fails to load, and drops events instead of failing', async () => {
     const failure = new Error('chunk failed');
-    const { analytics } = connectPostHogWeb(() => Promise.reject(failure))({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
+    const { analytics } = connectPostHogWeb(() => Promise.reject(failure), () => 'fine')({ key: 'phc_key', host: 'https://eu.i.posthog.com' });
 
     analytics.track({ name: 'first_return', properties: { route: 'swipe' } });
     await settle();
