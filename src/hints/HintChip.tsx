@@ -2,13 +2,9 @@ import { StyleSheet, Text } from 'react-native';
 import { FONT } from '../theme/fonts';
 import { TYPE } from '../theme/layout';
 import { useTheme } from '../theme/useTheme';
+import { hintCopy } from './hintCopy';
 import type { HintKind } from './hintRules';
-
-// DESIGN.md §8.
-const HINT_COPY: Record<HintKind, string> = {
-  swipe: '← SWIPE LEFT TO TAKE A TANGENT',
-  back: 'SWIPE RIGHT TO GO BACK →',
-};
+import { usePointerKind } from './usePointerKind';
 
 const CHIP = { inset: 14, overhang: 11, paddingV: 3, paddingH: 10, pillRadius: 999 } as const;
 
@@ -18,6 +14,7 @@ const CHIP = { inset: 14, overhang: 11, paddingV: 3, paddingH: 10, pillRadius: 9
  */
 export function HintChip({ kind }: { kind: HintKind }) {
   const palette = useTheme();
+  const pointer = usePointerKind();
   return (
     <Text
       pointerEvents="none"
@@ -25,7 +22,7 @@ export function HintChip({ kind }: { kind: HintKind }) {
       accessibilityElementsHidden
       style={[styles.chip, { backgroundColor: palette.ink, color: palette.card }]}
     >
-      {HINT_COPY[kind]}
+      {hintCopy(kind, pointer)}
     </Text>
   );
 }
