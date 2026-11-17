@@ -704,7 +704,8 @@ The app fetches `page/mobile-html` as on native, then renders it in `<iframe san
 
 ### 15.7 Analytics
 Same PostHog project, events and privacy rule as §11, sent with `posthog-js` (`posthogWeb.ts`; `connectPostHog(.web).ts` picks the client per platform, `createAnalytics` keeps the dev/no-key choice for both).
-- **Every event** carries `platform: 'web'` and `$geoip_disable` (registered super properties). Native events don't set `platform`; split by it, or by `$os`.
+- **Every event** carries `platform: 'web'`, `pointer` and `$geoip_disable` (registered super properties). Native events don't set `platform`; split by it, or by `$os`.
+- **`pointer`** is the primary pointer from the `(pointer: …)` media query: `coarse` (touch), `fine` (mouse or trackpad), `none`, or `unknown` when the browser can't say. It splits phones from desktops on web, for the beta funnel breakdown (#19) and the desktop hint (#12). Read once when PostHog starts; a hybrid laptop reports its primary pointer. Not set on native, where it's always touch. Decided 2026-11-12 (#18).
 - **No page address:** posthog-js stamps the page URL on every event (`$current_url`, `$pathname`, their `$initial_` and `$session_entry_` copies), and a reader URL names the article (`/reader?title=…`). `before_send` drops every property ending `url` or `pathname`, and `title`; `$referrer` and `$host` stay.
 - **Off:** autocapture, page views and page leaves, rage/dead clicks, heatmaps, exceptions, performance, session replay, surveys, product tours, conversations, web experiments, feature flags, and loading PostHog's extra scripts. No touch autocapture either, so `TouchAutocapture.web.tsx` renders no provider and `posthog-react-native` stays out of the web bundle.
 - **Screens** are sent by hand as route patterns, as `$screen` with `$screen_name`, the event native PostHog sends, so they chart together.

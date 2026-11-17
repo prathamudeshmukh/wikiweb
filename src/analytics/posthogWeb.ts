@@ -2,6 +2,7 @@ import type { CaptureResult, PostHog, PostHogConfig, Properties } from 'posthog-
 import { reportError } from '../services/reportError';
 import type { Analytics } from './analytics';
 import type { AnalyticsConnector } from './createAnalytics';
+import type { PointerKind } from './pointerKind';
 
 export type PostHogJsClient = Pick<PostHog, 'capture' | 'register' | 'opt_out_capturing' | 'opt_in_capturing'>;
 /** Loads and starts `posthog-js`; async so its ~330 KB stay out of the first screen's bundle (SPEC.md §15.9). */
@@ -53,6 +54,9 @@ const POSTHOG_JS_CONFIG: Omit<Partial<PostHogConfig>, 'api_host'> = {
 
 const SUPER_PROPERTIES = { platform: 'web', $geoip_disable: true } as const;
 
+/** Asked when PostHog starts, not at import, so nothing touches `window` while the module loads. */
+export type PointerDetector = () => PointerKind;
+
 // The saved choice is re-applied on every load and every Settings visit; opting in must not send a `$opt_in` event each time.
 const SILENT_OPT_IN = { captureEventName: false } as const;
 
@@ -81,10 +85,10 @@ function whenLoaded(loading: Promise<Analytics>): Analytics {
 }
 
 /** `posthog-js` in the browser (SPEC.md §15.7). No touch autocapture, so no client for the provider. */
-export function connectPostHogWeb(clientFor: PostHogJsFactory): AnalyticsConnector {
+export function connectPostHogWeb(clientFor: PostHogJsFactory, detectPointer: PointerDetector): AnalyticsConnector {
   return ({ key, host }) => {
     const loading = clientFor(key, { ...POSTHOG_JS_CONFIG, api_host: host }).then((client) => {
-      client.register(SUPER_PROPERTIES);
+      client.register({ ...SUPER_PROPERTIES, pointer: detectPointer() });
       return posthogJsAnalytics(client);
     });
     return { analytics: whenLoaded(loading), client: null };
