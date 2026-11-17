@@ -1,6 +1,5 @@
 import { ZodError } from 'zod';
 import { WikiApiError } from '../wiki-api/http';
-import { LaneCancelledError } from '../wiki-api/requestBudget';
 
 const CLASS_NAME = /^[A-Za-z]+$/;
 
@@ -15,7 +14,6 @@ export function errorReason(error: unknown): string {
     return 'network';
   }
   if (error instanceof ZodError) return 'parse';
-  if (error instanceof LaneCancelledError) return 'cancelled';
   if (error instanceof Error && CLASS_NAME.test(error.name)) return error.name;
   return 'unknown';
 }

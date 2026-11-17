@@ -583,7 +583,7 @@ Analytics exists mainly to judge **feed quality**: which columns and Home picks 
 | `feedback_given` | A thumb on the feedback card | `rating` (`up`/`down`), `expeditions`, `impression` |
 | `feedback_note` | *Send* in the note sheet, with a non-empty note | `rating`, `note` (trimmed, ≤ 280; the only free-text property — the sheet asks for no personal details) |
 | `feedback_dismissed` | The feedback card swiped away or scrolled past | `how` (`swipe`/`scrolled_past`), `impression` |
-| `app_error` | Anything passed to `reportError` | `scope`, `reason` (`http_429`, `api_<code>`, `network`, `parse`, `cancelled`, or the error class — never the message) |
+| `app_error` | Anything passed to `reportError`, except a prefetch the request budget dropped (§6), which is expected | `scope`, `reason` (`http_429`, `api_<code>`, `network`, `parse`, or the error class — never the message) |
 
 A column **visit** runs from the column becoming the one on top to it stopping (a hop covering it counts as leaving, with `outcome: hop`); time with the reader, Logbook or Settings over it counts towards the visit. Only the app going to the background ends a visit or reports an expedition — iOS *inactive* (Control Centre, alerts) doesn't. Cards already dwelt on when a column comes on top count as seen, and a feed that ended before then still sets `feed_end`. Opting out also drops events not yet sent, and `Application Opened` is sent without its launch URL (a deep link can name an article). Skip rate is `card_seen` without a matching `hop` or `read_open`; a flat column is a `column_left` with no hop out and no reads.
 
