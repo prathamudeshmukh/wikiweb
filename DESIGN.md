@@ -325,6 +325,10 @@ Header: wordmark left, Logbook (`BookOpen`) right. One snapping card + 56 pt pee
 
 **First-hop hint** (until the first hop; rules in SPEC §4.4): a chip straddles the focused card's bottom edge, 14 pt from its right edge — `ink.primary` pill, `bg.card` text, IBM Plex Mono 500 11/16 caps, padding 3 × 10, moves with the card. The card peels (§7). No chip on compass, error or offline cards.
 
+With a mouse (`pointer: fine`, web) the chip takes the mouse copy (§8).
+
+**Key legend** (web, mouse, wide window): three rows in the margin, 32 pt right of the column and centred on the window's height, 10 pt apart. Keycap: `bg.card` with a `line.hairline` border (2 pt at the bottom), radius 5, min 22 × 22, padding 0 × 6, IBM Plex Mono 500 11/16, `ink.primary`. Label 12 pt after it in the meta style, `ink.muted`. No new colours. Rules: SPEC §15.3.
+
 ### 6.3 Column
 Header = breadcrumb route, then seed header, then snapping cards. No Logbook button mid-expedition. Until the first return, each column's first card carries the same chip with the back copy (§8); no peel.
 
@@ -385,6 +389,9 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Swipe label | Take a tangent → |
 | First-hop hint chip | ← Swipe left to take a tangent |
 | First-return hint chip | Swipe right to go back → |
+| First-hop hint chip, mouse | Drag or press → to take a tangent |
+| First-return hint chip, mouse | Drag or press ← to go back |
+| Key legend | → Take a tangent · ← Back · Enter Read |
 | Onboarding | Where shall we start? |
 | Onboarding CTA | Set off → |
 | Seed header | Exploring from {title} |

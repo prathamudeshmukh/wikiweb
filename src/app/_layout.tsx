@@ -7,6 +7,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AnalyticsRoot } from '../analytics/AnalyticsRoot';
 import { HintsProvider } from '../hints/HintsContext';
+import { KeyLegend } from '../hints/KeyLegend';
 import { interestsSavedProperties } from '../analytics/interestsSaved';
 import { type InterestsSaved, InterestsProvider } from '../interests/InterestsContext';
 import { AppServicesProvider, createAppServices } from '../services/AppServices';
@@ -107,6 +108,8 @@ export default function RootLayout() {
           </AppServicesProvider>
         </SafeAreaProvider>
       </View>
+      {/* Outside the frame, which clips: the legend sits in the margin beside the column (DESIGN.md §6.2). */}
+      <KeyLegend />
     </AppRoot>
   );
 }

@@ -1,10 +1,8 @@
-import { pointerKind } from './pointerKind';
+import { browserPointerKind } from './browserPointer.web';
 import { connectPostHogWeb } from './posthogWeb';
-
-const detectPointer = () => pointerKind(typeof window.matchMedia === 'function' ? (query) => window.matchMedia(query) : undefined);
 
 // Imported on demand, so the browser fetches posthog-js as its own chunk after the first screen (SPEC.md §15.9).
 export const connectPostHog = connectPostHogWeb(async (key, config) => {
   const { posthog } = await import('posthog-js');
   return posthog.init(key, config);
-}, detectPointer);
+}, browserPointerKind);
