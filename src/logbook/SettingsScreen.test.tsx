@@ -8,13 +8,20 @@ const SAFE_AREA = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { to
 async function renderSettings({ sharing }: { sharing: boolean | undefined } = { sharing: true }) {
   const onBack = jest.fn();
   const onOpenInterests = jest.fn();
+  const onOpenAbout = jest.fn();
   const usage = { sharing, setSharing: jest.fn() };
   await render(
     <SafeAreaProvider initialMetrics={SAFE_AREA}>
-      <SettingsScreen interests={['space', 'history', 'music', 'food']} onBack={onBack} onOpenInterests={onOpenInterests} usage={usage} />
+      <SettingsScreen
+        interests={['space', 'history', 'music', 'food']}
+        onBack={onBack}
+        onOpenInterests={onOpenInterests}
+        onOpenAbout={onOpenAbout}
+        usage={usage}
+      />
     </SafeAreaProvider>,
   );
-  return { onBack, onOpenInterests, usage };
+  return { onBack, onOpenInterests, onOpenAbout, usage };
 }
 
 describe('SettingsScreen', () => {
@@ -58,6 +65,22 @@ describe('SettingsScreen', () => {
     await renderSettings({ sharing: undefined });
 
     expect(screen.getByLabelText('Share usage data')).toBeDisabled();
+  });
+
+  it('opens About & privacy', async () => {
+    const { onOpenAbout } = await renderSettings();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'About & privacy' }));
+
+    expect(onOpenAbout).toHaveBeenCalled();
+  });
+
+  it('keeps Send feedback as the last row', async () => {
+    await renderSettings();
+
+    const buttons = screen.getAllByRole('button').map((button) => button.props.accessibilityLabel as string);
+
+    expect(buttons.slice(-2)).toEqual(['About & privacy', 'Send feedback. feedback@gotangent.app']);
   });
 
   it('opens an email to the feedback inbox', async () => {

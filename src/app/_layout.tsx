@@ -98,6 +98,7 @@ export default function RootLayout() {
                       <Stack.Screen name="expedition/[id]" options={{ animation: 'slide_from_right' }} />
                       <Stack.Screen name="settings/index" options={{ animation: 'slide_from_right' }} />
                       <Stack.Screen name="settings/interests" options={{ animation: 'slide_from_right' }} />
+                      <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
                     </Stack>
                     <StatusBar style="auto" />
                   </TangentProvider>

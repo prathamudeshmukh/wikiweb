@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { UsageSharing } from '../analytics/useUsageSharing';
+import { PITCH } from '../brand/pitch';
 import { useTheme } from '../theme/useTheme';
 import { MIN_INTERESTS, type OnboardingAction, onboardingAction } from './interestSelection';
 import { pickerScreenStyles as layout } from './pickerScreenStyles';
 import { PrimaryButton } from './PrimaryButton';
 import { TopicPicker } from './TopicPicker';
+import { UsageNotice } from './UsageNotice';
 
 interface OnboardingScreenProps {
   onDone: (tileIds: readonly string[]) => void;
   /** Started with nothing picked: the route saves the defaults, marked as not chosen. */
   onJustStart: () => void;
+  onOpenPrivacy: () => void;
+  usage: UsageSharing;
 }
 
-// The social preview card says the same (public/index.html), so a visitor lands on the promise they clicked.
-const PITCH = 'Wikipedia, one swipe at a time';
 const INTRO = 'Swipe left to follow a link and see where you end up. Pick a few topics to start from, or just start.';
 const SET_OFF_HINT = `Pick at least ${MIN_INTERESTS} topics to set off`;
 
@@ -29,7 +32,7 @@ function OnboardingButton({ action, onSetOff, onJustStart }: { action: Onboardin
   }
 }
 
-export function OnboardingScreen({ onDone, onJustStart }: OnboardingScreenProps) {
+export function OnboardingScreen({ onDone, onJustStart, onOpenPrivacy, usage }: OnboardingScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<readonly string[]>([]);
@@ -44,6 +47,7 @@ export function OnboardingScreen({ onDone, onJustStart }: OnboardingScreenProps)
       <View style={layout.actions}>
         <OnboardingButton action={onboardingAction(selected)} onSetOff={() => onDone(selected)} onJustStart={onJustStart} />
       </View>
+      <UsageNotice usage={usage} onOpenPrivacy={onOpenPrivacy} />
     </View>
   );
 }

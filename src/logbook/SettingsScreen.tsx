@@ -1,5 +1,6 @@
 import { ArrowUpRight, CaretRight } from '../theme/icons';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { UsageSharingSwitch } from '../analytics/UsageSharingSwitch';
 import type { UsageSharing } from '../analytics/useUsageSharing';
 import { FEEDBACK } from '../config/constants';
 import { openFeedbackMail } from '../feedback/feedbackMail';
@@ -14,6 +15,7 @@ interface SettingsScreenProps {
   interests: readonly string[];
   onBack: () => void;
   onOpenInterests: () => void;
+  onOpenAbout: () => void;
   usage: UsageSharing;
 }
 
@@ -22,23 +24,30 @@ const USAGE_NOTE = 'Helps tune which articles Tangent shows. Includes the titles
 
 function UsageSharingRow({ usage }: { usage: UsageSharing }) {
   const palette = useTheme();
-  const loading = usage.sharing === undefined;
   return (
     <View style={[styles.row, { backgroundColor: palette.card, borderColor: palette.line }]}>
       <View style={styles.rowText}>
         <Text style={[styles.rowTitle, { color: palette.ink }]}>Share usage data</Text>
         <Text style={[styles.rowValue, { color: palette.muted }]}>{USAGE_NOTE}</Text>
       </View>
-      <Switch
-        value={usage.sharing ?? false}
-        disabled={loading}
-        // Switch doesn't announce disabled on its own.
-        accessibilityState={{ disabled: loading }}
-        onValueChange={usage.setSharing}
-        accessibilityLabel="Share usage data"
-        trackColor={{ true: palette.ink, false: palette.line }}
-      />
+      <UsageSharingSwitch usage={usage} />
     </View>
+  );
+}
+
+/** What Tangent sends and why (SPEC.md §3.11), next to the switch it explains. */
+function AboutRow({ onPress }: { onPress: () => void }) {
+  const palette = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="About & privacy"
+      style={({ pressed }) => [styles.row, { backgroundColor: palette.card, borderColor: palette.line }, pressed && styles.pressed]}
+    >
+      <Text style={[styles.rowText, styles.rowTitle, { color: palette.ink }]}>About & privacy</Text>
+      <CaretRight size={18} color={palette.muted} />
+    </Pressable>
   );
 }
 
@@ -62,7 +71,7 @@ function SendFeedbackRow() {
 }
 
 /** Settings, reached from the Logbook gear (DESIGN.md §6.6). */
-export function SettingsScreen({ interests, onBack, onOpenInterests, usage }: SettingsScreenProps) {
+export function SettingsScreen({ interests, onBack, onOpenInterests, onOpenAbout, usage }: SettingsScreenProps) {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const summary = interestsSummary(interests);
@@ -83,6 +92,7 @@ export function SettingsScreen({ interests, onBack, onOpenInterests, usage }: Se
           <CaretRight size={18} color={palette.muted} />
         </Pressable>
         <UsageSharingRow usage={usage} />
+        <AboutRow onPress={onOpenAbout} />
         <SendFeedbackRow />
       </View>
     </View>

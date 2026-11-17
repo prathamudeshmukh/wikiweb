@@ -5,6 +5,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { Text } from 'react-native';
 import Onboarding from '../app/onboarding';
 import { memoryAnalytics } from '../analytics/__testing__/memoryAnalytics';
+import { createAnalyticsConsent } from '../analytics/analyticsConsent';
 import { DEFAULT_INTERESTS } from './interestSelection';
 
 // A minimal saved-interests store: Home redirects to onboarding until picks exist, as src/app/index.tsx does.
@@ -33,16 +34,28 @@ jest.mock('../interests/useSaveInterests', () => ({
 }));
 
 const mockAnalytics = memoryAnalytics();
+const mockConsent = createAnalyticsConsent({ getItem: async () => null, setItem: async () => undefined }, mockAnalytics);
 
 jest.mock('../services/AppServices', () => ({
-  useAppServices: () => ({ analytics: mockAnalytics }),
+  useAppServices: () => ({ analytics: mockAnalytics, analyticsConsent: mockConsent }),
 }));
 
 jest.mock('./OnboardingScreen', () => {
   const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
   return {
-    OnboardingScreen: ({ onDone, onJustStart }: { onDone: (ids: readonly string[]) => void; onJustStart: () => void }) => (
+    OnboardingScreen: ({
+      onDone,
+      onJustStart,
+      onOpenPrivacy,
+    }: {
+      onDone: (ids: readonly string[]) => void;
+      onJustStart: () => void;
+      onOpenPrivacy: () => void;
+    }) => (
       <>
+        <Pressable onPress={onOpenPrivacy}>
+          <Text>Privacy</Text>
+        </Pressable>
         <Pressable onPress={() => onDone(['science', 'history', 'culture'])}>
           <Text>Continue</Text>
         </Pressable>
@@ -82,6 +95,7 @@ async function renderApp(initialUrl: string) {
       _layout: { default: () => <Stack screenOptions={{ headerShown: false }} />, unstable_settings: { initialRouteName: 'index' } },
       index: Home,
       onboarding: Onboarding,
+      about: () => <Text>About</Text>,
     },
     { initialUrl },
   );
@@ -118,6 +132,18 @@ describe('onboarding route, just started', () => {
 
     expect(savedPicks).toEqual(DEFAULT_INTERESTS);
     expect(mockSavedFrom).toEqual(['skip']);
+  });
+});
+
+describe('onboarding route, privacy', () => {
+  it('opens the privacy section of About, on top of onboarding so Back keeps the picks', async () => {
+    const app = await renderApp('/');
+
+    await fireEvent.press(screen.getByText('Privacy'));
+
+    expect(app.router.getPathname()).toBe('/about');
+    expect(app.router.getSearchParams()).toEqual({ section: 'privacy' });
+    expect(stackRouteNames(app)?.slice(-2)).toEqual(['onboarding', 'about']);
   });
 });
 

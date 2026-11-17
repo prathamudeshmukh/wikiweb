@@ -1,5 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';
+import { PRIVACY_SECTION } from '../about/aboutLinks';
+import { useUsageSharing } from '../analytics/useUsageSharing';
 import { useSaveInterests } from '../interests/useSaveInterests';
 import { DEFAULT_INTERESTS } from '../onboarding/interestSelection';
 import { OnboardingScreen } from '../onboarding/OnboardingScreen';
@@ -14,5 +16,15 @@ export default function Onboarding() {
   const save = useSaveInterests(goHome, 'onboarding');
   // Recorded as `skip`, the value analytics has used since before Just start replaced Skip.
   const saveDefaults = useSaveInterests(goHome, 'skip');
-  return <OnboardingScreen onDone={(ids) => void save(ids)} onJustStart={() => void saveDefaults(DEFAULT_INTERESTS)} />;
+  const usage = useUsageSharing();
+  // Pushed, so Back returns to the tiles with the picks still in place.
+  const openPrivacy = useCallback(() => router.push({ pathname: '/about', params: { section: PRIVACY_SECTION } }), [router]);
+  return (
+    <OnboardingScreen
+      onDone={(ids) => void save(ids)}
+      onJustStart={() => void saveDefaults(DEFAULT_INTERESTS)}
+      onOpenPrivacy={openPrivacy}
+      usage={usage}
+    />
+  );
 }

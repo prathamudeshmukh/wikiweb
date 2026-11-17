@@ -60,4 +60,60 @@ describe('analytics consent', () => {
 
     expect(consent.isOptedOut()).toBe(false);
   });
+
+  it('tells subscribers when the choice changes, so every switch shows the same state', async () => {
+    const consent = createAnalyticsConsent(memoryKv(), memoryAnalytics());
+    const listener = jest.fn();
+    consent.subscribe(listener);
+
+    await consent.setOptedOut(true);
+
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops telling a subscriber once it unsubscribes', async () => {
+    const consent = createAnalyticsConsent(memoryKv(), memoryAnalytics());
+    const listener = jest.fn();
+    const unsubscribe = consent.subscribe(listener);
+
+    unsubscribe();
+    await consent.load();
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('reads the saved choice once, however many screens ask for it at startup', async () => {
+    const kv = memoryKv();
+    const getItem = jest.spyOn(kv, 'getItem');
+    const consent = createAnalyticsConsent(kv, memoryAnalytics());
+
+    await Promise.all([consent.load(), consent.load()]);
+
+    expect(getItem).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a choice made while the saved one was still loading', async () => {
+    let finishRead: (value: string | null) => void = () => undefined;
+    const kv = { getItem: () => new Promise<string | null>((resolve) => (finishRead = resolve)), setItem: async () => undefined };
+    const analytics = memoryAnalytics();
+    const consent = createAnalyticsConsent(kv, analytics);
+    const loading = consent.load();
+
+    await consent.setOptedOut(true);
+    finishRead(null);
+    await loading;
+
+    expect(consent.isOptedOut()).toBe(true);
+    expect(analytics.optedOut()).toBe(true);
+  });
+
+  it('reads again after a failed read', async () => {
+    const getItem = jest.fn().mockRejectedValueOnce(new Error('blocked')).mockResolvedValueOnce('true');
+    const consent = createAnalyticsConsent({ getItem, setItem: async () => undefined }, memoryAnalytics());
+    await expect(consent.load()).rejects.toThrow('blocked');
+
+    const optedOut = await consent.load();
+
+    expect(optedOut).toBe(true);
+  });
 });

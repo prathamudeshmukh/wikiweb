@@ -8,8 +8,9 @@ export function SettingsRoute() {
   const router = useRouter();
   const back = useCallback(() => router.back(), [router]);
   const openInterests = useCallback(() => router.push('/settings/interests'), [router]);
+  const openAbout = useCallback(() => router.push('/about'), [router]);
   const usage = useUsageSharing();
   return (
-    <RequireInterests>{(interests) => <SettingsScreen interests={interests} onBack={back} onOpenInterests={openInterests} usage={usage} />}</RequireInterests>
+    <RequireInterests>{(interests) => <SettingsScreen interests={interests} onBack={back} onOpenInterests={openInterests} onOpenAbout={openAbout} usage={usage} />}</RequireInterests>
   );
 }
