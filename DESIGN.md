@@ -335,7 +335,7 @@ Full-height sheet over the column, grabber on top, header bar with close (left) 
 Back, title `LOGBOOK`, gear. Then the world atlas (M7, §5.12): eyebrow, title, stats, map, blind-spot bar, expedition chips. Then the stamps grid (5 per row, `6 / 24` count). Then `FINDS · {n}` (M6): a horizontal strip of the latest finds (thumbnail or territory swatch, title, solid ✦), newest first, with *See all →* to the `FINDS` list screen (title, `FOUND ON · FROM {first}…` / `FOUND ON HOME` caption). Tap a find → peek card (§5.8). Then `COMPLETED · {n}` (M8, hidden while empty): rows with a 40 pt territory swatch holding the tile icon, the node label in Fraunces 18, a caption `{TILE} › {PARENT} · {n} ARTICLES · {DATE}` in Plex Mono 10 `ink.muted`, and ✓ at the right; newest first, no cap. Tap → the tile's tree screen (§5.13) at the node's parent. Then the expeditions list: title, date, hop count, territory route strip. Tap → recap card.
 
 ### 6.6 Settings
-Interests (re-open tile picker; tree tiles open their tree screen, §5.13) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · Send feedback (`feedback@gotangent.app` as its value, `ArrowUpRight`: it leaves the app) · About & attributions.
+Interests (re-open tile picker; tree tiles open their tree screen, §5.13) · Theme (System / Paper / Night atlas) · Reduce motion (System / On) · Share anonymous usage (toggle) · About & privacy (`CaretRight`, SPEC.md §3.11) · Send feedback (`feedback@gotangent.app` as its value, `ArrowUpRight`: it leaves the app), always last.
 
 ### 6.7 States
 | State | Visual |
@@ -416,6 +416,8 @@ Curious, warm, short. Second person. Cartographic verbs (set off, cross, chart, 
 | Chips toast | Added {labels} · Home is rebuilding |
 | Feedback card | Two expeditions in / Enjoying Tangent? / You've wandered a couple of times now. Tell us how it's going: it shapes what we build next. / 👍 Yes · 👎 Not yet |
 | Feedback card (opted out) | You're not sharing usage data, so nothing is sent from here. If you'd like to tell us how it's going, an email reaches us directly. / Send feedback by email → |
+| Onboarding usage notice | Anonymous usage stats, including article titles, help tune feeds. / Privacy · Turn off — off: Usage stats are off. / Privacy · Turn on (Literata 13, `ink.muted`, links underlined in `ink`) |
+| About & privacy | `src/about/aboutCopy.ts` (SPEC.md §3.11): What Tangent sends · Share usage data · Questions or requests: feedback@gotangent.app |
 | Feedback sheet | Thanks: noted 👍 / Anything to add? / What do you like most? — 👎: What would make it better? — Sent anonymously · don't include personal details |
 | Logbook Completed | Completed · {n} — {Tile} › {Parent} · {n} articles · {date} |
 
