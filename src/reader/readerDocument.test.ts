@@ -30,6 +30,39 @@ describe('buildReaderDocument', () => {
     expect(doc).toContain(`--color-base: ${NIGHT_ATLAS.ink}`);
   });
 
+  it('themes the neutral fill Wikipedia gives wikitable header cells', () => {
+    expect(build({ palette: NIGHT_ATLAS })).toContain(`--background-color-neutral: ${NIGHT_ATLAS.line}`);
+  });
+
+  describe('Night atlas images and fills', () => {
+    const night = () => build({ palette: NIGHT_ATLAS });
+
+    it('inverts the images Wikipedia editors tagged for inverting', () => {
+      expect(night()).toMatch(/#pcs \.skin-invert-image img[^{]*#pcs img\.skin-invert[^{]*\{[^}]*filter: invert\(1\) hue-rotate\(180deg\)/);
+    });
+
+    it('dims other images and leaves .notheme content un-inverted', () => {
+      const doc = night();
+
+      expect(doc).toMatch(/#pcs img \{[^}]*filter: brightness\(0\.85\)/);
+      expect(doc.lastIndexOf('#pcs .notheme img')).toBeGreaterThan(doc.indexOf('#pcs .skin-invert-image img'));
+    });
+
+    it('runs the contrast pass for inline fills with Paper ink and Night ink', () => {
+      const doc = night();
+
+      expect(doc).toContain(JSON.stringify({ dark: PAPER.ink, light: NIGHT_ATLAS.ink }));
+      expect(doc.indexOf('tangent-fill-contrast')).toBeLessThan(doc.indexOf('</body>'));
+    });
+
+    it('leaves Paper images and fills alone', () => {
+      const doc = build();
+
+      expect(doc).not.toContain('tangent-fill-contrast');
+      expect(doc).not.toContain('filter:');
+    });
+  });
+
   it('hides edit controls', () => {
     expect(build()).toMatch(/\.pcs-edit-section-link-container[^{]*\{[^}]*display:\s*none/);
   });

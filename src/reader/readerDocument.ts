@@ -1,4 +1,5 @@
-import type { Palette } from '../theme/tokens';
+import { NIGHT_ATLAS, PAPER, type Palette } from '../theme/tokens';
+import { fillContrastScript } from './fillContrast';
 
 interface ReaderDocumentInput {
   /** Wikipedia's mobile-html for the article. */
@@ -9,16 +10,33 @@ interface ReaderDocumentInput {
   fontFaceCss: string;
 }
 
+const IMAGE_DIM = 0.85;
+
+// Night atlas only. The CSS mobile-html loads has no rule for the images editors tag `skin-invert-image` /
+// `skin-invert` (black line art and diagrams), so the reader inverts them itself; other images are dimmed so white
+// backgrounds don't glare. `#pcs` outranks PCS's own `!important` brightness rule. `.notheme` content stays as drawn.
+const NIGHT_IMAGE_CSS = `
+#pcs img { filter: brightness(${IMAGE_DIM}) !important; }
+#pcs .skin-invert-image img, #pcs img.skin-invert, #pcs .skin-invert img, #pcs img.mw-invert { filter: invert(1) hue-rotate(180deg) !important; }
+#pcs .notheme img { filter: brightness(${IMAGE_DIM}) !important; }`;
+
+const READER_INKS = { dark: PAPER.ink, light: NIGHT_ATLAS.ink };
+
+/** Night atlas draws cards with a hairline instead of a shadow; it's the only dark palette. */
+const isNight = (palette: Palette) => !palette.cardShadow;
+
 // DESIGN.md §6.4: Literata body at a comfortable measure, Fraunces headings, framed images, no edit chrome.
 function readerCss(palette: Palette, fontFaceCss: string): string {
-  const scheme = palette.cardShadow ? 'light' : 'dark';
+  const scheme = isNight(palette) ? 'dark' : 'light';
   return `${fontFaceCss}
 :root { color-scheme: ${scheme}; }
 /* Wikipedia's mobile CSS takes its colours from these variables (often with !important), so theming them
    re-colours hatnotes, infoboxes and the rest in one place. */
 :root, #pcs {
   --background-color-base: ${palette.paper};
+  --background-color-interactive: ${palette.card};
   --background-color-interactive-subtle: ${palette.card};
+  --background-color-neutral: ${palette.line};
   --background-color-neutral-subtle: ${palette.card};
   --color-base: ${palette.ink};
   --color-emphasized: ${palette.ink};
@@ -26,6 +44,7 @@ function readerCss(palette: Palette, fontFaceCss: string): string {
   --color-progressive: ${palette.ink};
   --border-color-base: ${palette.line};
   --border-color-subtle: ${palette.line};
+  --border-color-muted: ${palette.line};
 }
 html, body { background: ${palette.paper} !important; color: ${palette.ink} !important; }
 body { font-family: 'Literata', Georgia, serif; font-size: 17px; line-height: 1.6; max-width: 68ch; margin: 0 auto !important; padding: 8px 20px 48px !important; }
@@ -42,7 +61,7 @@ th, td { border-color: ${palette.line} !important; }
 /* PCS styles hatnotes via an id selector (#pcs .hatnote) with !important; match its specificity and win on order. */
 html body #pcs div.hatnote, html body div.hatnote { background: transparent !important; color: ${palette.muted} !important; font-style: italic; }
 .tangent-attribution { margin-top: 40px; padding-top: 16px; border-top: 1px solid ${palette.line}; font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.08em; color: ${palette.muted}; }
-.tangent-attribution a { color: ${palette.muted} !important; }`;
+.tangent-attribution a { color: ${palette.muted} !important; }${isNight(palette) ? NIGHT_IMAGE_CSS : ''}`;
 }
 
 function attribution(title: string): string {
@@ -67,5 +86,6 @@ function insertBefore(html: string, { closingTag, content, fallback }: Insertion
 export function buildReaderDocument({ html, title, palette, fontFaceCss }: ReaderDocumentInput): string {
   const style = `<style id="tangent-reader">${readerCss(palette, fontFaceCss)}</style>`;
   const styled = insertBefore(html, { closingTag: '</head>', content: style, fallback: 'start' });
-  return insertBefore(styled, { closingTag: '</body>', content: attribution(title), fallback: 'end' });
+  const nightScript = isNight(palette) ? fillContrastScript(READER_INKS) : '';
+  return insertBefore(styled, { closingTag: '</body>', content: `${attribution(title)}${nightScript}`, fallback: 'end' });
 }
