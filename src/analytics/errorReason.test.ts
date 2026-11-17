@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { WikiApiError } from '../wiki-api/http';
-import { LaneCancelledError } from '../wiki-api/requestBudget';
 import { errorReason } from './errorReason';
 
 describe('errorReason', () => {
@@ -16,9 +15,8 @@ describe('errorReason', () => {
     expect(errorReason(new WikiApiError('Could not reach Wikipedia.', { retryable: true }))).toBe('network');
   });
 
-  it('names parse and cancellation failures', () => {
+  it('names parse failures', () => {
     expect(errorReason(z.string().safeParse(1).error)).toBe('parse');
-    expect(errorReason(new LaneCancelledError())).toBe('cancelled');
   });
 
   it('falls back to the error class, never its message', () => {

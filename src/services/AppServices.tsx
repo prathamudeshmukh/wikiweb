@@ -6,7 +6,7 @@ import { type AnalyticsConsent, createAnalyticsConsent } from '../analytics/anal
 import { type ColumnVisits, createColumnVisits } from '../analytics/columnVisits';
 import { connectPostHog } from '../analytics/connectPostHog';
 import { type AnalyticsConnector, createAnalytics } from '../analytics/createAnalytics';
-import { errorReason } from '../analytics/errorReason';
+import { appErrorEvent } from '../analytics/appErrorEvent';
 import { createExpeditionReporter, type ExpeditionReporter } from '../analytics/expeditionReport';
 import { findEvents } from '../analytics/findEvents';
 import { createFeedbackPrompt, type FeedbackPrompt } from '../feedback/feedbackPrompt';
@@ -82,7 +82,10 @@ export function createAppServices(config: AppConfig, connect: AnalyticsConnector
   const api = apiOn();
   const prefetcher = createColumnPrefetcher({ ...PREFETCH, feedFor: (entry, lane) => columnFeedFor(apiOn(lane), entry) });
   const { analytics, client } = createAnalytics({ key: config.posthogKey, host: config.posthogHost, isDev: config.isDev }, connect);
-  setErrorSink((scope, error) => analytics.track({ name: 'app_error', properties: { scope, reason: errorReason(error) } }));
+  setErrorSink((scope, error) => {
+    const event = appErrorEvent(scope, error);
+    if (event) analytics.track(event);
+  });
   const expeditions = createExpeditionReporter({ analytics, now: Date.now });
   // One connection for every table in the on-device database.
   const openDatabase = openOnce(openJourneyDatabase);
