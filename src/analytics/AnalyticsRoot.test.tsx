@@ -39,6 +39,14 @@ describe('AnalyticsRoot', () => {
     expect(services.analytics.screens()).toEqual(['/expedition/[id]']);
   });
 
+  it('sends no screen view for the About & privacy page, so reading the policy sends nothing', async () => {
+    jest.mocked(useSegments).mockReturnValue(['about'] as never);
+
+    const { services } = await renderRoot();
+
+    expect(services.analytics.screens()).toEqual([]);
+  });
+
   it('summarises an expedition under way when the app goes to the background', async () => {
     const emit = captureAppState();
     const services = testServices(fakeWikiApi({}).api);

@@ -5,8 +5,7 @@ import { testServices } from '../__testing__/renderWithServices';
 import { AppServicesProvider } from '../services/AppServices';
 import { useUsageSharing } from './useUsageSharing';
 
-function renderSharing() {
-  const services = testServices(fakeWikiApi({}).api);
+function renderSharing(services = testServices(fakeWikiApi({}).api)) {
   const wrapper = ({ children }: { children: ReactNode }) => <AppServicesProvider services={services}>{children}</AppServicesProvider>;
   return { services, rendered: renderHook(() => useUsageSharing(), { wrapper }) };
 }
@@ -28,5 +27,16 @@ describe('useUsageSharing', () => {
     expect(result.current.sharing).toBe(false);
     expect(services.analytics.optedOut()).toBe(true);
     expect(await services.analyticsConsent.load()).toBe(true);
+  });
+
+  it('follows a change made through another switch', async () => {
+    const services = testServices(fakeWikiApi({}).api);
+    const { result: settings } = await renderSharing(services).rendered;
+    const { result: about } = await renderSharing(services).rendered;
+    await waitFor(() => expect(settings.current.sharing).toBe(true));
+
+    await act(() => about.current.setSharing(false));
+
+    expect(settings.current.sharing).toBe(false);
   });
 });

@@ -3,14 +3,16 @@ import { type ReactNode, useEffect } from 'react';
 import { useAppForeground } from './useAppForeground';
 import { useAppServices } from '../services/AppServices';
 import { reportError } from '../services/reportError';
-import { screenRoute } from './screenRoute';
+import { isTrackedScreen, screenRoute } from './screenRoute';
 import { TouchAutocapture } from './TouchAutocapture';
 
 /** Screen views by route pattern; segments, unlike the pathname, keep `[id]` instead of the id. */
 function useScreenViews() {
   const { analytics } = useAppServices();
   const route = screenRoute(useSegments());
-  useEffect(() => analytics.screen(route), [analytics, route]);
+  useEffect(() => {
+    if (isTrackedScreen(route)) analytics.screen(route);
+  }, [analytics, route]);
 }
 
 /** Applies the saved opt-out, and reports an expedition under way whenever the app goes to the background. */
